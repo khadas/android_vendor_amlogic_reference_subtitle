@@ -1,0 +1,62 @@
+
+// *** THIS PACKAGE HAS SPECIAL LICENSING CONDITIONS.  PLEASE
+//     CONSULT THE OWNERS AND opensource-licensing@google.com BEFORE
+//     DEPENDING ON IT IN YOUR PROJECT. ***
+package {
+    // See: http://go/android-license-faq
+    // A large-scale-change added 'default_applicable_licenses' to import
+    // all of the 'license_kinds' from "vendor_amlogic_common_frameworks_core_license"
+    // to get the below license kinds:
+    //   SPDX-license-identifier-Apache-2.0
+    //   SPDX-license-identifier-FTL
+    //   SPDX-license-identifier-GPL
+    //   SPDX-license-identifier-LGPL-2.1
+    //   SPDX-license-identifier-MIT
+    //   legacy_by_exception_only (by exception only)
+    //   legacy_notice
+    default_applicable_licenses: [
+        "vendor_amlogic_common_license",
+    ],
+}
+
+cc_library_shared {
+    name: "libsubtitlemanager_jni",
+    vendor:true,
+    srcs: [
+        "com_droidlogic_app_SubtitleManager.cpp",
+    ],
+
+    shared_libs: [
+        "vendor.amlogic.hardware.subtitleserver@1.0",
+        "android.hidl.memory@1.0",
+        "libbase",
+        "libvendorfont",
+        "libhidlbase",
+        "libhidlmemory",
+        "liblog",
+        "libcutils",
+        "libutils",
+    ],
+
+	header_libs: [
+		"jni_headers",
+	],
+
+    static_libs: ["libsubtitleclient_static"],
+
+    cppflags: [
+        "-std=c++14",
+        "-Wno-unused-parameter",
+        "-Wno-unused-const-variable",
+        "-O0",
+    ],
+
+}
+
+cc_prebuilt_library_shared {
+   name: "libvendorfont",
+   vendor: true,
+   srcs: [
+      "arm/libvendorfont.so",
+   ],
+}
