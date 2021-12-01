@@ -67,7 +67,7 @@ bool FmqReceiver::readLoop() {
             } else {
                 usleep(1000);
             }
-
+             // TODO coverity no 94:q
             // consume all data.
             while (!mStop && (ringbuffer_read_avail(bufferHandle) > sizeof(IpcPackageHeader))) {
                 char buffer[sizeof(IpcPackageHeader)];
@@ -105,9 +105,9 @@ bool FmqReceiver::readLoop() {
                     //ALOGD("payload listener=%p type=%x, %d", listener.get(), peekAsSocketWord(payloads), curHeader.dataSize);
                     if (listener != nullptr) {
                         if (listener->onData(payloads, curHeader.dataSize+4) < 0) {
-                            free(payloads);
+                            //free(payloads);
                             ringbuffer_free(bufferHandle);
-                            return -1;
+                            //return -1;
                         }
                     }
                 }

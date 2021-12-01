@@ -96,6 +96,12 @@ struct AM_CC_Decoder
 	AM_Bool_t hide;
 	AM_Bool_t render_flag;
 	AM_Bool_t need_clear;
+	AM_Bool_t auto_detect_play;
+	AM_Bool_t auto_set_play_flag;
+	AM_Bool_t cea_708_cc_flag;
+	int auto_detect_last_708_pgno;
+	int auto_detect_last_pgno;
+	int auto_detect_pgno_count;
 	unsigned int decoder_param;
 	char lang[12];
 	pthread_t render_thread;

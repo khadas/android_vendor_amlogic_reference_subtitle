@@ -153,7 +153,7 @@ int subtitleGetType()
 
 char* subtitleGetTypeStr()
 {
-    char* ret;
+    char* ret = nullptr;
     const sp<SubtitleServerHidlClient>& subser = getSubtitleService();
     if (subser != 0) {
         //@@ret = String8(subser->getTypeStr()).string();
@@ -311,7 +311,8 @@ const char* subtitleGetLanguage()
         //strcpy(ret, subser->subtitleGetLanguage(0));
         if (value != "") {
             ALOGE("subtitleGetLanguage -languege:%s", value.c_str());
-            strcpy(ret, value.c_str());
+            strncpy(ret, value.c_str(), sizeof(ret));
+            ret[sizeof(ret) - 1] = '/0';
             return ret;
         }
     }

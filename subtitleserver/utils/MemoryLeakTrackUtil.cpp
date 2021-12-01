@@ -102,7 +102,7 @@ public:
                     }
 
                     MmapInfo *info = new MmapInfo();
-                    info->fileName = trim(line+pathIndex);
+                    info->fileName.setTo(trim(line+pathIndex));
                     info->startAddr = startAddrValue;
                     info->endAddr = endAddrValue;
                     maptable.push_back(info);

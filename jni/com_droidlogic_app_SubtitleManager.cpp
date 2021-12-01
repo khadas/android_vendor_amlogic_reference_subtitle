@@ -7,10 +7,11 @@
 #include <utils/Log.h>
 //#include <utils/RefBase.h>
 #include <utils/String8.h>
-//#include <utils/String16.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <cutils/properties.h>
 #include <dlfcn.h>
+#include <algorithm>
 
 #include "SubtitleServerClient.h"
 
@@ -194,6 +195,9 @@ public:
 
         ALOGD("in onStringSubtitleEvent subtitleType=%d size=%d x=%d, y= %d width=%d height=%d videow=%d, videoh=%d cmd=%d\n",
                 uiType, size, x, y, width, height, videoWidth, videoHeight,cmd);
+
+        if (uiType == 1 && width > 0 && height > 0) uiType = 2;
+
         if (((uiType == 2) || (uiType == 4)) && size > 0) {
             getJniContext()->callJava_showBitmapData(data, size, uiType, x, y, width, height, videoWidth, videoHeight, cmd);
         } else {
@@ -264,7 +268,7 @@ static void nativeDestroy(JNIEnv* env, jobject object) {
 }
 
 static void nativeUpdateVideoPos(JNIEnv* env, jobject object, jint pos) {
-    ALOGD("subtitleShowSub pos:%d\n", pos);
+    //ALOGD("subtitleShowSub pos:%d\n", pos);
     if (pos > 0 && getJniContext()->mSubContext != nullptr) {
         getJniContext()->mSubContext->updateVideoPos(pos);
     } else {
@@ -272,27 +276,64 @@ static void nativeUpdateVideoPos(JNIEnv* env, jobject object, jint pos) {
     }
 }
 
-static jboolean nativeOpen(JNIEnv* env, jobject object, jstring jpath, jint ioType) {
-    if (TRACE_CALL) ALOGD("%s %d", __func__, __LINE__);
-    const char *cpath = env->GetStringUTFChars(jpath, nullptr);
-    ALOGD("nativeOpen path:%s", cpath);
-    bool res = false;
 
+static jboolean nativeOpenSubIdx(JNIEnv* env, jobject object, jstring jpath, jint trackId, jint ioType) {
+    if (TRACE_CALL) ALOGD("%s %d", __func__, __LINE__);
+
+    bool res = false;
+    int fd = -1;
+
+    const char *cpath = env->GetStringUTFChars(jpath, nullptr);
 
     if (getJniContext()->mSubContext != nullptr) {
         getJniContext()->mSubContext->userDataOpen();
         bool isExt = getJniContext()->callJava_isExternalSubtitle();
         ALOGD("isExt? %d", isExt);
-        if (isExt) {
-            res = getJniContext()->mSubContext->open(cpath, ioType);
+        if (isExt && cpath != nullptr) {
+            std::string path = cpath;
+            fd = ::open(path.c_str(), O_RDONLY);
+            size_t pos = path.rfind(".");
+            std::string ext = path.substr(pos, path.size()-pos);
+            ALOGD("file extension is:%s", ext.c_str());
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
+            ALOGD("file extension is:%s", ext.c_str());
+            if (ext.compare(".IDX") == 0) {
+                int idxDataFd = -1;
+                std::string subFile = path.substr(0, pos);
+                ALOGD(">> %s", (subFile+".SUB").c_str());
+                if (access((subFile+".SUB").c_str(), F_OK) == 0) {
+                    idxDataFd = ::open((subFile+".SUB").c_str(), O_RDONLY);
+                    ALOGD("access %s", (subFile+".SUB").c_str());
+                } else if(access((subFile+".sub").c_str(), F_OK) == 0) {
+                    idxDataFd = ::open((subFile+".sub").c_str(), O_RDONLY);
+                    ALOGD("access %s", (subFile+".sub").c_str());
+                }
+
+                if (idxDataFd != -1) {
+                    res = getJniContext()->mSubContext->open(fd, idxDataFd, trackId, ioType);
+                    ::close(idxDataFd);
+                } else {
+                    res = getJniContext()->mSubContext->open(fd, ioType);
+                }
+            } else {
+                res = getJniContext()->mSubContext->open(fd, ioType);
+            }
         } else {
-            res = getJniContext()->mSubContext->open(nullptr, ioType);
+            res = getJniContext()->mSubContext->open(-1, ioType);
         }
     } else {
        ALOGE("Subtitle Connection not established");
     }
+
+    if (fd >= 0) ::close(fd);
     env->ReleaseStringUTFChars(jpath, cpath);
     return true;
+}
+
+static jboolean nativeOpen(JNIEnv* env, jobject object, jstring jpath, jint ioType) {
+    // negtive index is for normal open.
+    // idx-sub subtitle may has many track, we support select it
+    return nativeOpenSubIdx(env, object, jpath, -1, ioType);
 }
 
 static void nativeClose(JNIEnv* env, jobject object) {
@@ -370,7 +411,7 @@ static void nativeResetForSeek(JNIEnv* env, jclass clazz) {
 
 static void nativeSelectCcChannel(JNIEnv* env, jclass clazz, jint channel) {
     if (TRACE_CALL) ALOGD("%s idx:%d", __func__, __LINE__);
-    if (getJniContext()->mSubContext != nullptr) {
+    if ((getJniContext() != nullptr) &&(getJniContext()->mSubContext != nullptr)) {
         getJniContext()->mSubContext->selectCcChannel(channel);
     } else {
         ALOGE("Subtitle Connection not established");
@@ -423,6 +464,15 @@ static jint nativeTtNextSubPage(JNIEnv* env, jclass clazz, jint dir) {
     return 0;
 }
 
+static void nativeSubtitleTune(JNIEnv* env, jclass clazz, jint type, jint param1, jint param2, jint param3)
+{
+    ALOGD("nativeSubtitleTune: subtitleTune(type:%d, params:%d,%d,%d)", type, param1, param2, param3);
+    if (getJniContext()->mSubContext != nullptr)
+    {
+        getJniContext()->mSubContext->setPipId(type + 1, param1);
+    }
+}
+
 static void nativeUnCrypt(JNIEnv *env, jclass clazz, jstring src, jstring dest) {
     const char *FONT_VENDOR_LIB = "/vendor/lib/libvendorfont.so";
     const char *FONT_PRODUCT_LIB = "/product/lib/libvendorfont.so";
@@ -461,6 +511,7 @@ static JNINativeMethod SubtitleManager_Methods[] = {
     {"nativeDestroy", "()V", (void *)nativeDestroy},
     {"nativeUpdateVideoPos", "(I)V", (void *)nativeUpdateVideoPos},
     {"nativeOpen", "(Ljava/lang/String;I)Z", (void *)nativeOpen},
+    {"nativeOpenSubIdx", "(Ljava/lang/String;II)Z", (void *)nativeOpenSubIdx},
     {"nativeClose", "()V", (void *)nativeClose},
     {"nativeTotalSubtitles", "()I", (void *)nativeTotalSubtitles},
     {"nativeInnerSubtitles", "()I", (void *)nativeInnerSubtitles},
@@ -474,6 +525,7 @@ static JNINativeMethod SubtitleManager_Methods[] = {
     {"nativeTtGotoPage", "(II)I", (void *)nativeTtGotoPage},
     {"nativeTtNextPage", "(I)I", (void *)nativeTtNextPage},
     {"nativeTtNextSubPage", "(I)I", (void *)nativeTtNextSubPage},
+    {"nativeSubtitleTune", "(IIII)V", (void *)nativeSubtitleTune},
     {"nativeSelectCcChannel", "(I)V", (void *)nativeSelectCcChannel},
     {"nativeUnCrypt", "(Ljava/lang/String;Ljava/lang/String;)V", (void *)nativeUnCrypt},
 

@@ -49,7 +49,7 @@ enum SubtitleType {
 
 #define INTERNAL_MAX_NUMBER_SPU_ITEM 20
 #define EXTERNAL_MAX_NUMBER_SPU_ITEM 500
-
+#define FILTER_DATA_TIMEROUT 10*1000
 
 
 static const int AML_PARSER_SYNC_WORD = 'AMLU';
@@ -66,6 +66,7 @@ public:
     }
     virtual ~Parser() {
         mState = SUB_EXIT;
+        mPtsRecord = 0;
     };
 
     virtual int parse(/*params*/) = 0;
@@ -102,11 +103,15 @@ public:
     }
 
     bool stopParse() {
-        mState = SUB_STOP;
-        if (mThreadExitRequested)
-            return false;
+        { // narrow the lock scope
+            std::unique_lock<std::mutex> autolock(mMutex);
+            mDecodedSpu.clear();
+            mState = SUB_STOP;
+            if (mThreadExitRequested)
+                return false;
 
-        mThreadExitRequested = true;
+            mThreadExitRequested = true;
+        }
         mThread.join();
         return true;
     }
@@ -132,7 +137,6 @@ public:
         }
         item = mDecodedSpu.front();
         mDecodedSpu.pop_front();
-
         return item;
     }
 
@@ -148,7 +152,7 @@ public:
         }
 
         // validate the item: do not sent empty items due to parser error.
-        if (item == nullptr || item->spu_data == nullptr) {
+        if (item == nullptr || (item->spu_data == nullptr && item->dynGen == false)) {
             __android_log_print(ANDROID_LOG_ERROR, "Parser", "add invalid empty spu!");
             return;
         }
@@ -173,7 +177,7 @@ protected:
     int mState;
     int mParseType;
     int mMaxSpuItems;
-
+    int64_t mPtsRecord = 0;
 
     void dumpCommon(int fd, const char *prefix) {
         dprintf(fd, "%s DataSource=%p\n", prefix, mDataSource.get());

@@ -18,11 +18,6 @@ std::shared_ptr<Parser> ParserFactory::create(
     // TODO: unless we can determin CC type, or default start CC parser
     if (type == TYPE_SUBTITLE_INVALID) {
         type = TYPE_SUBTITLE_CLOSED_CATPTION;
-        if (source->type() == E_SUBTITLE_DEMUX) {
-            subParam->ccParam.ChannelID = DEFAULT_CC_DEMUX_CHANNELD_ID;
-        } else {
-            subParam->ccParam.ChannelID = DEFAULT_CC_CHANNELD_ID;
-        }
      }
 
     switch (type) {
@@ -76,7 +71,7 @@ std::shared_ptr<Parser> ParserFactory::create(
         }
 
         case TYPE_SUBTITLE_EXTERNAL:
-            return std::shared_ptr<Parser>(new ExtParser(source));
+            return std::shared_ptr<Parser>(new ExtParser(source, subParam->idxSubTrackId));
 
     }
 
@@ -93,10 +88,10 @@ DisplayType ParserFactory::getDisplayType(int type)
         case TYPE_SUBTITLE_DVB:
         case TYPE_SUBTITLE_DVB_TELETEXT:
         case TYPE_SUBTITLE_SCTE27:
+        case TYPE_SUBTITLE_IDX_SUB:
           return SUBTITLE_IMAGE_DISPLAY;
         case TYPE_SUBTITLE_MKV_STR:
         case TYPE_SUBTITLE_TMD_TXT:
-        case TYPE_SUBTITLE_IDX_SUB:
         case  TYPE_SUBTITLE_SSA:
             return SUBTITLE_TEXT_DISPLAY;
 

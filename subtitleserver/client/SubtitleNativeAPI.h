@@ -28,6 +28,8 @@ typedef enum {
     SUB_DATA_TYPE_CC_JSON = 1,
     SUB_DATA_TYPE_BITMAP = 2,
     SUB_DATA_TYPE_POSITON_BITMAP = 4,
+
+    SUB_DATA_TYPE_QTONE = 0xAAAA,
 } AmlSubDataType;
 
 typedef enum {
@@ -43,6 +45,9 @@ typedef enum {
     TYPE_SUBTITLE_DVB_TELETEXT,
     TYPE_SUBTITLE_CLOSED_CATPTION,
     TYPE_SUBTITLE_SCTE27,
+    TYPE_SUBTITLE_DTVKIT_DVB, //12
+    TYPE_SUBTITLE_DTVKIT_TELETEXT,
+    TYPE_SUBTITLE_DTVKIT_SCTE27,
     TYPE_SUBTITLE_EXTERNAL,
     TYPE_SUBTITLE_MAX,
 } AmlSubtitletype;
@@ -135,6 +140,8 @@ typedef struct {
     int ancillaryPageId;         //dvb
     int compositionPageId;       //dvb
     int dmxId;
+    int fd;
+    const char *lang;
 } AmlSubtitleParam;
 
 
@@ -236,6 +243,8 @@ AmlSubtitleStatus amlsub_UiSetPosHeight(AmlSubtitleHnd handle, int yOffset);
 AmlSubtitleStatus amlsub_UiSetImgRatio(AmlSubtitleHnd handle, float ratioW, float ratioH, int maxW, int maxH);
 AmlSubtitleStatus amlsub_UiSetSurfaceViewRect(AmlSubtitleHnd handle, int x, int y, int width, int height);
 
+
+AmlSubtitleStatus amlsub_UpdateVideoPos(AmlSubtitleHnd handle, int64_t pos);
 
 #ifdef __cplusplus
 }

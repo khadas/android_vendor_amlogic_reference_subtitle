@@ -209,6 +209,10 @@ o_str_prop (Output *out, const char *key, const char *val)
 static int
 vbi_style_cmp (vbi_char *s1, vbi_char *s2)
 {
+	//ignore empty space
+	if (s2->unicode == 0x20 && (s2->opacity == 0 || s2->background == 0))
+		return 0;
+
 	if (s1->foreground != s2->foreground)
 		return 1;
 	if (s1->background != s2->background)
@@ -262,10 +266,13 @@ effect_status_to_str(enum cc_effect_status status)
 	{
 		case CC_EFFECT_NONE:
 			str = "NONE";
+			break;
 		case CC_EFFECT_DISPLAY:
 			str = "DISPLAY";
+			break;
 		case CC_EFFECT_HIDE:
 			str = "HIDE";
+			break;
 		default:
 			str = "NONE";
 	};
@@ -735,6 +742,52 @@ text_to_json (uint8_t *buf, int len, struct dtvcc_pen_style *pt, Output *out)
 	return 0;
 }
 
+static int abc[7] = {0xb9eb, 0xb9dd, 0xfeeb, 0xb4eb, 0xc3a4, 0xb3ce, 0xc0bb};
+/*For two bytes convert to korean test*/
+static void
+test_korean_char()
+{
+	uint8_t  buf[1024];
+	uint8_t *pb  = buf;
+	int      len = 0;
+
+	for (int i = 0; i < 7; i++) {
+		if (abc[i]) {
+			iconv_t cd = iconv_open("utf-8", "euc-kr");
+			if (cd == -1) {
+				AM_DEBUG(0, "iconv open failed errno=%d", errno);
+				AM_DEBUG(0, "cc_json convert json in kor lang: %s", getenv("ICU_DATA"));
+				break;
+			}
+			char tobuffer[16] = {0};
+			size_t outLen = 16;
+			size_t inLen = 2;
+			char* in_pointer = &abc[i];
+			char inbuffer[2];
+			char* srcStart = inbuffer;
+			if (!in_pointer[1])
+			{
+				inbuffer[0] = in_pointer[0];
+				inbuffer[1] = 0;
+			}
+			else
+			{
+				inbuffer[0] = in_pointer[1];
+				inbuffer[1] = in_pointer[0];
+			}
+			char* tmpTobuffer = tobuffer;
+			int ret_len = iconv(cd, (const char**)&srcStart, (size_t *)&inLen, &tmpTobuffer, (size_t *)&outLen);
+			AM_DEBUG(AM_DEBUG_LEVEL, "debug-cc-korea: %d in: %02x%02x inLen: %d outLen: %d out: %s outlen: %d %x",
+				ret_len, inbuffer[0], inbuffer[1], inLen, outLen, tobuffer, strlen(tobuffer), tobuffer[0]);
+			iconv_close(cd);
+			strcpy(pb, tobuffer);
+			len += strlen(tobuffer);
+			pb += strlen(tobuffer);
+		}
+	}
+}
+
+
 static int
 row_to_json (struct tvcc_decoder *td, struct dtvcc_window *win, Output *out, int row, struct dtvcc_pen_style *pt)
 {
@@ -754,6 +807,14 @@ row_to_json (struct tvcc_decoder *td, struct dtvcc_window *win, Output *out, int
 	if (o_symbol(out, '[') < 0)
 		return -1;
 
+#if 0
+	static int hasTest = 0;
+	if (!hasTest) {
+		test_korean_char();
+		hasTest = 1;
+	}
+#endif
+
 	for (col = 0; col < win->column_count; col ++) {
 		int c = win->buffer[row][col];
 		struct dtvcc_pen_style *cpt = &win->pen[row][col];
@@ -766,46 +827,51 @@ row_to_json (struct tvcc_decoder *td, struct dtvcc_window *win, Output *out, int
 		else
 			continuance_flag = 1;
 
-	char* lang_korea;
-	int lang_korea_unicode;
-	lang_korea = strstr(td->dtvcc.lang, "kor");
-	lang_korea_unicode = td->dtvcc.decoder_param & (0x1<<13);
-	if (lang_korea && (lang_korea_unicode == 0))
-	{
-		AM_DEBUG(0, "cc_json convert json in kor lang");
-		if (c) {
-			iconv_t cd = iconv_open("utf-8", "euc-kr");
-			if (cd == -1)
-				AM_DEBUG(0, "iconv open failed");
-			char tobuffer[16] = {0};
-			size_t outLen = 16;
-			size_t inLen = 2;
-			char* in_pointer = &c;
-			char inbuffer[2];
-			char* srcStart = inbuffer;
-			if (!in_pointer[1])
-			{
-				inbuffer[0] = in_pointer[0];
-				inbuffer[1] = 0;
+		char* lang_korea;
+		int lang_korea_unicode;
+		lang_korea = strstr(td->dtvcc.lang, "kor");
+		lang_korea_unicode = td->dtvcc.decoder_param & (0x1<<13);
+		if (lang_korea && (lang_korea_unicode == 0))
+		{
+			errno = 0;
+			//AM_DEBUG(0, "cc_json convert json in kor lang: %s", getenv("ICU_DATA"));
+			if (c) {
+				iconv_t cd = iconv_open("utf-8", "euc-kr");
+				if (cd == -1) {
+					AM_DEBUG(0, "iconv open failed errno=%d", errno);
+					AM_DEBUG(0, "cc_json convert json in kor lang: %s", getenv("ICU_DATA"));
+					break;
+				}
+				char tobuffer[16] = {0};
+				size_t outLen = 16;
+				size_t inLen = 2;
+				char* in_pointer = &c;
+				char inbuffer[2];
+				char* srcStart = inbuffer;
+				if (!in_pointer[1])
+				{
+					inbuffer[0] = in_pointer[0];
+					inbuffer[1] = 0;
+				}
+				else
+				{
+					inbuffer[0] = in_pointer[1];
+					inbuffer[1] = in_pointer[0];
+				}
+				char* tmpTobuffer = tobuffer;
+				*pt = *cpt;
+				int ret_len = iconv(cd, (const char**)&srcStart, (size_t *)&inLen, &tmpTobuffer, (size_t *)&outLen);
+				AM_DEBUG(AM_DEBUG_LEVEL, "debug-cc ret: %d in: %02x%02x inLen: %d outLen: %d out: %s outlen: %d %x",
+					ret_len, inbuffer[0], inbuffer[1], inLen, outLen, tobuffer, strlen(tobuffer), tobuffer[0]);
+				iconv_close(cd);
+				strcpy(pb, tobuffer);
+				len += strlen(tobuffer);
+				pb += strlen(tobuffer);
 			}
-			else
-			{
-				inbuffer[0] = in_pointer[1];
-				inbuffer[1] = in_pointer[0];
-			}
-			char* tmpTobuffer = tobuffer;
-			*pt = *cpt;
-			int ret_len = iconv(cd, (const char**)&srcStart, (size_t *)&inLen, &tmpTobuffer, (size_t *)&outLen);
-			AM_DEBUG(0, "ret: %d in: %02x%02x inLen: %d outLen: %d out: %s outlen: %d %x",
-				ret_len, inbuffer[0], inbuffer[1], inLen, outLen, tobuffer, strlen(tobuffer), tobuffer[0]);
-			iconv_close(cd);
-			strcpy(pb, tobuffer);
-			len += strlen(tobuffer);
-			pb += strlen(tobuffer);
 		}
-	}
-	else
-	{
+		else
+		{
+
 		if (c) {
 			if (memcmp(pt, cpt, sizeof(*pt))) {
 				if (len) {
@@ -829,8 +895,9 @@ row_to_json (struct tvcc_decoder *td, struct dtvcc_window *win, Output *out, int
 			len += r;
 		}
 		}
-
 	}
+
+	AM_DEBUG(AM_DEBUG_LEVEL, "debug-cc row buffer=%s", buf);
 
 	if (len) {
 		if (text_to_json(buf, len, pt, out) < 0)

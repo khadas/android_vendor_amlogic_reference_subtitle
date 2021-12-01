@@ -4,8 +4,8 @@
 #include "DataSource.h"
 #include "Parser.h"
 
-#define DEFAULT_CC_CHANNELD_ID 0
-#define DEFAULT_CC_DEMUX_CHANNELD_ID 15
+#define TYPE_SUBTITLE_Q_TONE_DATA 0xAAAA
+#define SUPPORT_KOREA
 
 enum ExtSubtitleType {
     SUB_INVALID   = -1,
@@ -30,6 +30,7 @@ enum ExtSubtitleType {
     SUB_LRC,
     SUB_DIVX,
     SUB_WEBVTT,
+    SUB_IDXSUB,
 };
 
 
@@ -94,6 +95,7 @@ enum VideoFormat {
 typedef struct {
     int ChannelID;
     int vfmt;  //Video format
+    char lang[64];  //channel language
 } CcParam;
 
 
@@ -204,10 +206,14 @@ struct SubtitleParamType {
 
     int playerId;
     int mediaId;
+
+    int idxSubTrackId; // only for idxsub
     DtvKitDvbParam dtvkitDvbParam; //the pes pid for filter subtitle data from demux
-    SubtitleParamType() {
+    SubtitleParamType() : playerId(0), mediaId(0) {
         subType = TYPE_SUBTITLE_INVALID;
         ttParam.event = TT_EVENT_INVALID;
+        memset(&ccParam, 0, sizeof(ccParam));
+        memset(&ttParam, 0, sizeof(TeletextParam));
     }
 
     void update() {

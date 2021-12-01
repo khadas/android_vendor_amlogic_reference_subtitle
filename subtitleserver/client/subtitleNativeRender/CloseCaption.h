@@ -167,7 +167,9 @@ private:
     std::string mFgOpacity;
     std::string mBgOpacity;
     std::string mData;
+    bool mIsMultiByteStr;
     double mStringLengthOnPaint;
+
     /* TODO: maybe there is more efficient way to do this */
     double mMaxSingleFontWidth;
     double mStrStartX;

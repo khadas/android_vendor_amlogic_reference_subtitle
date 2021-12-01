@@ -1,0 +1,60 @@
+package {
+    // See: http://go/android-license-faq
+    // A large-scale-change added 'default_applicable_licenses' to import
+    // all of the 'license_kinds' from "vendor_amlogic_common_license"
+    // to get the below license kinds:
+    //   SPDX-license-identifier-Apache-2.0
+    //   SPDX-license-identifier-GPL-2.0
+    default_applicable_licenses: ["vendor_amlogic_common_license"],
+}
+
+android_app {
+    name: "NativeRenderApp",
+
+    system_ext_specific: true,
+    sdk_version: "system_current",
+    srcs: ["java/**/*.java"],
+
+    certificate: "platform",
+    //libs: ["droidlogic"],
+    static_libs: [
+        "droidlogicLib",
+        "androidx.appcompat_appcompat",
+    ],
+
+    dex_preopt: {
+        enabled: false,
+    },
+
+    jni_libs: ["libsubcontrol_jni"],
+}
+
+cc_library {
+    name: "libsubcontrol_jni",
+    sdk_version: "current",
+    system_ext_specific: true,
+
+    min_sdk_version: "current",
+    srcs: [
+        "jni/NativeRenderApp_JNI.cpp",
+        "jni/BasePlayerSubApi.cpp"
+    ],
+    shared_libs: [
+        "liblog",
+        "libandroid",
+    ],
+
+    header_libs: ["jni_headers", "libsubtitlenativerender_header"],
+
+    stl: "c++_static",
+
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wno-unused-parameter",
+        "-Wthread-safety",
+        "-Wno-unused-variable",
+    ],
+
+    ldflags: ["-Wl,--exclude-libs=ALL,-error-limit=0"],
+}

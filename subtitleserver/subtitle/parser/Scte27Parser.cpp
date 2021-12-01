@@ -145,7 +145,7 @@ static void drawBeginCallback(AM_SCTE27_Handle_t handle) {
 
 static void drawEndCallback(AM_SCTE27_Handle_t handle) {
     LOGI("[scte27_draw_end_cb]");
-    (void)handle;
+    TVSubtitleData *sub = (TVSubtitleData *)AM_SCTE27_GetUserData(handle);
 
     std::unique_lock<std::mutex> autolock(gLock);
     Scte27Parser *parser = Scte27Parser::getCurrentInstance();
@@ -156,16 +156,16 @@ static void drawEndCallback(AM_SCTE27_Handle_t handle) {
 
     TVSubtitleData *ctx = parser->getContexts();
     std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
-    spu->buffer_size = SCTE27_SUB_SIZE;
-    spu->spu_data = (unsigned char *)malloc(SCTE27_SUB_SIZE);
+    spu->buffer_size = sub->sub_w*sub->sub_h*4;//SCTE27_SUB_SIZE;
+    spu->spu_data = (unsigned char *)malloc(sub->sub_w*sub->sub_h*4);
     if (!spu->spu_data) {
         LOGI("av_malloc SCTE27_SUB_SIZE failed!\n");
         return;
     }
-    memset(spu->spu_data, 0, SCTE27_SUB_SIZE);
-    memcpy(spu->spu_data,ctx->buffer, SCTE27_SUB_SIZE);
-    spu->spu_width = BUFFER_W;
-    spu->spu_height = BUFFER_H;
+    memset(spu->spu_data, 0, sub->sub_w*sub->sub_h*4);
+    memcpy(spu->spu_data,ctx->buffer, sub->sub_w*sub->sub_h*4);
+    spu->spu_width = sub->sub_w;
+    spu->spu_height = sub->sub_h;
     LOGI("[scte27_draw_end_cb]data->buffer:%p", ctx->buffer);
     spu->spu_origin_display_w = ctx->sub_w;
     spu->spu_origin_display_h = ctx->sub_h;
@@ -187,6 +187,9 @@ static void drawEndCallback(AM_SCTE27_Handle_t handle) {
             LOGI("[scte27_draw_end_cb]dump sucess!");
         }
     }
+    memset(ctx->buffer, 0, sub->sub_w*sub->sub_h*4);
+    LOGI("[scte27_draw_end_cb]");
+
 }
 
 static void reportCallback(AM_SCTE27_Handle_t handle, int error) {

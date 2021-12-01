@@ -90,6 +90,8 @@ typedef void (*AM_CC_VBINetworkCb_t)(AM_CC_Handle_t handle, vbi_network *n);
 typedef void (*AM_CC_VBIRatingCb_t)(AM_CC_Handle_t handle, vbi_rating *rating);
 /**CC data callback.*/
 typedef void (*AM_CC_DataCb_t)(AM_CC_Handle_t handle, int mask);
+/**Q_tone data callback.*/
+typedef void (*AM_CC_Q_Tone_DataCb_t)(AM_CC_Handle_t handle, char* buffer, int size);
 
 typedef void (*AM_CC_UpdataJson_t)(AM_CC_Handle_t handle);
 typedef void (*AM_CC_ReportError)(AM_CC_Handle_t handle, int error);
@@ -241,7 +243,9 @@ typedef struct
 	AM_CC_DrawEnd_t     draw_end;      /**< Drawing end callback*/
 	AM_CC_UpdataJson_t json_update;
 	AM_CC_ReportError report;
+	AM_CC_Q_Tone_DataCb_t q_tone_cb;
 	char *json_buffer;
+	AM_Bool_t auto_detect_play;
 }AM_CC_CreatePara_t;
 
 /**\brief Close caption parser start parameter*/
@@ -253,6 +257,7 @@ typedef struct
 	AM_CC_CaptionMode_t    caption1;     /**< Mode 1*/
 	AM_CC_CaptionMode_t    caption2;     /**< Mode 2.*/
 	AM_CC_UserOptions_t    user_options; /**< User options*/
+	AM_Bool_t 	       auto_detect_play;
 }AM_CC_StartPara_t;
 
 

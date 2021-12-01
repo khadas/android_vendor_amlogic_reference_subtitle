@@ -34,8 +34,8 @@ public:
     DataSource() = default;
     DataSource& operator=(const DataSource&) = delete;
     virtual ~DataSource() {
-        ALOGD("%s", __func__);
-}
+            ALOGD("%s", __func__);
+    }
 
     virtual SubtitleIOType type() = 0;
     virtual bool start() = 0;
@@ -54,9 +54,14 @@ public:
         (void)mode;
         (void)id;
         return;
-     }
+    }
+
     virtual bool isFileAvailble() {
         return false;
+    }
+
+    virtual int64_t getSyncTime() {
+        return mSyncPts;
     }
 
 
@@ -84,6 +89,8 @@ public:
 
     std::list<std::weak_ptr<InfoChangeListener>> mInfoListeners;
 
+    int64_t mSyncPts;
+
     // TODO: dump interface.
 
     void enableSourceDump(bool enable) {
@@ -91,6 +98,9 @@ public:
     }
 
     virtual void dump(int fd, const char *prefix) = 0;
+
+    // for idx sub to parse sub picture.
+    int getExtraFd() {return mExtraFd;}
 protected:
 
     std::mutex mLock;
@@ -98,6 +108,8 @@ protected:
     int mDumpFd;
     int mPlayerId;
     int mMediaSyncId;
+
+    int mExtraFd;
 };
 
 #endif

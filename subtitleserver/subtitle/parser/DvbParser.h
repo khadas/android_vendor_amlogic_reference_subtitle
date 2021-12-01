@@ -18,9 +18,9 @@ public:
     void notifyCallerAvail(int avail);
 
 private:
-    int getSpu(std::shared_ptr<AML_SPUVAR> spu);
+    int getSpu();
     int getInterSpu();
-    int getDvbSpu(std::shared_ptr<AML_SPUVAR> spu);
+    int getDvbSpu();
     int decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const int size);
 
     int softDemuxParse(std::shared_ptr<AML_SPUVAR> spu);
@@ -39,6 +39,7 @@ private:
 
     void saveResult2Spu(std::shared_ptr<AML_SPUVAR> spu);
     void notifySubtitleDimension(int width, int height);
+    void notifySubtitleErrorInfo(int error);
 
     void checkDebug();
 

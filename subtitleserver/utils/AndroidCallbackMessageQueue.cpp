@@ -284,6 +284,9 @@ bool AndroidCallbackMessageQueue::postDisplayData(const char *data,  int type,
         mSubtitleData.push_back(std::move(subtitleData));
         mLooper->sendMessage(this, Message(MSG_CHECK_SUBDATA));
 
+    ALOGD(" in postDisplayData:%s type:%d, width=%d, height=%d size=%d",
+        __func__, type,  width, height, size);
+
     } else {
         ALOGE("Fail to process hidl memory!!");
     }

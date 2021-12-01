@@ -13,8 +13,8 @@
 #include "SubtitleNativeAPI.h"
 #include "SubtitleServerClient.h"
 
-#define DEBUG_CALL 1
-#define DEBUG_SESSION 1
+#define DEBUG_CALL 0
+#define DEBUG_SESSION 0
 
 using ::android::CallStack;
 using ::android::sp;
@@ -33,9 +33,10 @@ static AmlSubDataType __mapServerType2ApiType(int type) {
     case TYPE_SUBTITLE_CLOSED_CATPTION:
         return SUB_DATA_TYPE_CC_JSON;
 
-    }
+    case 0xAAAA:
+         return SUB_DATA_TYPE_QTONE;
 
-    //default:
+    }
     return SUB_DATA_TYPE_BITMAP;
 }
 
@@ -282,7 +283,12 @@ AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
     } else {
         ioType = param->ioSource;
     }
-    bool r = ctx->mClient->open(param->extSubPath, ioType);
+
+    if (param->lang != nullptr) {
+        ctx->mClient->setClosedCaptionLang(param->lang);
+    }
+    bool r = ctx->mClient->open(param->fd, ioType);
+
 
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
@@ -606,6 +612,22 @@ AmlSubtitleStatus amlsub_UiSetSurfaceViewRect(AmlSubtitleHnd handle, int x, int 
     }
 
     bool r  = ctx->mClient->uiSetSurfaceViewRect(x, y, width, height);
+    return r ? SUB_STAT_OK : SUB_STAT_FAIL;
+}
+
+AmlSubtitleStatus amlsub_UpdateVideoPos(AmlSubtitleHnd handle, int64_t pos) {
+
+    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    SubtitleContext *ctx = (SubtitleContext *)handle;
+    if (ctx == nullptr || ctx->mClient == nullptr) {
+        return SUB_STAT_INV;
+    }
+    if (!__checkInContextMap(ctx)) {
+        ALOGE("Error! Bad handle! mis-using API?");
+        return SUB_STAT_INV;
+    }
+
+    bool r  = ctx->mClient->updateVideoPos(pos);
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 

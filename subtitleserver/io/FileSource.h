@@ -11,7 +11,7 @@ class FileSource : public DataSource {
 
 public:
     FileSource() {mFd = -1;}
-    FileSource(int fd);
+    FileSource(int fd, int fdExtra);
     virtual ~FileSource();
 
     size_t totalSize();
@@ -25,15 +25,13 @@ public:
     virtual size_t availableDataSize();
     virtual size_t read(void *buffer, size_t size);
 
-    virtual int onData(const char*buffer, int len) {
-        return -1;
-    }
+    virtual int onData(const char*buffer, int len);
 
     virtual void dump(int fd, const char *prefix);
 
 private:
     int mFd;
-
+    int mFdExtra;
 };
 
 #endif

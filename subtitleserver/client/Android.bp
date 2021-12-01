@@ -44,13 +44,8 @@ cc_library_shared {
     static_libs: ["libsubtitleclient_static"],
 
     export_include_dirs: ["."],
-    srcs: [
-        // Deprecated, but need for CTC use.
-        // TODO: remove it!
-        "SubtitleClient.cpp",
-        "SubtitleClientPrivate.cpp",
-        "ClientAdapter_V2.cpp",
 
+    srcs: [
         // API impl. We add here for compatibility
         "SubtitleNativeAPI.cpp",
         "SubtitleReportAPI.cpp",
@@ -59,14 +54,6 @@ cc_library_shared {
         // Android Q
         "-DANDROID_PLATFORM_SDK_VERSION=29",
         "-Wno-unused-parameter",
-    ],
-
-    include_dirs: [
-        "system/libhidl/transport/include/hidl",
-        "system/libhidl/libhidlmemory/include",
-        "system/libfmq/include",
-        "hardware/amlogic/media/amcodec/include",
-        "hardware/amlogic/media/amavutils/include",
     ],
 
     shared_libs: [

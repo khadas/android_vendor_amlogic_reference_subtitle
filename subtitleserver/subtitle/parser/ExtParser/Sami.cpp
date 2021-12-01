@@ -73,22 +73,25 @@ Sami::~Sami() {
  *
  */
 std::shared_ptr<ExtSubItem> Sami::decodedItem() {
-    static char line[LINE_LEN + 1];
-    char text[LINE_LEN + 1] = {0, 0};
+    char * line = (char *)MALLOC(LINE_LEN+1);
+    char * text = (char *)MALLOC(LINE_LEN+1);
     int state = 0;
     int mSubSlackTime= 0;
     char *p = NULL, *q;
-
+    memset(line, 0, LINE_LEN+1);
+    memset(text, 0, LINE_LEN+1);
     std::shared_ptr<ExtSubItem> item = std::shared_ptr<ExtSubItem>(new ExtSubItem());
 
     if (!mReader->getLine(line)) {
+        free(line);
+        free(text);
         return nullptr;
     }
     char *s = line;
 
     while (state != 99) {
         //if (s != nullptr) s = triml(s, "\t ");
-        ALOGD("state=%d %s", state, s);
+        //ALOGD("state=%d %s", state, s);
 
         switch (state) {
             case 0: {/* find "START=" or "Slacktime:" */
@@ -248,6 +251,8 @@ std::shared_ptr<ExtSubItem> Sami::decodedItem() {
                 if (item->start > 0) {
                      break;  // if it is the last subtitle
                 } else {
+                    free(line);
+                    free(text);
                     return nullptr;
                 }
             }
@@ -261,14 +266,19 @@ std::shared_ptr<ExtSubItem> Sami::decodedItem() {
         if (text[0] != '\0') {
             item->lines.push_back(std::string(text));
         } else {
+            free(line);
+            free(text);
             return nullptr;
         }
     }
-
+/*
     ALOGD("[%lld %lld]", item->start, item->end);
     for (auto s :item->lines) {
         ALOGD("    %s", s.c_str());
     }
+*/
+    free(line);
+    free(text);
     return item;
 }
 

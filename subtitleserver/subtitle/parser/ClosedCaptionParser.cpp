@@ -21,7 +21,10 @@
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 #define  TRACE()    LOGI("[%s::%d]\n",__FUNCTION__,__LINE__)
-
+#define CC_EVENT_VCHIP_AUTH -1
+#define CC_EVENT_VCHIP_FLAG -2
+#define CC_EVENT_CHANNEL_ADD 1
+#define CC_EVENT_CHANNEL_REMOVE 0
 
 // we want access Parser in little-dvb callback.
 // must use a global lock
@@ -65,15 +68,43 @@ static void cc_rating_cb (AM_CC_Handle_t handle, vbi_rating *rating) {
         int data = 0;
         data = rating->auth<<16|rating->id<<8| rating->dlsv;
         ALOGD("CC_RATING_CB: auth: %d id:%d dlsv:%d", rating->auth, rating->id, rating->dlsv);
-        parser->notifyChannelState(-1, data);
+        parser->notifyChannelState(CC_EVENT_VCHIP_AUTH, data);
     }
+}
+
+static void q_tone_data_cb(AM_CC_Handle_t handle, char *buffer, int size) {
+    ALOGD("q_tone_data_cb data:%s, size:%d", buffer ,size);
+    std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
+    spu->spu_data = (unsigned char *)malloc(size);
+    memset(spu->spu_data, 0, size);
+    memcpy(spu->spu_data, buffer, size);
+    spu->buffer_size = size;
+    spu->isQtoneData = true;
+
+    // report data:
+    {
+        std::unique_lock<std::mutex> autolock(gLock);
+        ClosedCaptionParser *parser = ClosedCaptionParser::getCurrentInstance();
+        if (parser != nullptr) {
+            // CC and scte use little dvb, render&presentation already handled.
+            spu->isImmediatePresent = true;
+            parser->addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
+        } else {
+            ALOGD("Report json string to a deleted cc parser!");
+        }
+    }
+
+
 }
 
 static void cc_data_cb(AM_CC_Handle_t handle, int mask) {
     (void)handle;
     if (mask > 0) {
         gHandle.mReqStop = true; // todo: CV notify
-
+        ClosedCaptionParser *parser = ClosedCaptionParser::getCurrentInstance();
+        if (parser != nullptr) {
+            parser->notifyChannelState(CC_EVENT_VCHIP_FLAG, mask);
+        }
         ALOGD("CC_DATA_CB: mask: %d lastMask:%d", mask, gHandle.mBackupMask);
         for (int i = 0; i<15; i++) {
             unsigned int curr = (mask >> i) & 0x1;
@@ -82,9 +113,8 @@ static void cc_data_cb(AM_CC_Handle_t handle, int mask) {
 
             if (curr != last) {
                 std::unique_lock<std::mutex> autolock(gLock);
-                ClosedCaptionParser *parser = ClosedCaptionParser::getCurrentInstance();
                 if (parser != nullptr) {
-                    parser->notifyChannelState(curr, i);
+                    parser->notifyChannelState((curr == 1) ? CC_EVENT_CHANNEL_ADD:CC_EVENT_CHANNEL_REMOVE, i);
                 }
             }
         }
@@ -163,6 +193,7 @@ ClosedCaptionParser::~ClosedCaptionParser() {
     stopAmlCC();
     // call back may call parser, parser later destroy
     stopParse();
+    if (mLang) free(mLang);
     delete mCcContext;
 }
 
@@ -170,6 +201,9 @@ bool ClosedCaptionParser::updateParameter(int type, void *data) {
     (void)type;
   CcParam *cc_param = (CcParam *) data;
   mChannelId = cc_param->ChannelID;
+  if (strlen(cc_param->lang) > 0) {
+      mLang = strdup(cc_param->lang);
+  }
   //mVfmt = cc_param->vfmt;
   LOGI("@@@@@@ updateParameter mChannelId: %d, mVfmt:%d", mChannelId, mVfmt);
   return true;
@@ -221,6 +255,14 @@ int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_c
     cc_para.switch_timeout = 3000;//3s
     cc_para.json_update = json_update_cb;
     cc_para.json_buffer = sJsonStr;
+#ifdef SUPPORT_KOREA
+    cc_para.q_tone_cb = q_tone_data_cb;
+    if (mLang != nullptr) {
+        strncpy(cc_para.lang, mLang, sizeof(cc_para.lang));
+        cc_para.lang[ sizeof(cc_para.lang) -1 ] = '\0';
+    }
+#endif
+
     spara.vfmt = vfmt;
     spara.player_id = mPlayerId;
     spara.mediaysnc_id = mMediaSyncId;
@@ -233,6 +275,7 @@ int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_c
     spara.user_options.font_size   = (AM_CC_FontSize_t)font_size;
     spara.user_options.font_style  = (AM_CC_FontStyle_t)font_style;
 
+    ALOGD("%s %s", mLang, cc_para.lang);
     ret = AM_CC_Create(&cc_para, &mCcContext->cc_handle);
     if (ret != AM_SUCCESS) {
         goto error;

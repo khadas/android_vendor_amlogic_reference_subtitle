@@ -21,6 +21,7 @@ SubtitleService::SubtitleService() {
     mDumpMaps = 0;
     mSubtiles = nullptr;
     mDataSource = nullptr;
+    mUserDataAfd = nullptr;
 }
 
 SubtitleService::~SubtitleService() {
@@ -28,6 +29,7 @@ SubtitleService::~SubtitleService() {
     //android::CallStack here(LOG_TAG);
     if (mFmqReceiver != nullptr) {
         mFmqReceiver->unregistClient(mDataSource);
+        mFmqReceiver = nullptr;
     }
 }
 
@@ -62,25 +64,30 @@ bool SubtitleService::stopFmqReceiver() {
     return false;
 }
 
-bool SubtitleService::startSubtitle(int fd, SubtitleIOType type, ParserEventNotifier *notifier) {
-    ALOGD("%s  fd:%d, type:%d", __func__, fd, type);
-        std::unique_lock<std::mutex> autolock(mLock);
-        if (mStarted) {
-            ALOGD("Already started, exit");
-            return false;
-        } else {
-            mStarted = true;
-        }
+bool SubtitleService::startSubtitle(std::vector<int> fds, int trackId, SubtitleIOType type, ParserEventNotifier *notifier) {
+    ALOGD("%s  type:%d", __func__, type);
+    std::unique_lock<std::mutex> autolock(mLock);
+    if (mStarted) {
+        ALOGD("Already started, exit");
+        return false;
+    } else {
+        mStarted = true;
+    }
 
-    std::shared_ptr<Subtitle> subtitle(new Subtitle(fd, notifier));
+    bool hasExtSub = fds.size() > 0;
+    bool hasExtraFd = fds.size() > 1;
+    std::shared_ptr<Subtitle> subtitle(new Subtitle(hasExtSub, trackId, notifier));
 
-    std::shared_ptr<DataSource> datasource = DataSourceFactory::create(fd, type);
+    std::shared_ptr<DataSource> datasource = DataSourceFactory::create(
+            hasExtSub ? fds[0] : -1,
+            hasExtraFd ? fds[1] : -1,
+            type);
 
     if (mDumpMaps & (1<<SUBTITLE_DUMP_SOURCE)) {
         datasource->enableSourceDump(true);
     }
     if (nullptr == datasource) {
-        ALOGD("Error, data Source is null!", __func__);
+        ALOGD("Error, %s data Source is null!", __func__);
         return false;
     }
 
@@ -109,7 +116,7 @@ bool SubtitleService::startSubtitle(int fd, SubtitleIOType type, ParserEventNoti
     ALOGD("setParameter on start: %d, dtvSubType=%d",
         mSubParam.isValidDtvParams(), mSubParam.dtvSubType);
     // TODO: revise,
-    if (fd <= 0 && (mSubParam.isValidDtvParams() || mSubParam.dtvSubType <= 0)) {
+    if (!hasExtSub && (mSubParam.isValidDtvParams() || mSubParam.dtvSubType <= 0)) {
         ALOGD("setParameter on start");
         subtitle->setParameter(&mSubParam);
     }
@@ -125,7 +132,7 @@ bool SubtitleService::startSubtitle(int fd, SubtitleIOType type, ParserEventNoti
 bool SubtitleService::resetForSeek() {
 
     if (mSubtiles != nullptr) {
-        return mSubtiles->resetForSeek();
+//        return mSubtiles->resetForSeek();
     }
 
     return false;
@@ -136,7 +143,7 @@ bool SubtitleService::resetForSeek() {
 int SubtitleService::updateVideoPosAt(int timeMills) {
     static int test = 0;
     if (test++ %100 == 0)
-        ALOGD("%s： %d(called %d times)", __func__, timeMills, test);
+        ALOGD("%s: %d(called %d times)", __func__, timeMills, test);
 
     if (mSubtiles) {
         return mSubtiles->onMediaCurrentPresentationTime(timeMills);
@@ -238,6 +245,13 @@ void SubtitleService::setClosedCaptionVfmt(int vfmt) {
      mSubParam.ccParam.vfmt = vfmt;
 }
 
+void SubtitleService::setClosedCaptionLang(const char *lang) {
+    ALOGD("lang=%s", lang);
+    if (lang != nullptr && strlen(lang)<64) {
+        strcpy(mSubParam.ccParam.lang, lang);
+    }
+}
+
 /*
     mode: 1 for the player id setting;
              2 for the media id setting.
@@ -247,7 +261,9 @@ void SubtitleService::setPipId(int mode, int id) {
     bool same = true;
     if (PIP_PLAYER_ID== mode) {
         mSubParam.playerId = id;
-        mUserDataAfd->setPlayerId(id);
+        if (mUserDataAfd != nullptr) {
+            mUserDataAfd->setPlayerId(id);
+        }
     } else if (PIP_MEDIASYNC_ID == mode) {
         if (mSubParam.mediaId == id) {
             same = true;
@@ -356,7 +372,7 @@ bool SubtitleService::stopSubtitle() {
 
     if (mFmqReceiver != nullptr && mDataSource != nullptr) {
         mFmqReceiver->unregistClient(mDataSource);
-        mFmqReceiver = nullptr;
+        //mFmqReceiver = nullptr;
     }
 
     mDataSource = nullptr;

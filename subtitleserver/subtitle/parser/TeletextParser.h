@@ -188,16 +188,19 @@ public:
 
 
 private:
-    int getSpu(std::shared_ptr<AML_SPUVAR> spu);
+    int getSpu();
     int getInterSpu();
 
     void checkDebug();
 
-    int getDvbTeletextSpu(std::shared_ptr<AML_SPUVAR> spu);
+    int getDvbTeletextSpu();
     int softDemuxParse(std::shared_ptr<AML_SPUVAR> spu);
     int hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu);
     int atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu);
     int teletextDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *psrc, const int size);
+
+
+    bool handleControl();
 
     // event handler, need calling when hold the lock
     int fetchCountPageLocked(int dir, int count);
@@ -230,6 +233,7 @@ private:
     static TeletextParser *sInstance;
 
     std::mutex mMutex;
+    std::list<std::shared_ptr<TeletextParam>> mControlCmds;
 
     std::stack<TeletextCachedPageT> mBackPageStk;
     std::stack<TeletextCachedPageT> mForwardPageStk;

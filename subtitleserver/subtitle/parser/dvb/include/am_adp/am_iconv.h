@@ -17,13 +17,15 @@
 #define _AM_ICONV_H
 
 #include "am_types.h"
+#include "am_debug.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#if 0 //def ANDROID
+#define USE_VENDOR_ICU
+#if 1 //def ANDROID
 #include <malloc.h>
 #include <unicode/ucnv.h>
 #include <unicode/putil.h>
@@ -55,7 +57,20 @@ extern void am_ucnv_dlink(void);
 
 
 #ifdef USE_VENDOR_ICU
-extern void am_first_action(void);
+static inline void am_first_action(void)
+{
+    static int actionFlag = 0;
+    if (!actionFlag) {
+        setenv("ICU_DATA", "/vendor/etc/icu", 1);
+        u_setDataDirectory("/vendor/etc/icu");
+        long status = 0;
+        u_init(&status);
+        if (status > 0)
+            AM_DEBUG(1, "icu init fail. [%ld]", status);
+        actionFlag = 1;
+    }
+}
+
 #define am_ucnv_open(conv, err)\
 	({\
         UConverter *ret;\
@@ -107,7 +122,9 @@ iconv_open(const char *tocode, const char *fromcode)
 		goto error;
 
 	cd->target = (UConverter *)am_ucnv_open(tocode, &err1);
+	AM_DEBUG(0, "target %s [%p]", tocode, cd->target);
 	cd->source = (UConverter *)am_ucnv_open(fromcode, &err2);
+	AM_DEBUG(0, "source %s [%p]", fromcode, cd->source);
 	if ((!U_SUCCESS(err1)) || (!U_SUCCESS(err2)))
 		goto error;
 

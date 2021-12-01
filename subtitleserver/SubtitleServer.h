@@ -25,6 +25,7 @@ namespace V1_0 {
 namespace implementation {
 
 using ::android::hardware::hidl_array;
+using ::android::hardware::hidl_vec;
 using ::android::hardware::hidl_handle;
 using ::android::hardware::hidl_memory;
 using ::android::hardware::hidl_string;
@@ -48,7 +49,7 @@ public:
     // Methods from ISubtitleServer follow.
     Return<void> openConnection(openConnection_cb _hidl_cb) override;
     Return<Result> closeConnection(int32_t sId) override;
-    Return<Result> open(int32_t sId, const hidl_handle& handle, int32_t ioType, OpenType openType) override;
+    Return<Result> open(int32_t sId, const hidl_handle& handles, int32_t ioType, OpenType openType) override;
     Return<Result> close(int32_t sId) override;
     Return<Result> resetForSeek(int32_t sId) override;
     Return<Result> updateVideoPos(int32_t sId, int32_t pos) override;
@@ -64,6 +65,7 @@ public:
     Return<Result> setAncPageId(int32_t sId, int32_t ancPageId) override;
     Return<Result> setChannelId(int32_t sId, int32_t channelId) override;
     Return<Result> setClosedCaptionVfmt(int32_t sId, int32_t vfmt) override;
+    Return<Result> setClosedCaptionLang(int32_t sId, const hidl_string& lang) override;
 
     Return<Result> ttControl(int32_t sId, int cmd, int magazine, int page, int regionId, int param) override;
     Return<Result> ttGoHome(int32_t sId) override;

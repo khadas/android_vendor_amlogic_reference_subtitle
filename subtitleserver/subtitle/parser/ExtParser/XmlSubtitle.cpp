@@ -35,23 +35,23 @@ void XmlSubtitle::parseXml() {
         const tinyxml2::XMLAttribute *attribute = parag->FirstAttribute();
         std::shared_ptr<ExtSubItem> item = std::shared_ptr<ExtSubItem>(new ExtSubItem());
         tinyxml2::XMLElement *e = parag->FirstChildElement("Number");
-        //if (e != nullptr) ALOGD("parseXml num:%s\n", e->GetText());
+        if (e != nullptr) ALOGD("parseXml num:%s\n", e->GetText());
 
         e = parag->FirstChildElement("StartMilliseconds");
         if (e!= nullptr) {
             item->start = e->Int64Text() / 10; // subtitle pts multiply
-            //ALOGD("parseXml StartMilliseconds:%s  %lld, %lld\n", e->GetText(), item->start, e->Int64Text());
+            ALOGD("parseXml StartMilliseconds:%s  %lld, %lld\n", e->GetText(), item->start, e->Int64Text());
         }
 
         e = parag->FirstChildElement("EndMilliseconds");
         if (e!= nullptr) {
-            //ALOGD("parseXml EndMilliseconds:%s\n", e->GetText());
+            ALOGD("parseXml EndMilliseconds:%s\n", e->GetText());
             item->end = e->Int64Text() / 10; // subtitle pts multiply
         }
 
         e = parag->FirstChildElement("Text");
         while (e != nullptr) {
-            //ALOGD("parseXml Text:%s\n", e->GetText());
+            ALOGD("parseXml Text:%s\n", e->GetText());
             item->lines.push_back(std::string(e->GetText()));
             e = e->NextSiblingElement("Text");
         }

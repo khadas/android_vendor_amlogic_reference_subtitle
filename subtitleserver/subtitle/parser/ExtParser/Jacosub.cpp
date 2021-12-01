@@ -99,7 +99,10 @@ void Jacosub::parseHeaderInfo() {
 // deprecated, spec canot access now
 //
 std::shared_ptr<ExtSubItem> Jacosub::decodedItem() {
-    char line1[LINE_LEN], line2[LINE_LEN], directive[LINE_LEN], *p, *q;
+    char *p, *q;
+    char *line1 = (char *)MALLOC(LINE_LEN);
+    char *line2 = (char *)MALLOC(LINE_LEN);
+    char *directive = (char *)MALLOC(LINE_LEN);
     memset(line1, 0, LINE_LEN);
     memset(line2, 0, LINE_LEN);
     memset(directive, 0, LINE_LEN);
@@ -216,10 +219,13 @@ std::shared_ptr<ExtSubItem> Jacosub::decodedItem() {
                         ++p;
                     } else if (mReader->ExtSubtitleEol(*(p + 1))) {
                         if (!mReader->getLine(directive)) {
+                            free(line1);
+                            free(line2);
+                            free(directive);
                             return nullptr;
                         }
                         mReader->trimSpace(directive);
-                        strncat(line2, directive, (LINE_LEN > 511) ? LINE_LEN : 511);
+                        strncat(line2, directive, (LINE_LEN > 511) ? (LINE_LEN - 1) : 511);
                         break;
                     }
                     [[fallthrough]];
@@ -237,8 +243,14 @@ std::shared_ptr<ExtSubItem> Jacosub::decodedItem() {
         item->start = start;
         item->end = end;
         item->lines.push_back(subStr);
+        free(line1);
+        free(line2);
+        free(directive);
         return item;
     }
+    free(line1);
+    free(line2);
+    free(directive);
     return nullptr;
 }
 

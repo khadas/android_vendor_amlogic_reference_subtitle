@@ -49,6 +49,7 @@ std::shared_ptr<SurfaceHandle> AndroidDisplay::createLayer(int width, int height
 // TODO:
 DisplayInfo AndroidDisplay::getDisplayInfo() {
     DisplayInfo info;
+    memset(&info, 0, sizeof(info));
     return info;
 }
 

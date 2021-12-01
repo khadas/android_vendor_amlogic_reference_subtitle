@@ -29,8 +29,11 @@
 #include <sys/ioctl.h>
 #include <math.h>
 #include <signal.h>
+#include <sys/utsname.h>
 #include <stdbool.h>
 #include "MediaSyncInterface.h"
+#include "cutils/properties.h"
+
 
 #define USERDATA_POLL_TIMEOUT 100
 #define MAX_CC_NUM			64
@@ -212,8 +215,8 @@ const AM_USERDATA_Driver_t aml_ud_drv = {
 
 int64_t am_get_video_pts(void* media_sync)
 {
-      #define VIDEO_PTS_PATH "/sys/class/tsync/pts_video"
-      int64_t value;
+#define VIDEO_PTS_PATH "/sys/class/tsync/pts_video"
+	int64_t value;
 	if (media_sync != NULL) {
 		MediaSync_getTrackMediaTime(media_sync, &value);
 		value = 0x1FFFFFFFF & ((9*value)/100);
@@ -505,6 +508,7 @@ len, int64_t pts, int pts_valid, int64_t duration)
 	if (len < 5)
 		return;
 
+	//TODO coverity p size is 4, p[4] overflow, index 174
 	if (p[4] != 3)
 		return;
 
@@ -721,15 +725,18 @@ static int aml_process_mpeg_userdata(AM_USERDATA_Device_t *dev, uint8_t *data, i
 
 			break;
 		} else if (MOD_ON_AFD(ud->mode) && IS_AFD(hdr->atsc_flag)) {
-			uint8_t *pafd_hdr = (uint8_t*)hdr->atsc_flag;
-			AM_USERDATA_AFD_t afd = *((AM_USERDATA_AFD_t *)(pafd_hdr + 4));
+			uint8_t *pafd_hdr = (uint8_t*)hdr->cc_data_start;
+			AM_USERDATA_AFD_t afd = *((AM_USERDATA_AFD_t *)(pafd_hdr));
 			//afd.reserved = afd.pts = 0;
 			AM_EVT_Signal(dev->dev_no, AM_USERDATA_EVT_AFD, (void*)&afd);
+			pd += 8;
+			left -= 8;
+			r += 8;
 			break;
 		} else {
 			pd   += 8;
 			left -= 8;
-			r	+= 8;
+			r += 8;
 		}
 	}
 
@@ -849,6 +856,20 @@ static int aml_process_h264_userdata(AM_USERDATA_Device_t *dev, uint8_t *data, i
 	return r;
 }
 
+static int get_kernel_version(void)
+{
+	int version, subversion, patchlevel;
+	struct utsname utsn;
+
+	/* Return 0 on failure, and attempt to probe with empty kversion */
+	if (uname(&utsn))
+		return 0;
+	if (sscanf(utsn.release, "%d.%d.%d", &version, &subversion, &patchlevel) != 3)
+		return 0;
+	AM_DEBUG(AM_DEBUG_LEVEL, "get_kernel_version version= %d,subversion=%d",version,subversion);
+	return (version << 16) + (subversion << 8) + patchlevel;
+}
+
 static void* aml_userdata_thread (void *arg)
 {
 	AM_USERDATA_Device_t *dev = (AM_USERDATA_Device_t*)arg;
@@ -876,7 +897,8 @@ static void* aml_userdata_thread (void *arg)
 			MediaSync_bindInstance(media_sync, ud->mediasync_id, MEDIA_VIDEO);
 		}
 	}
-
+	int kernel_version = get_kernel_version();
+	kernel_version = kernel_version>>16;
 	while (ud->running) {
 		//If scte and mpeg both exist, we need to ignore scte cc data,
 		//so we need to check cc type every time.
@@ -898,7 +920,13 @@ static void* aml_userdata_thread (void *arg)
 		} else {
 			AM_DEBUG(AM_DEBUG_LEVEL, "get avaible vdec OK: 0x%x\n", vdec_ids);
 		}
-		read_vdec_id = vdec_ids;//ffs(vdec_ids) - 1;
+
+		if (kernel_version >= 5 || property_get_int32("ro.build.version.sdk", 28) >= 29) {
+		//AM_DEBUG(0, "kernel version:%d, android sdk:%d",kernel_version, property_get_int32("ro.build.version.sdk", 28));
+			read_vdec_id = vdec_ids;
+		} else {
+			read_vdec_id = ffs(vdec_ids) - 1;
+		}
 		if (read_vdec_id != ud->playerId) {
 			AM_DEBUG(0, "the player is not consistent with the video read_vdec_id=%d,ud->playerId=%d",read_vdec_id,ud->playerId);
 			continue;
@@ -932,7 +960,7 @@ static void* aml_userdata_thread (void *arg)
 			left += r;
 			pd = data;
 			}else {
-			    usleep(100*1000);
+			    usleep(20*1000);
 			}
 #if 0
 			static char display_buffer[10*1024];
@@ -960,6 +988,7 @@ static void* aml_userdata_thread (void *arg)
 
 			if ((ud->format == MPEG_CC_TYPE) || (ud->format == MPEG_AFD_TYPE)) {
 				ud->scte_enable = 0;
+				//TODO coverity should be fixed index 176
 				r = aml_process_mpeg_userdata(dev, pd, left, &user_para_info.meta_info);
 			} else if (ud->format == SCTE_CC_TYPE) {
 				if (ud->scte_enable == 1)

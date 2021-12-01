@@ -448,8 +448,8 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                 spu = mPresent->mEmittedShowingSpu.front();
                 uint64_t timestamp = mPresent->mStartTimeModifier + mPresent->mCurrentPresentRelativeTime;
 
-                //in case seek done, then show out-of-date subtitle
-                while (spu != nullptr && spu->m_delay > 0 && (ns2ms(timestamp) > spu->m_delay/DVB_TIME_MULTI) && spu->isExtSub) {
+                //in case seek done, then throw out-of-date subtitle
+                while (spu != nullptr && spu->m_delay > 0 && (ns2ms(timestamp) >= spu->m_delay/DVB_TIME_MULTI)) {
                     mPresent->mEmittedShowingSpu.pop_front();
                     spu = mPresent->mEmittedShowingSpu.front();
                     timestamp = mPresent->mStartTimeModifier + mPresent->mCurrentPresentRelativeTime;

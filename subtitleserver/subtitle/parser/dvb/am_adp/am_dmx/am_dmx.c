@@ -164,7 +164,7 @@ static void* dmx_data_thread(void *arg)
 	while (dev->enable_thread)
 	{
 		AM_DMX_FILTER_MASK_CLEAR(&mask);
-		int id;
+		uint32_t id;
 
 		ret = dev->drv->poll(dev, &mask, DMX_POLL_TIMEOUT);
 		if (ret == AM_SUCCESS)

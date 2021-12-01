@@ -41,12 +41,13 @@ Return<void> SubtitleServerClient::SubtitleCallback::notifyDataCallback(const Su
     int cordinateY = parcel.bodyInt[5];
     int videoWidth = parcel.bodyInt[6];
     int videoHeight = parcel.bodyInt[7];
-    ALOGD("processSubtitleData!");
+    ALOGD("processSubtitleData! %d %d", type, parcel.msgType);
     if (memory ==  nullptr) {
         ALOGD("Error! mapMemory cannot get memory!");
         return Void();
     }
     char* data = static_cast<char *>(static_cast<void*>(memory->getPointer()));
+
     if (mListener != nullptr) {
         mListener->onSubtitleEvent(data, size, type, cordinateX, cordinateY, width, height, videoWidth, videoHeight, cmd);
     } else {
@@ -246,24 +247,26 @@ SubtitleServerClient::~SubtitleServerClient() {
     mRemote = nullptr;
 }
 
-bool SubtitleServerClient::open(const char *path, int ioType) {
+
+bool SubtitleServerClient::open(int fd, int fdData, int trackId, int ioType) {
+    if (fd <=0 || fdData <= 0)
+        return open(-1, ioType);
+
     Mutex::Autolock _l(mLock);
     LOG(INFO) << "open session:" << mSessionId << " ioType="<<ioType;
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
 
-    int fd = -1;
     native_handle_t* nativeHandle = nullptr;
 
-    if ((path != nullptr) && ((fd = ::open(path, O_RDONLY)) > 0)) {
-        ::lseek(fd, 0, SEEK_SET);
-        LOG(INFO) << "open session:" << path << " fd:" << fd;
-        nativeHandle = native_handle_create(1, 0);
-        nativeHandle->data[0] = fd;
-    } else {
-        nativeHandle = native_handle_create(0, 0);
-    }
+    ::lseek(fd, 0, SEEK_SET);
+    ::lseek(fd, 0, SEEK_SET);
+    LOG(INFO) << "open session:" << mSessionId << " fd:" << fd << " fdData:" << fdData;
+    nativeHandle = native_handle_create(2, 1);
+    nativeHandle->data[0] = fd;
+    nativeHandle->data[1] = fdData;
+    nativeHandle->data[2] = trackId;
 
     ::android::hardware::hidl_handle handle;
     handle.setTo(nativeHandle, false /* shouldOwn */);
@@ -272,9 +275,50 @@ bool SubtitleServerClient::open(const char *path, int ioType) {
     checkRemoteResultLocked(r);
     native_handle_delete(nativeHandle);
 
-    if (fd >= 0) ::close(fd);
+    return true;
+}
+
+bool SubtitleServerClient::open(int fd, int ioType) {
+    Mutex::Autolock _l(mLock);
+    LOG(INFO) << "open session:" << mSessionId << " ioType="<<ioType;
+    if (mRemote == nullptr) {
+        initRemoteLocked();
+    }
+
+    native_handle_t* nativeHandle = nullptr;
+
+    if (fd > 0) {
+        ::lseek(fd, 0, SEEK_SET);
+        LOG(INFO) << "open session:" << mSessionId << " fd:" << fd;
+        nativeHandle = native_handle_create(1, 0);
+        nativeHandle->data[0] = fd;
+    } else {
+        nativeHandle = native_handle_create(0, 0);
+    }
+
+
+    ::android::hardware::hidl_handle handle;
+    handle.setTo(nativeHandle, false /* shouldOwn */);
+    ::android::hardware::hidl_vec<hidl_handle> out; // null handles for this.
+
+    auto r = mRemote->open(mSessionId, handle, ioType, mOpenType);
+    checkRemoteResultLocked(r);
+    native_handle_delete(nativeHandle);
 
     return true;
+}
+
+bool SubtitleServerClient::open(const char *path, int ioType) {
+    int fd = -1;
+    bool res = false;
+    if ((path != nullptr) && ((fd = ::open(path, O_RDONLY)) > 0)) {
+        res = open(fd, ioType);
+    } else {
+        res = open(-1, ioType);
+    }
+
+    if (fd >= 0) ::close(fd);
+    return res;
 }
 
 
@@ -379,10 +423,28 @@ bool SubtitleServerClient::setSubPid(int pid) {
     return r.isOk();
 }
 
-bool SubtitleServerClient::selectCcChannel(int ch) {
+bool SubtitleServerClient::setClosedCaptionLang(const char *lang) {
+    LOG(INFO) << "select session:" << mSessionId << ",lang=" << lang;
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
+    }
+    std::string clang;
+    clang = lang;
+    auto r = mRemote->setClosedCaptionLang(mSessionId, clang);
+    checkRemoteResultLocked(r);
+    return r.isOk();
+}
+
+bool SubtitleServerClient::selectCcChannel(int ch, const char *lang) {
+    Mutex::Autolock _l(mLock);
+    LOG(INFO) << "select session:" << mSessionId << ",channel="<< ch << ",lang=" << lang;
+    if (mRemote == nullptr) {
+        initRemoteLocked();
+    }
+    std::string clang;
+    if (lang != nullptr) {
+        clang = lang;
     }
 
     Return<Result> r = mRemote->resetForSeek(mSessionId);
@@ -393,11 +455,18 @@ bool SubtitleServerClient::selectCcChannel(int ch) {
     checkRemoteResultLocked(r);
     r = mRemote->setChannelId(mSessionId, ch);
     checkRemoteResultLocked(r);
+    r = mRemote->setClosedCaptionLang(mSessionId, clang);
+    checkRemoteResultLocked(r);
     r = mRemote->setSubType(mSessionId, DTV_SUB_CC);
     checkRemoteResultLocked(r);
     r = mRemote->open(mSessionId, nullptr, 0, mOpenType); // CC do not care io type
     checkRemoteResultLocked(r);
     return r.isOk();
+}
+
+bool SubtitleServerClient::selectCcChannel(int ch) {
+    char* clang = "";
+    return selectCcChannel(ch, clang);
 }
 
 bool SubtitleServerClient::setClosedCaptionId(int id) {
@@ -422,6 +491,7 @@ bool SubtitleServerClient::setClosedCaptionVfmt(int fmt) {
     checkRemoteResultLocked(r);
     return r.isOk();
 }
+
 bool SubtitleServerClient::setCompositionPageId(int pageId) {
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {

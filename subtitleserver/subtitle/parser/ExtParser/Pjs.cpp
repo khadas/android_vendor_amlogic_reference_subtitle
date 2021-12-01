@@ -17,9 +17,10 @@ Pjs::~Pjs() {
  */
 // TODO: C++ style
 std::shared_ptr<ExtSubItem> Pjs::decodedItem() {
-    char line[LINE_LEN + 1];
-    char text[LINE_LEN + 1];
-
+    char *line = (char *)MALLOC(LINE_LEN+1);
+    char *text = (char *)MALLOC(LINE_LEN+1);
+    memset(line, 0, LINE_LEN+1);
+    memset(text, 0, LINE_LEN+1);
     while (mReader->getLine(line)) {
         ALOGD(" read: %s", line);
         int start, end;
@@ -38,9 +39,12 @@ std::shared_ptr<ExtSubItem> Pjs::decodedItem() {
         item->start = start * 100 / mPtsRate;
         item->end = end * 100 / mPtsRate;;
         item->lines.push_back(std::string(p));
+        free(line);
+        free(text);
         return item;
     }
-
+    free(line);
+    free(text);
     return nullptr;
 }
 

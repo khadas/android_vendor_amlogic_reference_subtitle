@@ -11,9 +11,10 @@ Mplayer1::~Mplayer1() {
 }
 
 std::shared_ptr<ExtSubItem> Mplayer1::decodedItem() {
-    char line[LINE_LEN+1];
-    char line2[LINE_LEN];
-
+    char *line = (char *)MALLOC(LINE_LEN+1);
+    char *line2 = (char *)MALLOC(LINE_LEN);
+    memset(line, 0, LINE_LEN+1);
+    memset(line2, 0, LINE_LEN);
     while (mReader->getLine(line)) {
         int start =0, end = 0, tmp;
         ALOGD(" read: %s", line);
@@ -33,8 +34,12 @@ std::shared_ptr<ExtSubItem> Mplayer1::decodedItem() {
         item->end = end*100/mPtsRate;
         std::string s(line2);
         item->lines.push_back(s);
+        free(line);
+        free(line2);
         return item;
     }
+    free(line);
+    free(line2);
     return nullptr;
 }
 

@@ -29,7 +29,7 @@
 
 //TODO: move to utils directory
 
-ExtParser::ExtParser(std::shared_ptr<DataSource> source) {
+ExtParser::ExtParser(std::shared_ptr<DataSource> source, int trackId) {
     mDataSource = source;
     mParseType = TYPE_SUBTITLE_EXTERNAL;
 
@@ -39,9 +39,11 @@ ExtParser::ExtParser(std::shared_ptr<DataSource> source) {
     mState = SUB_INIT;
     mMaxSpuItems = EXTERNAL_MAX_NUMBER_SPU_ITEM;
 
+    mIdxSubTrackId = trackId;
+
     mSubDecoder = ExtSubFactory::create(source);
     if (mSubDecoder != nullptr) {
-        mSubDecoder->decodeSubtitles();
+        mSubDecoder->decodeSubtitles(mIdxSubTrackId);
     }
 }
 
@@ -64,6 +66,7 @@ int ExtParser::getSpu() {
         std::shared_ptr<AML_SPUVAR> spu = mSubDecoder->popDecodedItem();
         if (spu != nullptr) {
             addDecodedItem(spu);
+            ret = 0; // has subtitle.
         }
     }
     return ret;
@@ -72,19 +75,21 @@ int ExtParser::getSpu() {
 
 int ExtParser::parse() {
     if (!mThreadExitRequested) {
+        bool needIdling = true;
         if (mState == SUB_INIT) {
             mState = SUB_PLAYING;
         } else if (mState == SUB_PLAYING) {
-            getSpu();
+            needIdling = getSpu() != 0;
         }
 
-        // idling. TODO: use notify to kill polling
-        usleep(1000*100LL);
-
+        if (needIdling) {
+            usleep(33*1000LL);
+        }
     }
     return 0;
 }
 
-void dump(int fd, const char *prefix) {
-
+void ExtParser::dump(int fd, const char *prefix) {
+    dprintf(fd, "\nExtParser: %p at\n", mSubDecoder.get());
+    mSubDecoder->dump(fd, "   ");
 }

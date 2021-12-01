@@ -229,11 +229,16 @@ AM_ErrorCode_t AM_EVT_Destory()
     AM_Event_t *evt;
     int i;
     pthread_mutex_destroy(&lock);
-	for (i = 0; i < AM_EVT_BUCKET_COUNT; i++)
-	for (evt=events[i]; evt; evt=evt->next)
-	{
-        free(evt);
-	}
 
+    for ( i = 0; i < AM_EVT_BUCKET_COUNT; i++ )
+    {
+        AM_Event_t *tmp, *head = events[i];
+        while (head != NULL)
+        {
+            tmp = head;
+            head = head->next;
+            free(tmp);
+        }
+    }
     return AM_SUCCESS;
 }

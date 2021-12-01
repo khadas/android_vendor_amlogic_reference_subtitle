@@ -18,7 +18,7 @@ LOCAL_SHARED_LIBRARIES :=       \
       libSubtitleClient
 
 LOCAL_C_FLAGS += -Wno-unused-variable
-
+LOCAL_HEADER_LIBRARIES := jni_headers
 LOCAL_MODULE := libsubtitleApiTestJni
 LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0 SPDX-license-identifier-BSD SPDX-license-identifier-LGPL legacy_by_exception_only
 LOCAL_LICENSE_CONDITIONS := by_exception_only notice restricted

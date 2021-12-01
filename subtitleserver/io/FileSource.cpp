@@ -6,13 +6,18 @@
 #include "FileSource.h"
 #include <utils/Log.h>
 #include <utils/CallStack.h>
+#include "IpcDataTypes.h"
 
 
-FileSource::FileSource(int fd) {
+FileSource::FileSource(int fd, int extFd) {
     ALOGD("%s fd:%d", __func__, fd);
     mFd = fd;
     if (mFd > 0) {
         ::lseek(mFd, 0, SEEK_SET);
+    }
+
+    if (extFd > 0) {
+        mExtraFd = extFd;
     }
 }
 
@@ -23,6 +28,13 @@ FileSource::~FileSource() {
         mFd = -1;
     }
 
+    if (mExtraFd > 0) {
+        ::close(mExtraFd);
+    }
+}
+
+int FileSource::onData(const char *buffer, int len) {
+    return 0;
 }
 
 bool FileSource::start() {

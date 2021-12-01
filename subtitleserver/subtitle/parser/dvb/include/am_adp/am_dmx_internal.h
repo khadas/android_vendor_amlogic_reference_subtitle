@@ -51,8 +51,8 @@ typedef uint32_t AM_DMX_FilterMask_t;
 
 #define AM_DMX_FILTER_MASK_ISEMPTY(m)    (!(*(m)))
 #define AM_DMX_FILTER_MASK_CLEAR(m)      (*(m)=0)
-#define AM_DMX_FILTER_MASK_ISSET(m,i)    (*(m)&(1<<(i)))
-#define AM_DMX_FILTER_MASK_SET(m,i)      (*(m)|=(1<<(i)))
+#define AM_DMX_FILTER_MASK_ISSET(m,i)    (*(m)&(((unsigned int)1<<(i)) & 0xFFFFFFFF))
+#define AM_DMX_FILTER_MASK_SET(m,i)      (*(m)|=((unsigned int)1<<(i)))
 
 /**\brief 解复用设备驱动*/
 typedef struct

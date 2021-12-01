@@ -21,7 +21,8 @@ package {
 
 cc_library_shared {
     name: "libsubtitlemanager_jni",
-    vendor:true,
+    vendor_available: true,
+    system_ext_specific: true,
     srcs: [
         "com_droidlogic_app_SubtitleManager.cpp",
     ],
@@ -54,9 +55,14 @@ cc_library_shared {
 }
 
 cc_prebuilt_library_shared {
-   name: "libvendorfont",
-   vendor: true,
-   srcs: [
-      "arm/libvendorfont.so",
-   ],
+    name: "libvendorfont",
+    vendor_available: true,
+    check_elf_files: false,
+    system_ext_specific: true,
+    arch: {
+        arm: { srcs: ["arm/libvendorfont.so"], },
+        arm64: { srcs: ["arm64/libvendorfont.so"], },
+        x86: { enabled: false, },
+        x86_64: { enabled: false, },
+    }
 }

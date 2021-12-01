@@ -848,6 +848,14 @@ void DvbParser::notifySubtitleDimension(int width, int height) {
         }
     }
 }
+
+void DvbParser::notifySubtitleErrorInfo(int error) {
+    if (mNotifier != nullptr) {
+        ALOGD("notifySubtitleErrorInfo: %d", error);
+        mNotifier->onSubtitleAvailable(error);
+    }
+}
+
 DvbParser::DvbParser(std::shared_ptr<DataSource> source) {
     mContext = nullptr;
     mDataSource = source;
@@ -918,6 +926,7 @@ int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize) {
         bottomFieldLen = AV_RB16(buf);
         buf += 2;
         if (buf + topFieldLen + bottomFieldLen > bufEnd) {
+            notifySubtitleErrorInfo(ERROR_DECODER_INVALIDDATA);
             LOGE("Field data size too large\n");
             return 0;
         }
@@ -940,6 +949,7 @@ int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize) {
                 return ret;
         }
     } else {
+        notifySubtitleErrorInfo(ERROR_DECODER_INVALIDDATA);
         LOGE("Unknown object coding %d\n", codingMethod);
         return -1;
     }
@@ -976,6 +986,7 @@ void DvbParser::parseClutSegment(const uint8_t *buf, int bufSize) {
         entry_id = *buf++;
         depth = (*buf) & 0xe0;
         if (depth == 0) {
+            notifySubtitleErrorInfo(ERROR_DECODER_INVALIDDATA);
             LOGE("Invalid clut depth 0x%x!\n", *buf);
             return;
         }
@@ -1257,7 +1268,10 @@ void DvbParser::saveResult2Spu(std::shared_ptr<AML_SPUVAR> spu) {
             xOff = display->xPos - xPos;
             yOff = display->yPos - yPos;
             clut = getClut(mContext, region->clut);
-            if (clut == 0) return;//clut = &gDefaultClut;
+            if (clut == 0) {
+                free(pbuf);
+                return;//clut = &gDefaultClut;
+            }
             switch (region->depth) {
                 case 2:
                     clut_table = clut->clut4;
@@ -1406,6 +1420,7 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
         segmentLength = AV_RB16(p);
         p += 2;
         if (pEnd - p < segmentLength) {
+            notifySubtitleErrorInfo(ERROR_DECODER_LOSEDATA);
             LOGI("incomplete or broken packet");
             return -1;
         }
@@ -1447,7 +1462,7 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
 }
 
 
-int DvbParser::getDvbSpu(std::shared_ptr<AML_SPUVAR> spu) {
+int DvbParser::getDvbSpu() {
     char tmpbuf[8];
     int64_t packetHeader = 0;
 
@@ -1455,6 +1470,9 @@ int DvbParser::getDvbSpu(std::shared_ptr<AML_SPUVAR> spu) {
         if (mState == SUB_STOP) {
             return 0;
         }
+
+        std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
+        spu->sync_bytes = AML_PARSER_SYNC_WORD;
 
         packetHeader = ((packetHeader<<8) & 0x000000ffffffff00) | tmpbuf[0];
         if ((packetHeader & 0xffffffff) == 0x000001bd) {
@@ -1565,6 +1583,12 @@ int DvbParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             }
 
             spu->pts = pts;
+            LOGE("[%s::%d]synctime:%lld\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime());
+            //If gap time is large than 9 secs, think pts skip,notify info
+            if (abs(mDataSource->getSyncTime() - pts) > 9*90000) {
+                LOGE("[%s::%d]pts skip, notify time error!\n", __FUNCTION__, __LINE__);
+                notifySubtitleErrorInfo(ERROR_DECODER_TIMEERROR);
+            }
             mDataSource->read(tmpbuf, 2) ;
             packetLen -= 2;
             tempPts = ((tmpbuf[0] << 8) | tmpbuf[1]);
@@ -1594,6 +1618,8 @@ int DvbParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                         LOGI("dump-pts-hwdmx!error pts(%lld) frame was abondon\n", spu->pts);
                         return -1;
                     }
+                } else {
+                        notifySubtitleErrorInfo(ERROR_DECODER_TIMEERROR);
                 }
 
                 LOGI("packetLen buf free=%p\n", buf);
@@ -1601,6 +1627,8 @@ int DvbParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                 free(buf);
             }
         }
+    }else {
+        notifySubtitleErrorInfo(ERROR_DECODER_TIMEERROR);
     }
 
     return ret;
@@ -1687,7 +1715,7 @@ void DvbParser::callbackProcess() {
     }
 }
 
-int DvbParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
+int DvbParser::getSpu() {
     if (mState == SUB_INIT) {
         mState = SUB_PLAYING;
     } else if (mState == SUB_STOP) {
@@ -1695,14 +1723,11 @@ int DvbParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
         return 0;
     }
 
-    return getDvbSpu(spu);
+    return getDvbSpu();
 }
 
 int DvbParser::getInterSpu() {
-    std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
-
-    spu->sync_bytes = AML_PARSER_SYNC_WORD;
-    return getSpu(spu);
+    return getSpu();
 }
 
 int DvbParser::parse() {

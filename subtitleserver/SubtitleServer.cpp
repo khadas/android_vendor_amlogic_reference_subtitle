@@ -127,6 +127,7 @@ Return<void> SubtitleServer::openConnection(openConnection_cb _hidl_cb) {
 }
 
 Return<Result> SubtitleServer::closeConnection(int32_t sId) {
+    std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
     ALOGV("%s sId=%d", __func__, sId);
 
     //TODO: too simple here! need more condition.
@@ -135,6 +136,14 @@ Return<Result> SubtitleServer::closeConnection(int32_t sId) {
 
 
     android::AutoMutex _l(mLock);
+
+    if (ss != nullptr) {
+        ss->stopFmqReceiver();
+        if (mDataMQ) {
+            std::unique_ptr<DataMQ> removeDataMQ(std::move(mDataMQ));
+            mDataMQ.reset(nullptr);
+        }
+    }
 
     int clientSize = mServiceClients.size();
     ALOGD("clientSize=%d", clientSize);
@@ -152,17 +161,24 @@ Return<Result> SubtitleServer::closeConnection(int32_t sId) {
     return Result::FAIL;
 }
 
-Return<Result> SubtitleServer::open(int32_t sId, const hidl_handle& handle, int32_t ioType, OpenType openType) {
+Return<Result> SubtitleServer:: open(int32_t sId, const hidl_handle& handle, int32_t ioType, OpenType openType) {
     android::AutoMutex _l(mLock);
     std::shared_ptr<SubtitleService>  ss = getSubtitleServiceLocked(sId);
     ALOGV("%s ss=%p ioType=%d openType:%d", __func__, ss.get(), ioType, openType);
 
-    int fd = -1;
-    int dupFd = -1; // fd will auto closed when destruct hidl_handle, dump one.
+    std::vector<int> fds;
+    int idxSubId = -1;
+    //int dupFd = -1; // fd will auto closed when destruct hidl_handle, dump one.
     int demuxId = -1;
     if (handle != nullptr && handle->numFds >= 1) {
-        fd = handle->data[0];
-        dupFd = ::dup(fd);
+        for (int i=0; i<handle->numFds; i++) {
+            int fd = handle->data[i];
+            fds.push_back(::dup(fd));
+        }
+
+        if (handle->numInts > 0) {
+            idxSubId = handle->data[handle->numFds];
+        }
     }
 
     auto now = systemTime(SYSTEM_TIME_MONOTONIC);
@@ -190,7 +206,7 @@ Return<Result> SubtitleServer::open(int32_t sId, const hidl_handle& handle, int3
             ALOGD("mOpenCalled : demux id= %d, ioType =%d\n", demuxId, ioType);
             ss->setDemuxId(demuxId);
         }
-        bool r = ss->startSubtitle(dupFd, (SubtitleIOType)ioType, mMessagQueue.get());
+        bool r = ss->startSubtitle(fds, idxSubId, (SubtitleIOType)ioType, mMessagQueue.get());
 
         mOpenCalled = true;
         mLastOpenType = openType;
@@ -199,7 +215,7 @@ Return<Result> SubtitleServer::open(int32_t sId, const hidl_handle& handle, int3
         return (r ? Result::OK : Result::FAIL);
     }
 
-    if (dupFd != -1) close(dupFd);
+    //if (dupFd != -1) close(dupFd);
     ALOGD("no valid ss, Should not enter here!");
     return Result::FAIL;
 }
@@ -209,15 +225,7 @@ Return<Result> SubtitleServer::close(int32_t sId) {
     ALOGV("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
         bool r = ss->stopSubtitle();
-        ss->stopFmqReceiver();
-        {
-            android::AutoMutex _l(mLock);
-            if (mDataMQ) {
-                std::unique_ptr<DataMQ> removeDataMQ(std::move(mDataMQ));
-                mDataMQ.reset(nullptr);
-            }
-            mOpenCalled = false;
-        }
+        mOpenCalled = false;
         return (r ? Result::OK : Result::FAIL);
     }
 
@@ -329,6 +337,15 @@ Return<Result> SubtitleServer::setClosedCaptionVfmt(int32_t sId, int32_t vfmt) {
     ALOGV("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
         ss->setClosedCaptionVfmt(vfmt);
+    }
+    return Result {};
+}
+
+Return<Result> SubtitleServer::setClosedCaptionLang(int32_t sId, const hidl_string& lang) {
+    std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
+    ALOGD("%s ss=%p", __func__, ss.get());
+    if (ss != nullptr) {
+        ss->setClosedCaptionLang(lang.c_str());
     }
     return Result {};
 }

@@ -81,7 +81,9 @@ public:
     SubtitleServerClient(bool isFallback, sp<SubtitleListener> listener, OpenType openType);
     ~SubtitleServerClient();
 
-    bool open(const char *path, int ioType);
+    bool open(const char*path, int ioType);
+    bool open(int fd, int ioType);
+    bool open(int fd, int fdData, int trackId, int ioType);
     bool close();
 
     /* for external subtitle update PTS */
@@ -99,8 +101,10 @@ public:
 
     // for select CC index
     bool selectCcChannel(int idx);
+    bool selectCcChannel(int idx, const char *lang);
     bool setClosedCaptionId(int id);
     bool setClosedCaptionVfmt(int fmt);
+    bool setClosedCaptionLang(const char *lang);
     bool setCompositionPageId(int pageId);
     bool setAncillaryPageId(int ancPageId);
 
@@ -164,7 +168,7 @@ private:
     mutable android::Mutex mLock;
 
     // standalone fallback impl
-    bool mIsFallback;
+    static inline bool mIsFallback;
 
     // As hidl. check if from middleware or APP.
     OpenType mOpenType;

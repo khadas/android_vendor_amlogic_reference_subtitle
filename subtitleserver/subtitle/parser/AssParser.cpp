@@ -22,6 +22,67 @@
 #define LOGE ALOGE
 #define MIN_HEADER_DATA_SIZE 24
 
+static inline std::string stringConvert2Stream(std::string s1, std::string s2) {
+    std::stringstream stream;
+    if (s1.length() == 0 || s1 == "") {
+        stream << s2;
+    } else {
+        stream << s1;
+        stream << "\n";
+        stream << s2;
+    }
+    return stream.str();
+}
+
+/* param s the string below have double language text.
+ *     Dialogue: ,0:01:25.16,0:01:26.72,*456,1,0000,0000,0000,,Hey! Come here!
+ *     Dialogue: ,0:01:25.16,0:01:26.72,*123,1,0000,0000,0000,,?¨¬1y¨¤¡ä
+ * return string for second line language text
+ *
+*/
+static inline std::string getSecondTextForDoubleLanguage(std::string source) {
+    std::size_t indexOflineBreak;
+    std::stringstream secondStream;
+    indexOflineBreak = source.find("\n");
+    if (indexOflineBreak == std::string::npos) {
+        ALOGE("NO double language, return");
+        return "";
+    }
+    std::string secondStr;
+    secondStr = source.substr(indexOflineBreak + 1, source.length());
+
+    const int ASS_EVENT_SECTIONS = 9;
+    const int BUILTIN_ASS_EVENT_SECTIONS = 8;
+    std::stringstream ss;
+    std::string str;
+    std::vector<std::string> items; // store the event sections in vector
+    bool isNormal = strncmp((const char *)secondStr.c_str(), "Dialogue:", 9) == 0;
+    ss << secondStr;
+
+    int i = 0;
+    while (getline(ss, str, ',')) {
+        i++;
+        items.push_back(str);
+        // keep the last subtitle content not split with ',', the content may has it.
+        if (isNormal && i == ASS_EVENT_SECTIONS) {
+            break;
+        } else if (!isNormal && i == BUILTIN_ASS_EVENT_SECTIONS) {
+            break;
+        }
+      }
+      std::string tempStr = ss.str();
+      //fist check the "{\" in the content. If don't find ,just use getline to get the content.
+      int nPos = tempStr.find("{\\");
+      if (-1 == nPos) {
+          getline(ss, str);
+      } else {
+          str = tempStr.substr(nPos, tempStr.length());
+      }
+      return str;
+
+}
+
+
 //TODO: move to utils directory
 
 /**
@@ -122,6 +183,10 @@ static inline int __getAssSpu(uint8_t*spuBuf, uint32_t length, std::shared_ptr<A
         std::string newline = "\n";
         str.replace(start, 2, newline);
     }
+
+    std::string secondStr = getSecondTextForDoubleLanguage(tempStr);
+    str = stringConvert2Stream(secondStr, str);
+
     strcpy((char *)spu->spu_data, str.c_str());
     return 0;
 }

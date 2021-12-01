@@ -34,6 +34,8 @@ cc_binary {
       },
   },
 
+  required: ["icudt60l.dat"],
+
   vendor: true,
   relative_install_path: "hw",
   vintf_fragments: ["vendor.amlogic.hardware.subtitleserver@1.0.xml"],
@@ -103,6 +105,7 @@ cc_binary {
     "subtitle/parser/ExtParser/Ttml.cpp",
     "subtitle/parser/ExtParser/WebVtt.cpp",
     "subtitle/parser/ExtParser/XmlSubtitle.cpp",
+    "subtitle/parser/ExtParser/VobSubIndex.cpp",
 
     "subtitle/render/AndroidHidlRemoteRender.cpp",
 

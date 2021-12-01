@@ -264,7 +264,7 @@ int SubtitleServerHidlClient::subtitleGetType()
 
 std::string SubtitleServerHidlClient::subtitleGetTypeStr()
 {
-    char* ret = nullptr;
+    std::string ret;
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
         //@@ret = String8(subser->getTypeStr()).string();

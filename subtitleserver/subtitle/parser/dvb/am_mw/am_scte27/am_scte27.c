@@ -461,10 +461,11 @@ static void decode_bitmap(AM_SCTE27_Parser_t *parser, scte_subtitle_t *sub_info,
 	int frame_rate;*/
 	uint32_t video_pts, frame_dur;
 	//char* frame_rate_tmp;
+	if (!buffer)
+		return;
 
 	scte_simple_bitmap_t *simple_bitmap = malloc(sizeof(scte_simple_bitmap_t));
-
-	if (!buffer || !simple_bitmap)
+	if (!simple_bitmap)
 		return;
 	/*
 	AM_FileRead("/sys/class/video/frame_rate", frame_rate_buf, sizeof(frame_rate_buf));
@@ -652,7 +653,7 @@ static void node_check(AM_SCTE27_Parser_t *parser)
 		}
 	}
 
-	//scte_log("has sub: %d", has_sub);
+	scte_log("has sub: %d", has_sub);
 
 	/*Clear the old bitmap only when has somethings to be displayed*/
 	list_for_each_entry_safe(simple_bitmap, tmp, &parser->simple_bitmap_head, list, scte_simple_bitmap_t)
@@ -962,6 +963,7 @@ int decode_message_body(AM_SCTE27_Parser_t *parser, const uint8_t *buf, int size
 		parser->para.update_size(parser, width, height);
 		parser->para.lastWidth = width;
 		parser->para.lastHeight = height;
+		parser->para.pitch = 4*width;
 	}
 	if (sub_node.sub_type == SUB_TYPE_SIMPLE_BITMAP)
 		decode_bitmap(parser, &sub_node, bitmap, sub_node.block_len);
@@ -1076,7 +1078,11 @@ AM_ErrorCode_t AM_SCTE27_Decode(AM_SCTE27_Handle_t handle, const uint8_t *buf, i
 		if (parser->scte_segment.has_segment)
 			clean_parser_segment(parser);
 		if ((section_length - 1 - 4) < 12)
-			return AM_SCTE27_PACKET_INVALID;
+		{
+			seg_errno = AM_SCTE27_PACKET_INVALID;
+			error_flag = AM_SCTE27_Decoder_Error_InvalidData;
+			goto SEG_ERROR;
+		}
 		ret = decode_message_body(parser, &buf[4], section_length - 1 - 4);
 	}
 	if (ret)

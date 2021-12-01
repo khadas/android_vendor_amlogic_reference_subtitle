@@ -259,7 +259,7 @@ static AM_ErrorCode_t dvb_poll(AM_DMX_Device_t *dev, AM_DMX_FilterMask_t *mask, 
 {
 	DVBDmx_t *dmx = (DVBDmx_t*)dev->drv_data;
 	struct pollfd fds[DMX_FILTER_COUNT_EXT];
-	int fids[DMX_FILTER_COUNT_EXT];
+	int fids[DMX_FILTER_COUNT_EXT] = {0};
 	int i, cnt = 0, ret;
 
 	for (i = 0; i < DMX_FILTER_COUNT; i++)
@@ -306,7 +306,7 @@ static AM_ErrorCode_t dvb_poll(AM_DMX_Device_t *dev, AM_DMX_FilterMask_t *mask, 
 static AM_ErrorCode_t dvb_wake(AM_DMX_Device_t *dev)
 {
 	DVBDmx_t *dmx = (DVBDmx_t*)dev->drv_data;
-	uint8_t wdata  = 0;
+	uint64_t wdata  = 0;
 
 	int event_fd = dmx->event_fd;
 	int ret = write(event_fd, &wdata, 8);
