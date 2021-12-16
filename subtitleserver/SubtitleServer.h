@@ -60,7 +60,7 @@ public:
     Return<void> getLanguage(int32_t sId, getLanguage_cb _hidl_cb) override;
 
     Return<Result> setSubType(int32_t sId, int32_t type) override;
-    Return<Result> setSubPid(int32_t sId, int32_t pid) override;
+    Return<Result> setSubPid(int32_t sId, int32_t pid, int onid, int tsid) override;
     Return<Result> setPageId(int32_t sId, int32_t pageId) override;
     Return<Result> setAncPageId(int32_t sId, int32_t ancPageId) override;
     Return<Result> setChannelId(int32_t sId, int32_t channelId) override;

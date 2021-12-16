@@ -157,14 +157,14 @@ void SubtitleServerHidlClient::initSubtitle(SUB_Para_t *para)
     if (subser != 0) {
         subser->setSubType(mSessionId, para->tvType);
         if ((para->tvType == CODEC_ID_SCTE27) ||(para->tvType == CODEC_ID_DEMUX_SCTE27)) {
-            subser->setSubPid(mSessionId, para->pid);
+            subser->setSubPid(mSessionId, para->pid, -1, -1);
                subser->setChannelId(mSessionId, 15);
         } else if ((para->tvType == CODEC_ID_DVB)||(para->tvType == CODEC_ID_DEMUX_DVB)) {
-               subser->setSubPid(mSessionId, para->pid);
+               subser->setSubPid(mSessionId, para->pid, -1, -1);
                subser->setPageId(mSessionId, para->pageId);
                subser->setAncPageId(mSessionId, para->ancPageId);
        } else if(para->tvType == CODEC_ID_DEMUX_TELETEXT) {
-            subser->setSubPid(mSessionId, para->pid);
+            subser->setSubPid(mSessionId, para->pid, -1, -1);
        } else if (para->vfmt == CODEC_ID_CLOSEDCAPTION_MPEG) {
               subser->setClosedCaptionVfmt(mSessionId, CODEC_ID_CLOSEDCAPTION_MPEG);
               subser->setChannelId(mSessionId, para->channelId);
@@ -426,12 +426,12 @@ void SubtitleServerHidlClient::subtitleCreat()
     return;
 }
 
-void SubtitleServerHidlClient::subtitleSetSubPid(int pid)
+void SubtitleServerHidlClient::subtitleSetSubPid(int32_t pid, int32_t onid, int32_t tsid)
 {
     ALOGD("%s", __func__);
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
-        subser->setSubPid(mSessionId, pid);
+        subser->setSubPid(mSessionId, pid, onid, tsid);
     }
     return;
 }

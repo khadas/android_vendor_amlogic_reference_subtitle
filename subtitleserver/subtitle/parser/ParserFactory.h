@@ -181,7 +181,8 @@ typedef enum{
 
 
 
-typedef struct {
+class TeletextParam {
+public:
     int demuxId;
     int pid;
     int magazine;
@@ -193,7 +194,17 @@ typedef struct {
     int regionId;
     TeletextCtrlCmd ctrlCmd;
     TeletextEvent event;
-} TeletextParam;
+    // when play the same program, vbi is cached, must support quick reference page
+    int onid; // origin network id for check need close vbi or not
+    int tsid; // tsid. for check need close vbi or not
+    TeletextParam() {
+        demuxId = pid = magazine = page = pageNo = subPageNo = pageDir
+            = subPageDir = regionId = -1;
+        ctrlCmd = CMD_INVALID;
+        event = TT_EVENT_INVALID;
+        onid = tsid = -1;
+    }
+};
 
 struct SubtitleParamType {
     SubtitleType subType;
@@ -211,9 +222,7 @@ struct SubtitleParamType {
     DtvKitDvbParam dtvkitDvbParam; //the pes pid for filter subtitle data from demux
     SubtitleParamType() : playerId(0), mediaId(0) {
         subType = TYPE_SUBTITLE_INVALID;
-        ttParam.event = TT_EVENT_INVALID;
         memset(&ccParam, 0, sizeof(ccParam));
-        memset(&ttParam, 0, sizeof(TeletextParam));
     }
 
     void update() {
@@ -224,15 +233,15 @@ struct SubtitleParamType {
             case DTV_SUB_SCTE27:
                 subType = TYPE_SUBTITLE_SCTE27;
                 break;
-		case DTV_SUB_DTVKIT_DVB:
-		    subType = TYPE_SUBTITLE_DTVKIT_DVB;
-		    break;
-		case DTV_SUB_DTVKIT_TELETEXT:
-		    subType = TYPE_SUBTITLE_DTVKIT_TELETEXT;
-		    break;
-		case DTV_SUB_DTVKIT_SCTE27:
-		    subType = TYPE_SUBTITLE_DTVKIT_SCTE27;
-		    break;
+            case DTV_SUB_DTVKIT_DVB:
+                subType = TYPE_SUBTITLE_DTVKIT_DVB;
+                break;
+            case DTV_SUB_DTVKIT_TELETEXT:
+                subType = TYPE_SUBTITLE_DTVKIT_TELETEXT;
+                break;
+            case DTV_SUB_DTVKIT_SCTE27:
+                subType = TYPE_SUBTITLE_DTVKIT_SCTE27;
+                break;
             default:
                 break;
         }

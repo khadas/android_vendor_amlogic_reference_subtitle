@@ -15,6 +15,7 @@
 #define  LOG_TAG "TeletextParser"
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include "bprint.h"
@@ -89,6 +90,86 @@
 
 #define OSD_HALF_SIZE (1920*1280/8)
 #define NAVIGATOR_COLORBAR_LINK_SIZE 4
+
+#ifdef NEED_CACHE_ZVBI_STATUS
+class ZvbiGlobalStatus {
+public:
+    /**
+    * If the program not changed, we must keep Vbi decoder
+    * Or, the cached teletext data will dropped and re-search tt pages.
+    * This introduce very bad UI experience.
+    *
+    */
+    bool needReuseVbiDecoder() {
+        return mKeepUsingVbi;
+    }
+
+    vbi_decoder *getVbiInstance() {
+        return mVbi;
+    }
+
+    void registerVbiInstance(vbi_decoder *vbi) {
+        mVbi = vbi;
+    }
+
+    void updateProgramInfo(int pid, int onid, int tsid) {
+        if (mLastPid ==pid && mLastOnid == onid && mLastTsid == tsid && tsid != -1) {
+            mKeepUsingVbi = true;
+        } else {
+            mKeepUsingVbi = false;
+        }
+
+        mLastPid = pid;
+        mLastOnid = onid;
+        mLastTsid = tsid;
+    }
+
+    void updateSearchLastPageStart() {
+        mSearchStart = std::chrono::system_clock::now();
+        mNeedCheckTimeout = true;
+    }
+
+    // if search success, no need
+    void searchLastPageFinished() {
+        mNeedCheckTimeout = false;
+    }
+
+    bool isSearchLastPageTimeout() {
+        if (!mNeedCheckTimeout) return false;
+
+        // timeout is 30S
+        std::chrono::duration<double> diff = std::chrono::system_clock::now() - mSearchStart;
+        if (diff > std::chrono::seconds(30)) {
+            mNeedCheckTimeout = false;
+            return true;
+        }
+        return false;
+    }
+
+    ZvbiGlobalStatus() : lastShowingPage(0), mVbi(nullptr),
+        mLastPid(-1), mLastOnid(-1), mLastTsid(-1) {
+        mKeepUsingVbi = false;
+    }
+
+int lastShowingPage;
+
+
+private:
+    vbi_decoder *mVbi;
+    int mLastPid;
+    int mLastOnid;
+    int mLastTsid;
+    bool mKeepUsingVbi;
+
+    // if use async handler thread, maybe easy to implement this machanism
+    std::chrono::time_point<std::chrono::system_clock> mSearchStart;
+    bool mNeedCheckTimeout;
+};
+
+ZvbiGlobalStatus gVBIStatus;
+
+#endif
+
 
 static inline int checkIdentifierIsTeletext(int identifier) {
     LOGI("[checkIdentifierIsTeletext]---identifier:0x%x--\n", identifier);
@@ -485,6 +566,7 @@ static void handler(vbi_event *ev, void *userData) {
         free(page);
         return;
     }
+
     if (ctx->dispUpdate) {
         //save atv subtitle page for skip to subtitle faster
         if (ctx->atvTeletext && ctx->atvSubtitlePage <= 100) {
@@ -497,8 +579,13 @@ static void handler(vbi_event *ev, void *userData) {
                 free(page);
             } else {
                 if (pageType & 0x8000) {//atv subtitle
-                    LOGI("%s, save atv subtitle page:%d\n",__FUNCTION__, pgno);
+                    LOGI("%s, save atv subtitle page:%d, gotoAtvSubtitleFlg:%d\n",__FUNCTION__, pgno, ctx->gotoAtvSubtitleFlg);
                     ctx->atvSubtitlePage = pgno;
+
+                    if (ctx->gotoAtvSubtitleFlg) {
+                        ctx->gotoPage = ctx->atvSubtitlePage;
+                        ctx->gotoAtvSubtitleFlg = FALSE;
+                    }
                 }
             }
         }
@@ -685,6 +772,12 @@ static void handler(vbi_event *ev, void *userData) {
         ctx->handlerRet = -1;//AVERROR(ENOSYS);
     }
 
+#ifdef NEED_CACHE_ZVBI_STATUS
+    if (ctx->handlerRet > 0 && ctx->pageState == TT2_DISPLAY_STATE) {
+        gVBIStatus.lastShowingPage = pgno; // we only record the success page
+    }
+#endif
+
     vbi_unref_page(page);
     free(page);
 }
@@ -734,7 +827,15 @@ TeletextParser::~TeletextParser() {
         }
         free(mContext->pages);
 
+#ifdef NEED_CACHE_ZVBI_STATUS
+//        vbi_event_handler_remove(mContext->vbi, tt2TimeUpdate);
+//        vbi_event_handler_remove(mContext->vbi, handler);
+        ALOGD("~mContext->pageNum=%d mContext->gotoPage=%d, lastGotoPage=%d", mContext->pageNum, mContext->gotoPage, gVBIStatus.lastShowingPage);
+#else
         vbi_decoder_delete(mContext->vbi);
+#endif
+
+
         mContext->vbi = nullptr;
         mContext->pts = AV_NOPTS_VALUE;
         mContext->mixVideoState = TT2_MIX_BLACK;
@@ -864,11 +965,12 @@ static inline int generateInputDisplay(AVSubtitleRect *subRect, unsigned char *d
         return -1;
     }
 
-    memcpy(&des[TELETEXT_HEAD_HEIGHT*width*4], TeletextParser::getCurrentInstance()->mTextBack, (TELETEXT_TEXT_HEIGHT*width*4));
 
     if (height < maxHeight) {
+        memcpy(&des[TELETEXT_HEAD_HEIGHT*width*4], TeletextParser::getCurrentInstance()->mTextBack, ((maxHeight/2-TELETEXT_HEAD_HEIGHT)*width*4));
         return 0;// enlarge mode, do not need bottom
     }
+    memcpy(&des[TELETEXT_HEAD_HEIGHT*width*4], TeletextParser::getCurrentInstance()->mTextBack, (TELETEXT_TEXT_HEIGHT*width*4));
     memcpy(&des[(TELETEXT_HEAD_HEIGHT+TELETEXT_TEXT_HEIGHT)*width*4], TeletextParser::getCurrentInstance()->mBarBack, (TELETEXT_BAR_HEIGHT*width*4));
     return 0;
 }
@@ -1000,6 +1102,10 @@ int TeletextParser::fetchVbiPageLocked(int pageNum, int subPageNum) {
 
     if (page == nullptr) return -1;
 
+#ifdef NEED_CACHE_ZVBI_STATUS
+    // TODO: monitor success fetch timeout.
+#endif
+
     if (!mContext->vbi) {
         free(page);
         LOGE("%s error! ctx vbi is null\n", __FUNCTION__);
@@ -1077,6 +1183,17 @@ int TeletextParser::fetchVbiPageLocked(int pageNum, int subPageNum) {
         mContext->handlerRet = -1;//AVERROR(ENOSYS);
     }
     free(page);
+
+#ifdef NEED_CACHE_ZVBI_STATUS
+    if (mContext->handlerRet > 0) {
+        gVBIStatus.lastShowingPage = pageNum; // we only record the success page
+        gVBIStatus.searchLastPageFinished();
+    } else {
+        if (gVBIStatus.isSearchLastPageTimeout()) {
+            goHomeLocked();
+        }
+    }
+#endif
     return 1;
 }
 
@@ -1133,7 +1250,7 @@ int TeletextParser::fetchCountPageLocked(int dir, int count) {
         mContext->lockSubpg = 0;
     }
 
-    if (mContext->gotoPage >= 100 || mContext->gotoPage <=899) {
+    if (mContext->gotoPage >= 100 && mContext->gotoPage <=899) {
         tt2AddBackCachePageLocked(mContext->gotoPage, mContext->subPageNum);
     }
 
@@ -1212,7 +1329,7 @@ int TeletextParser::nextPageLocked(int dir, bool fetch) {
         mContext->lockSubpg = 0;
     }
 
-    if (mContext->gotoPage >= 100 || mContext->gotoPage <=899) {
+    if (mContext->gotoPage >= 100 && mContext->gotoPage <=899) {
         tt2AddBackCachePageLocked(mContext->gotoPage, mContext->subPageNum);
     }
 
@@ -1260,7 +1377,7 @@ int TeletextParser::getSubPageInfoLocked() {
     }
     int subArray[VBI_LOP_SUBPAGE_LINK_LENGTH];
     int len = VBI_LOP_SUBPAGE_LINK_LENGTH;
-    int pgno  = vbi_dec2bcd(mContext->gotoPage);
+    int pgno = vbi_dec2bcd(mContext->gotoPage);
 
 
 
@@ -1505,7 +1622,14 @@ int TeletextParser::gotoDefaultSubtitleLocked() {
     LOGI("%s atvSubtitlePage:%d\n", __FUNCTION__, mContext->atvSubtitlePage);
 
     mContext->subtitleMode = TT2_GRAPHICS_MODE;
-    gotoPageLocked(mContext->atvSubtitlePage, AM_TT2_ANY_SUBNO);
+
+    if (mContext->atvSubtitlePage >= 100) {
+        gotoPageLocked(mContext->atvSubtitlePage, AM_TT2_ANY_SUBNO);
+    } else {
+        LOGI("%s no valid atvSubtitlePage:%d, need wait! \n", __FUNCTION__, mContext->atvSubtitlePage);
+        mContext->gotoAtvSubtitleFlg = TRUE;
+        mContext->dispUpdate = 1;
+    }
     return TT2_SUCCESS;
 }
 
@@ -1525,7 +1649,7 @@ int TeletextParser::gotoPageLocked(int pageNum, int subPageNum)
     if (subPageNum > 0xFF && subPageNum != AM_TT2_ANY_SUBNO) {
         return -1;
     }
-    if (mContext->gotoPage >= 100 || mContext->gotoPage <=899) {
+    if (mContext->gotoPage >= 100 && mContext->gotoPage <=899) {
         tt2AddBackCachePageLocked(mContext->gotoPage, mContext->subPageNum);
     }
 
@@ -1538,7 +1662,7 @@ int TeletextParser::gotoPageLocked(int pageNum, int subPageNum)
     mContext->acceptSubPage = subPageNum;
     mContext->gotoPage = pageNum;
     LOGI("[%s,%d] pgno: %d, mContext->subtitleMode:%d\n",__FUNCTION__, __LINE__, mContext->pageNum, mContext->subtitleMode);
-
+    android::CallStack stk("here");
     if (mContext->subtitleMode == TT2_GRAPHICS_MODE) {
         mContext->dispUpdate = 1;
         int res = fetchVbiPageLocked(pageNum, subPageNum);
@@ -1580,6 +1704,34 @@ bool TeletextParser::updateParameter(int type, void *data) {
     std::unique_lock<std::mutex> autolock(mMutex);
     std::shared_ptr<TeletextParam> ttParam(new TeletextParam());
     memcpy(ttParam.get(), data, sizeof(TeletextParam));
+
+    if (ttParam->event == TT_EVENT_INVALID) {
+        return false; // ignore invalid command requested.
+    }
+
+#ifdef NEED_CACHE_ZVBI_STATUS
+    // teletext not started. this is the first time we check. when not started, vbi is null.
+    if (mContext->vbi == nullptr) {
+        ALOGD("This is the first? pid:%d onid:%d tsid:%d  %d", ttParam->pid, ttParam->onid, ttParam->tsid, ttParam->event);
+        // tricky for check need keep using vbi or not
+        gVBIStatus.updateProgramInfo( ttParam->pid, ttParam->onid, ttParam->tsid);
+
+        // The first page, is setup by dtvkit. modify to the last
+        if (gVBIStatus.needReuseVbiDecoder() && gVBIStatus.lastShowingPage >= 100) {
+
+            // When dtvkit request home page, it goto last saved page when at the same program.
+            if (ttParam->event == TT_EVENT_GO_TO_PAGE && ttParam->pageNo <= 1 && ttParam->subPageNo == 0) {
+                int pageNum =vbi_dec2bcd(gVBIStatus.lastShowingPage);
+                ttParam->pageNo =  pageNum >> 8;
+                ttParam->subPageNo = pageNum & 0xFF;
+                // here, search the last saved page. log start search...
+                gVBIStatus.updateSearchLastPageStart();
+            }
+        }
+    }
+
+    ALOGD("mContext->pageNum=%d mContext->gotoPage=%d, lastGotoPage=%d", mContext->pageNum, mContext->gotoPage, gVBIStatus.lastShowingPage);
+#endif
     mControlCmds.push_back(ttParam);
     return true;
 }
@@ -1593,7 +1745,8 @@ bool TeletextParser::handleControl() {
     std::shared_ptr<TeletextParam> ttParam = mControlCmds.front();
     mControlCmds.pop_front();
     int page;
-    LOGI("%s, pageNo:%d, subPageNo:%d, regionId:%d, subPageDir:%d, event:%d\n", __FUNCTION__, ttParam->pageNo, ttParam->subPageNo, ttParam->regionId, ttParam->subPageDir, ttParam->event);
+    LOGI("%s, pageNo:%d, subPageNo:%d, regionId:%d, subPageDir:%d, event:%d\n",
+        __FUNCTION__, ttParam->pageNo, ttParam->subPageNo, ttParam->regionId, ttParam->subPageDir, ttParam->event);
 
     switch (ttParam->event) {
         case TT_EVENT_QUICK_NAVIGATE_1:
@@ -1746,6 +1899,7 @@ int TeletextParser::initContext() {
     mContext->mixVideoState = TT2_MIX_BLACK;
     mContext->subtitleMode = TT2_SUBTITLE_MODE;
     mContext->reveal = 0;
+    mContext->gotoAtvSubtitleFlg = FALSE;
 
     mContext->heightIndex = 0;
     mContext->chopSpaces = 1;
@@ -1791,21 +1945,47 @@ int TeletextParser::teletextDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *s
         spu->spu_height = TELETEXT_ROW * BITMAP_CHAR_HEIGHT;
     }
 
-    LOGV("%s, ctx->vbi:%p\n", __FUNCTION__, mContext->vbi);
+    LOGD(" %s, ctx->vbi:%p\n", __FUNCTION__, mContext->vbi);
     if (!mContext->vbi) {
+        //TODO: check need close or not
+#ifdef NEED_CACHE_ZVBI_STATUS
+        if (!gVBIStatus.needReuseVbiDecoder()) {
+            if (gVBIStatus.getVbiInstance() != nullptr) {
+                vbi_decoder_delete(gVBIStatus.getVbiInstance());
+                gVBIStatus.registerVbiInstance(nullptr);
+            }
+        }
+
+        if (gVBIStatus.getVbiInstance() == nullptr) {
+            gVBIStatus.registerVbiInstance(vbi_decoder_new());
+            if (gVBIStatus.getVbiInstance() == nullptr) return -1;
+        } else {
+            // clear handler.
+            vbi_event_handler_remove(gVBIStatus.getVbiInstance(), tt2TimeUpdate);
+            vbi_event_handler_remove(gVBIStatus.getVbiInstance(), handler);
+        }
+        mContext->vbi = gVBIStatus.getVbiInstance();
+#else
         if (!(mContext->vbi = vbi_decoder_new()))
-            return -1;//AVERROR(ENOMEM);
+            return -1;
+#endif
 
         if (!vbi_event_handler_add(mContext->vbi, VBI_EVENT_TTX_PAGE, handler, mContext)) {
             //LOGI("[teletext_decode_frame]---%d--\n", __LINE__);
+#ifdef NEED_CACHE_ZVBI_STATUS
+            vbi_decoder_delete(gVBIStatus.getVbiInstance());
+            gVBIStatus.registerVbiInstance(nullptr);
+#else
             vbi_decoder_delete(mContext->vbi);
+#endif
             mContext->vbi = NULL;
-            return -1;//AVERROR(ENOMEM);
+            return -1;
         }
 
         vbi_event_handler_add(mContext->vbi, VBI_EVENT_TIME, tt2TimeUpdate, mContext);
         vbi_set_subtitle_page(mContext->vbi, vbi_dec2bcd(mContext->pageNum));
     }
+
 
     //atv teletext
     if (mContext->atvTeletext) {

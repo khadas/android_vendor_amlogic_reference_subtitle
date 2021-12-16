@@ -98,6 +98,7 @@ public:
     bool setPipId(int mode, int id);
     // most, for scte.
     bool setSubPid(int pid);
+    bool setSubPid(int pid, int onid, int tsid);
 
     // for select CC index
     bool selectCcChannel(int idx);

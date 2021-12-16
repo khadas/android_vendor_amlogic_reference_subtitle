@@ -33,7 +33,7 @@ public:
 
     int updateVideoPosAt(int timeAt);
     void setSubType(int type);
-    void setSubPid(int pid);
+    void setSubPid(int pid, int onid, int tsid);
     void setSubPageId(int pageId);
     void setSubAncPageId(int ancPageId);
     void setClosedCaptionVfmt(int vfmt);

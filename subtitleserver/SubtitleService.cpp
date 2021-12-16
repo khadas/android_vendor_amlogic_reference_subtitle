@@ -186,7 +186,7 @@ void SubtitleService::setDemuxId(int demuxId) {
         mDataSource->updateParameter(mSubParam.subType, &mSubParam.scteParam);
     }
 }
-void SubtitleService::setSubPid(int pid) {
+void SubtitleService::setSubPid(int pid, int onid, int tsid) {
     switch (mSubParam.dtvSubType) {
         case  DTV_SUB_SCTE27:
             [[fallthrough]];
@@ -197,7 +197,11 @@ void SubtitleService::setSubPid(int pid) {
             mSubParam.dtvkitDvbParam.pid = pid;
         break;
         case DTV_SUB_DTVKIT_TELETEXT:
-            mSubParam.ttParam.pid = pid;
+            mSubParam.ttParam.pid = pid; // for demux
+
+            // startSubtitle may use these.
+            mSubParam.ttParam.onid = onid;
+            mSubParam.ttParam.tsid = tsid;
         break;
         default:
         break;

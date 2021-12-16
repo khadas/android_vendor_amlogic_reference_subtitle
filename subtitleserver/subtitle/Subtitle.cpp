@@ -220,10 +220,12 @@ void Subtitle::run() {
 
         switch (mPendingAction) {
             case ACTION_SUBTITLE_SET_PARAM: {
+                bool createAndStart = false;
                 if (mParser == nullptr) {
+                    // when the first time start subtitle, some parameter may affect the behavior
+                    // such as cached teletext. we use tsid/onid/pid to check need use cached ttx or not
+                    createAndStart = true;
                     mParser = ParserFactory::create(mSubPrams, mDataSource);
-                    mParser->startParse(mParserNotifier, mPresentation.get());
-                    mPresentation->startPresent(mParser);
                 }
                 ALOGD("run ACTION_SUBTITLE_SET_PARAM %d %d", mSubPrams->subType, TYPE_SUBTITLE_CLOSED_CATPTION);
                 if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_DVB) {
@@ -235,6 +237,11 @@ void Subtitle::run() {
                     mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_SCTE27, &mSubPrams->scteParam);
                 } else if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CATPTION) {
                     mParser->updateParameter(TYPE_SUBTITLE_CLOSED_CATPTION, &mSubPrams->ccParam);
+                }
+
+                if (createAndStart) {
+                    mParser->startParse(mParserNotifier, mPresentation.get());
+                    mPresentation->startPresent(mParser);
                 }
             }
             break;

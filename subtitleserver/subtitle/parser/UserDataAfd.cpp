@@ -133,7 +133,7 @@ int UserDataAfd::stop() {
         }
     }
     AM_EVT_Unsubscribe(USERDATA_DEVICE_NUM, AM_USERDATA_EVT_AFD, afd_evt_callback, NULL);
-    if ((mMode && AM_USERDATA_MODE_CC) ==  AM_USERDATA_MODE_CC)
+    if ((mMode & AM_USERDATA_MODE_CC) ==  AM_USERDATA_MODE_CC)
         AM_USERDATA_Close(USERDATA_DEVICE_NUM);
     return 0;
 }

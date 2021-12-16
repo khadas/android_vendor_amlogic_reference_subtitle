@@ -300,7 +300,7 @@ size_t VbiSource::read(void *buffer, size_t size) {
 
 
 void VbiSource::dump(int fd, const char *prefix) {
-    dprintf(fd, "%s nDeviceSource:\n", prefix);
+    dprintf(fd, "%s nVBISource:\n", prefix);
     {
         std::unique_lock<std::mutex> autolock(mLock);
         for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
@@ -311,8 +311,6 @@ void VbiSource::dump(int fd, const char *prefix) {
     }
     dprintf(fd, "%s   state:%d\n\n", prefix, mState);
 
-    dprintf(fd, "%s   Current Subtitle type: (%s)%ld\n", prefix,
-            DTV_SUB_DTVKIT_TELETEXT, DTV_SUB_DTVKIT_TELETEXT);
 
     dprintf(fd, "\n%s   Current Unconsumed Data Size: %d\n", prefix, availableDataSize());
 }

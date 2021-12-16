@@ -92,11 +92,11 @@ DemuxSource::DemuxSource() : mRdFd(-1), mState(E_SOURCE_INV),
     mPlayerId = -1;
     mMediaSyncId = -1;
     mMediaSync = MediaSync_create();
-    ALOGD("DeviceSource");
+    ALOGD("DemuxSource");
 }
 
 DemuxSource::~DemuxSource() {
-    ALOGD("~DeviceSource");
+    ALOGD("~DemuxSource");
     mExitRequested = true;
     if (mRenderTimeThread != nullptr) {
         mRenderTimeThread->join();
@@ -291,7 +291,7 @@ bool DemuxSource::start() {
 void DemuxSource::updateParameter(int type, void *data) {
    ALOGE(" in updateParameter type = %d ",type);
    bool restartDemux =false;
-   if (12 == type) {
+   if (TYPE_SUBTITLE_DTVKIT_DVB == type) {
         DtvKitDvbParam *pDvbParam = (DtvKitDvbParam* )data;
         if ((mState == E_SOURCE_STARTED) && (mPid != pDvbParam->pid)) {
               restartDemux = true;
@@ -300,7 +300,7 @@ void DemuxSource::updateParameter(int type, void *data) {
         mPid = pDvbParam->pid;
         mParam1 = pDvbParam->compositionId;
         mParam2 = pDvbParam->ancillaryId;
-    } else if (13 == type) {
+    } else if (TYPE_SUBTITLE_DTVKIT_TELETEXT == type) {
         TeletextParam *pTeleteParam = (TeletextParam* )data;
         if ((mState == E_SOURCE_STARTED) && (mPid != pTeleteParam->pid)) {
              restartDemux = true;
@@ -309,7 +309,7 @@ void DemuxSource::updateParameter(int type, void *data) {
         mPid = pTeleteParam->pid;
         mParam1 = pTeleteParam->magazine;
         mParam2 = pTeleteParam->page;
-    } else if (14 == type) {
+    } else if (TYPE_SUBTITLE_DTVKIT_SCTE27 == type) {
         Scte27Param *pScteParam = (Scte27Param* )data;
         if ((mState == E_SOURCE_STARTED) && (mPid != pScteParam->SCTE27_PID)) {
              restartDemux = true;

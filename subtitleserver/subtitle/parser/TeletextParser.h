@@ -140,6 +140,7 @@ struct TeletextContext {
 
     int             gotoPage;
     int             atvSubtitlePage;
+    bool            gotoAtvSubtitleFlg;
 
     bool            isSubtitle;
 

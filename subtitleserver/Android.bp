@@ -147,6 +147,7 @@ cc_binary {
     "-Werror=array-bounds",
     "-Wno-unused-variable",
     "-Wno-unused-parameter",
+    "-DNEED_CACHE_ZVBI_STATUS",
   ],
 
 /*

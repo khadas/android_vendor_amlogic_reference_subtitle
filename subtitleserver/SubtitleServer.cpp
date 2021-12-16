@@ -296,11 +296,11 @@ Return<Result> SubtitleServer::setSubType(int32_t sId, int32_t type) {
     return Result {};
 }
 
-Return<Result> SubtitleServer::setSubPid(int32_t sId, int32_t pid) {
+Return<Result> SubtitleServer::setSubPid(int32_t sId, int32_t pid, int onid, int tsid) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
     ALOGV("%s ss=%p pid=%d", __func__, ss.get(), pid);
     if (ss != nullptr) {
-        ss->setSubPid(pid);
+        ss->setSubPid(pid, onid, tsid);
     }
     return Result {};
 }

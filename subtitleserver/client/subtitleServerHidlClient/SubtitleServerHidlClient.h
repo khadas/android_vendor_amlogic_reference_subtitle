@@ -121,7 +121,7 @@ typedef enum
     std::string subtitleGetLanguage(int32_t idx);
     void subtitleLoad(const std::string& path);
     void subtitleSetSurfaceViewParam(int x, int y, int w, int h);
-    void subtitleSetSubPid(int32_t pid);
+    void subtitleSetSubPid(int32_t pid, int32_t onid, int32_t tsid);
     int subtitleGetSubHeight();
     int subtitleGetSubWidth();
     void subtitleSetSubType(int32_t type);

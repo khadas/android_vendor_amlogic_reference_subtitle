@@ -412,13 +412,18 @@ bool SubtitleServerClient::setPipId(int mode, int id) {
     return r.isOk();
 }
 
+
 bool SubtitleServerClient::setSubPid(int pid) {
+    return setSubPid(pid, -1, -1);
+}
+
+bool SubtitleServerClient::setSubPid(int pid, int onid, int tsid) {
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
 
-    auto r = mRemote->setSubPid(mSessionId, pid);
+    auto r = mRemote->setSubPid(mSessionId, pid, onid, tsid);
     checkRemoteResultLocked(r);
     return r.isOk();
 }
