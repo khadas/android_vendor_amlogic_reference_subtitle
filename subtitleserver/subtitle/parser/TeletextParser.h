@@ -27,6 +27,10 @@
 #define MAX_SLICES 64
 #define ATV_TELETEXT_DATA_LEN 42
 
+#define TELETEXT_SUBTITLE_MAX_NUMBER 800
+#define TELETEXT_SUBTITLE_PAGE_SHOW_TIME 3 //Unit is second
+
+
 
 struct TeletextPage {
     AVSubtitleRect *subRect;
@@ -134,17 +138,24 @@ struct TeletextContext {
     int             dispUpdate;
     int             dispMode;  //1:whole gfx, 0:only page
     char            time[8];
-
+    std::chrono::time_point<std::chrono::system_clock> lasttime;
     int             removewHeights;  //for double height and double sroll
     int             heightIndex;  //for double height and double sroll
 
     int             gotoPage;
-    int             atvSubtitlePage;
+    int             gotoGraphicsSubtitlePage;
+    int             atvSubtitlePage[TELETEXT_SUBTITLE_MAX_NUMBER];
+    int             dtvSubtitlePage[TELETEXT_SUBTITLE_MAX_NUMBER];
+    int             subtitlePageId;
+    int             subtitlePageNumber;
+    bool            subtitlePageNumberShowTimeOutFlag;
     bool            gotoAtvSubtitleFlg;
+    bool            gotoDtvSubtitleFlg;
 
     bool            isSubtitle;
 
     bool            atvTeletext;
+    bool            dtvTeletext;
     bool            reveal;
     bool            flash;
     vbi_search      *search;
@@ -175,7 +186,10 @@ public:
     int nextPageLocked(int dir, bool fetch=true);
     int nextSubPageLocked(int dir);
     int gotoPageLocked(int pageNum, int subPageNum);
-    int gotoDefaultSubtitleLocked();
+    int gotoDefaultAtvSubtitleLocked(int atvSubtitlePageId);
+    int gotoDefaultDtvSubtitleLocked(int dtvSubtitlePageId);
+    bool isRedundantSubtitlePage(int array[], int pageNumber, int n);
+    void selectSortSubtitlePage(int array[], int n);
     int getSubPageInfoLocked();
     int fetchVbiPageLocked(int pageNum, int subPageNum);
     void notifyTeletextLoadState(int val);
@@ -220,6 +234,7 @@ private:
     int convertPageDecimal2Hex(int magazine, int page);
 
     void notifyMixVideoState(int val);
+    bool isSubtitlePage(int array[], int pageNumber);
     int saveTeletextGraphicsRect2Spu(std::shared_ptr<AML_SPUVAR> spu, AVSubtitleRect *subRect) ;
 
     int saveDisplayRect2Spu(std::shared_ptr<AML_SPUVAR> spu, AVSubtitleRect *subRect);
@@ -231,6 +246,7 @@ private:
     int mDumpSub;
     int mIndex;
     int mGotoPageNum;
+    int mUpdateParamCount;
     static TeletextParser *sInstance;
 
     std::mutex mMutex;
