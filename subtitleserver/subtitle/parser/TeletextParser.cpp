@@ -542,7 +542,7 @@ static void tt2TimeUpdate(vbi_event *ev, void *user_data)
     }
 }
 
-static inline void setNavigatorPageNumber(vbi_page *page)
+static inline void setNavigatorPageNumber(vbi_page *page, int currentPage)
 {
      TeletextParser *parser = TeletextParser::getCurrentInstance();
      if ((parser == nullptr) || (page == nullptr)) {
@@ -550,7 +550,7 @@ static inline void setNavigatorPageNumber(vbi_page *page)
          return;
      }
 
-     if (page->have_flof == 0)
+     if (page->have_flof == 1 || vbi_bcd2dec(page->pgno) != currentPage)
          return;
      if ((parser->mNavigatorPage != page->pgno) || (parser->mNavigatorSubPage != page->subno)) {
          parser->mNavigatorPage = page->pgno;
@@ -568,7 +568,11 @@ static inline void setNavigatorPageNumber(vbi_page *page)
      }
      for (int i = 0; i < NAVIGATOR_COLORBAR_LINK_SIZE; i++) {
          NavigatorPageT navigatorPage;
-         navigatorPage.pageNo = page->nav_link[i].pgno;
+         if (vbi_bcd2dec(page->nav_link[i].pgno) > TELETEXT_MIN_PAGE_NUMBER && vbi_bcd2dec(page->nav_link[i].pgno) < TELETEXT_MAX_PAGE_NUMBER) {
+            navigatorPage.pageNo = page->nav_link[i].pgno;
+         } else {
+            navigatorPage.pageNo = vbi_dec2bcd(currentPage+i+1);
+         }
          navigatorPage.subPageNo= page->nav_link[i].subno;
          parser->mCurrentNavigatorPage.push_back(navigatorPage);
      }
@@ -778,7 +782,7 @@ static void handler(vbi_event *ev, void *userData) {
            ctx->pageState = (TeletextPageState)TT2_DISPLAY_STATE;
            ctx->searchDir = 1;
        }
-       setNavigatorPageNumber(page);
+       setNavigatorPageNumber(page,ctx->gotoPage);
        vbi_set_subtitle_flag(ctx->vbi, 0, ctx->subtitleMode, TELETEXT_USE_SUBTITLESERVER);
 
        #ifdef SUPPORT_LOAD_ANIMATION
@@ -1269,7 +1273,7 @@ int TeletextParser::fetchVbiPageLocked(int pageNum, int subPageNum) {
     vpt = vbi_classify_page(mContext->vbi, vbi_dec2bcd(pageNum), &subno, &lang);
     chopTop = mContext->chopTop || ((page->rows > 1) && (vpt == VBI_SUBTITLE_PAGE));
     vbi_teletext_set_current_page(mContext->vbi, vbi_dec2bcd(mContext->gotoPage), vbi_dec2bcd(mContext->subPageNum));
-    setNavigatorPageNumber(page);
+    setNavigatorPageNumber(page,mContext->gotoPage);
     vbi_set_subtitle_flag(mContext->vbi, mContext->isSubtitle, mContext->subtitleMode, TELETEXT_USE_SUBTITLESERVER);
     if (mContext->totalPages < MAX_BUFFERED_PAGES) {
         LOGI("%s, totalPages:%d\n",__FUNCTION__, mContext->totalPages);
