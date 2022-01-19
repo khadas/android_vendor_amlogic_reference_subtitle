@@ -550,8 +550,11 @@ static inline void setNavigatorPageNumber(vbi_page *page, int currentPage)
          return;
      }
 
-     if (page->have_flof == 1 || vbi_bcd2dec(page->pgno) != currentPage)
+     /*if (page->have_flof == 1 || vbi_bcd2dec(page->pgno) != currentPage){
+         LOGI("%s, page->have_flof:%d,currentPage:%d, vbi_bcd2dec(page->pgno):%d\n", __FUNCTION__,page->have_flof,currentPage,vbi_bcd2dec(page->pgno));
          return;
+     }*/
+
      if ((parser->mNavigatorPage != page->pgno) || (parser->mNavigatorSubPage != page->subno)) {
          parser->mNavigatorPage = page->pgno;
          parser->mNavigatorSubPage = page->subno;
@@ -568,11 +571,7 @@ static inline void setNavigatorPageNumber(vbi_page *page, int currentPage)
      }
      for (int i = 0; i < NAVIGATOR_COLORBAR_LINK_SIZE; i++) {
          NavigatorPageT navigatorPage;
-         if (vbi_bcd2dec(page->nav_link[i].pgno) > TELETEXT_MIN_PAGE_NUMBER && vbi_bcd2dec(page->nav_link[i].pgno) < TELETEXT_MAX_PAGE_NUMBER) {
-            navigatorPage.pageNo = page->nav_link[i].pgno;
-         } else {
-            navigatorPage.pageNo = vbi_dec2bcd(currentPage+i+1);
-         }
+         navigatorPage.pageNo = page->nav_link[i].pgno;
          navigatorPage.subPageNo= page->nav_link[i].subno;
          parser->mCurrentNavigatorPage.push_back(navigatorPage);
      }
