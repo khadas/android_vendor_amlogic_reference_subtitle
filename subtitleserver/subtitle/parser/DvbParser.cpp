@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <functional>
 
+#include <utils/CallStack.h>
 #include <utils/Log.h>
 #include "streamUtils.h"
 
@@ -105,7 +106,7 @@ struct DVBSubContext {
     unsigned int lastSpuOriginDisplayW;
     unsigned int lastSpuOriginDisplayH;
 
-    int timeOut;
+    int64_t timeOut;
     DVBSubRegion *regionList;
     DVBSubCLUT *clutList;
     DVBSubObject *objectList;
@@ -118,6 +119,8 @@ struct DVBSubContext {
             displayListSize(0), displayList(nullptr), displayDefinition(nullptr)
     {
         ALOGD("%s %d", __func__, __LINE__);
+        lastSpuOriginDisplayW = 0;
+        lastSpuOriginDisplayH = 0;
     }
     ~DVBSubContext() {ALOGD("%s %d", __func__, __LINE__);}
 
@@ -902,6 +905,20 @@ DvbParser::~DvbParser() {
     mTimeoutThread->join();
 }
 
+bool DvbParser::updateParameter(int type, void *data) {
+    if (TYPE_SUBTITLE_DTVKIT_DVB == type) {
+        DtvKitDvbParam *pDvbParam = (DtvKitDvbParam* )data;
+        mContext->compositionId = pDvbParam->compositionId;
+        mContext->ancillaryId = pDvbParam->ancillaryId;
+        if (mContext->compositionId <= 0 && mContext->ancillaryId <= 0) {
+            //invalid, reset to -1
+            mContext->compositionId = -1;
+            mContext->ancillaryId = -1;
+        }
+    }
+    return true;
+}
+
 int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize) {
     const uint8_t *bufEnd = buf + bufSize;
     const uint8_t *block;
@@ -1059,6 +1076,10 @@ void DvbParser::parseRegionSegment(const uint8_t *buf, int bufSize) {
         }
         region->bufSize = region->width * region->height;
         region->pbuf = (uint8_t *) malloc(region->bufSize);
+        if (!region->pbuf) {
+            LOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
+            return;
+        }
         LOGI("@@[%s::%d] malloc ptr=%p, size=%d\n",__FUNCTION__, __LINE__, region->pbuf, region->bufSize);
         LOGI("malloc region->buf=%p, size=%d\n", region->pbuf, region->bufSize);
         fill = 1;
@@ -1093,6 +1114,10 @@ void DvbParser::parseRegionSegment(const uint8_t *buf, int bufSize) {
         object = getObject(mContext, objectId);
         if (!object) {
             object = (DVBSubObject *)calloc(1, sizeof(DVBSubObject));
+            if (!object) {
+                LOGE("[%s::%d]DVBSubObject calloc error! \n", __FUNCTION__, __LINE__);
+                return;
+            }
             LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n",
                     __FUNCTION__, __LINE__, object, sizeof(DVBSubObject));
             object->id = objectId;
@@ -1101,6 +1126,10 @@ void DvbParser::parseRegionSegment(const uint8_t *buf, int bufSize) {
         }
         object->type = (*buf) >> 6;
         display = (DVBSubObjectDisplay *)calloc(1, sizeof(DVBSubObjectDisplay));
+        if (!display) {
+            LOGE("[%s::%d]DVBSubObjectDisplay calloc error! \n", __FUNCTION__, __LINE__);
+            return;
+        }
         LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, display, sizeof(DVBSubObjectDisplay));
 
         display->objectId = objectId;
@@ -1158,6 +1187,10 @@ void DvbParser::parsePageSegment(const uint8_t *buf, int bufSize) {
         }
         if (!display) {
             display = (DVBSubRegionDisplay *)calloc(1, sizeof(DVBSubRegionDisplay));
+            if (!display) {
+                LOGE("DVB SubRegion Display calloc fail!\n");
+                return;
+            }
         }
         LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, display, sizeof(DVBSubObjectDisplay));
 
@@ -1245,9 +1278,14 @@ void DvbParser::saveResult2Spu(std::shared_ptr<AML_SPUVAR> spu) {
             LOGE("save_display_set malloc fail, width=%d, height=%d \n", width, height);
             return;
         }
-        memset(pbuf,0,width * height * 4);
-        memset(spu->spu_data,0,DVB_SUB_SIZE);
-        //spu->spu_data = pbuf;
+        memset(pbuf, 0, width * height * 4);
+        if (spu->spu_data) free(spu->spu_data);
+        spu->spu_data = (unsigned char *)malloc(spu->buffer_size);
+        if (!spu->spu_data) {
+            LOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
+            return ;
+        }
+        memset(spu->spu_data, 0, spu->buffer_size);
         spu->spu_width = width;
         spu->spu_height = height;
         spu->spu_start_x = xPos;
@@ -1324,9 +1362,7 @@ void DvbParser::saveResult2Spu(std::shared_ptr<AML_SPUVAR> spu) {
             LOGI("free pbuf=%p\n", region->pbuf);
             LOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, pbuf);
             free(pbuf);
-            pbuf = NULL;
         }
-        pbuf = NULL;
     }
     filenoIndex++;
 }
@@ -1424,7 +1460,8 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
             LOGI("incomplete or broken packet");
             return -1;
         }
-        LOGI("## dvbsub_decode segmentType=%x", segmentType);
+        LOGI("## dvbsub_decode segmentType=%x, pageId=%d, cpage=%d, apage=%d",
+            segmentType, pageId, mContext->compositionId, mContext->ancillaryId);
         if (pageId == mContext->compositionId
                 || pageId == mContext->ancillaryId
                 || mContext->compositionId == -1
@@ -1433,6 +1470,7 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
             switch (segmentType) {
                 case DVBSUB_PAGE_SEGMENT:
                     parsePageSegment(p, segmentLength);
+                    dataSize = displayEndSegment(spu);
                     break;
                 case DVBSUB_REGION_SEGMENT:
                     parseRegionSegment(p, segmentLength);
@@ -1463,7 +1501,7 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
 
 
 int DvbParser::getDvbSpu() {
-    char tmpbuf[8];
+    char tmpbuf[8] = {0};
     int64_t packetHeader = 0;
 
     while (mDataSource->read(tmpbuf, 1) == 1) {
@@ -1471,20 +1509,20 @@ int DvbParser::getDvbSpu() {
             return 0;
         }
 
-        std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
-        spu->sync_bytes = AML_PARSER_SYNC_WORD;
 
         packetHeader = ((packetHeader<<8) & 0x000000ffffffff00) | tmpbuf[0];
         if ((packetHeader & 0xffffffff) == 0x000001bd) {
             LOGI("## [Hardware Demux]  get_dvb_teletext_spu hardware demux dvb %x,%llx,-----------\n",
                     tmpbuf[0], packetHeader & 0xffffffffff);
-            return hwDemuxParse(spu);
+            return hwDemuxParse();
         } else if (((packetHeader & 0xffffffffff)>>8) == AML_PARSER_SYNC_WORD
                 && (((packetHeader & 0xff)== 0x77) || ((packetHeader & 0xff)==0xaa))) {
             LOGI("## 222  get_dvb_teletext_spu soft demux dvb %x,%llx,-----------\n",
                     tmpbuf[0], packetHeader & 0xffffffffff);
-            return softDemuxParse(spu);
-        } else {
+            return softDemuxParse();
+        }
+        //TODO for coverity, useless_continue
+        /*else {
             // advance header, not report error if no problem.
             if (tmpbuf[0] == 0xFF) {
                 if (packetHeader == 0xFF || packetHeader == 0xFFFF || packetHeader == 0xFFFFFF
@@ -1500,15 +1538,15 @@ int DvbParser::getDvbSpu() {
             }
 
             //ALOGE("dvb package header error: %x, %llx",tmpbuf[0], packetHeader);
-        }
+        }*/
     }
 
     return 0;
 }
 
 
-int DvbParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
-    char tmpbuf[256];
+int DvbParser::hwDemuxParse() {
+    char tmpbuf[256] = {0};
     int64_t pts = 0, dts = 0;
     int64_t tempPts = 0, tempDts = 0;
     int packetLen = 0, pesHeaderLen = 0;
@@ -1574,15 +1612,11 @@ int DvbParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                 return -1;
             }
 
+            std::shared_ptr<AML_SPUVAR> spu = std::make_shared<AML_SPUVAR>();
+            spu->sync_bytes = AML_PARSER_SYNC_WORD;
             spu->subtitle_type = TYPE_SUBTITLE_DVB;
-            //spu->buffer_size = DVB_SUB_SIZE;
-            spu->spu_data = (unsigned char *)malloc(DVB_SUB_SIZE);
-            if (!spu->spu_data) {
-                LOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
-                return -1;
-            }
-
             spu->pts = pts;
+
             LOGE("[%s::%d]synctime:%lld\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime());
             //If gap time is large than 9 secs, think pts skip,notify info
             if (abs(mDataSource->getSyncTime() - pts) > 9*90000) {
@@ -1591,7 +1625,7 @@ int DvbParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             }
             mDataSource->read(tmpbuf, 2) ;
             packetLen -= 2;
-            tempPts = ((tmpbuf[0] << 8) | tmpbuf[1]);
+            //tempPts = ((tmpbuf[0] << 8) | tmpbuf[1]); //for coverity
             buf = (char *)malloc(packetLen);
             if (buf) {
                 LOGI("packetLen is %d, pts is %llx, delay is %llx,\n", packetLen, spu->pts, tempPts);
@@ -1616,6 +1650,8 @@ int DvbParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                         }
                     } else {
                         LOGI("dump-pts-hwdmx!error pts(%lld) frame was abondon\n", spu->pts);
+                        free(buf);
+
                         return -1;
                     }
                 } else {
@@ -1626,6 +1662,7 @@ int DvbParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                 LOGI("[%s::%d] free ptr=%p\n", __FUNCTION__, __LINE__, buf);
                 free(buf);
             }
+
         }
     }else {
         notifySubtitleErrorInfo(ERROR_DECODER_TIMEERROR);
@@ -1634,8 +1671,8 @@ int DvbParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
     return ret;
 }
 
-int DvbParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
-    char tmpbuf[256];
+int DvbParser::softDemuxParse() {
+    char tmpbuf[256] = {0};
     int64_t pts = 0, ptsDiff = 0;
     int ret = 0;
     int dataLen = 0;
@@ -1648,9 +1685,10 @@ int DvbParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
         pts     = subPeekAsInt64(tmpbuf + 7);
         ptsDiff = subPeekAsInt32(tmpbuf + 15);
 
+
+        std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
+        spu->sync_bytes = AML_PARSER_SYNC_WORD;
         spu->subtitle_type = TYPE_SUBTITLE_DVB;
-        //spu->buffer_size = DVB_SUB_SIZE;
-        spu->spu_data = (unsigned char *)malloc(DVB_SUB_SIZE);
         LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n",__FUNCTION__, __LINE__, spu->spu_data, DVB_SUB_SIZE);
         spu->pts = pts;
         LOGI("fmq send pts:%lld\n", spu->pts);
@@ -1661,8 +1699,15 @@ int DvbParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                 tmpbuf[10], tmpbuf[11], tmpbuf[12], tmpbuf[13], tmpbuf[14]);
 
         data = (char *)malloc(dataLen);
+        if (!data) {
+            LOGI("data buf malloc fail!\n");
+            return -1;
+        }
         memset(data, 0x0, dataLen);
         ret = mDataSource->read(data, dataLen);
+        if (ret <= 0) {
+            LOGI("no data now\n");
+        }
         ret = decodeSubtitle(spu, data, dataLen);
         if (ret != -1 && spu->buffer_size > 0) {
             LOGI("dump-pts-swdmx!success pts(%lld) frame was add\n", spu->pts);

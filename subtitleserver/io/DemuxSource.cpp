@@ -91,6 +91,7 @@ DemuxSource::DemuxSource() : mRdFd(-1), mState(E_SOURCE_INV),
     sInstance = this;
     mPlayerId = -1;
     mMediaSyncId = -1;
+    mSubType = -1;
     mMediaSync = MediaSync_create();
     ALOGD("DemuxSource");
 }
@@ -128,7 +129,7 @@ bool DemuxSource::notifyInfoChange() {
         int value = -1;
 
         if (auto lstn = wk_lstner.lock()) {
-            lstn->onTypeChanged(subType);
+            lstn->onTypeChanged(mSubType);
             return true;
         }
     }
@@ -146,7 +147,7 @@ void DemuxSource::loopRenderTime() {
                 ALOGV("[threadLoop] lstn null.\n");
                 continue;
             }
-            int64_t value;
+            int64_t value = 0;;
             if (-1 == mMediaSyncId) {
                 value = sysfsReadInt(SYSFS_VIDEO_PTS.c_str(), 16);
                 mSyncPts = value;
@@ -208,7 +209,7 @@ static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid)
         memset(&pesp, 0, sizeof(pesp));
         pesp.pid = pid;
         pesp.output = DMX_OUT_TAP;
-        if (12 == DemuxSource::getCurrentInstance()->subType) {
+        if (12 == DemuxSource::getCurrentInstance()->mSubType) {
             ALOGE("[open_dmx] dvb demux");
             pesp.pes_type = DMX_PES_SUBTITLE;
             pesp.input = DMX_IN_FRONTEND;
@@ -216,7 +217,7 @@ static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid)
             if (ret != AM_SUCCESS)
                 goto error;
             ALOGE("[open_dmx]AM_DMX_SetPesFilter");
-        } else if (13 == DemuxSource::getCurrentInstance()->subType) {
+        } else if (13 == DemuxSource::getCurrentInstance()->mSubType) {
             ALOGE("[open_dmx] teletext demux");
             pesp.pes_type = DMX_PES_SUBTITLE;//DMX_PES_TELETEXT;
             pesp.input = DMX_IN_FRONTEND;
@@ -224,7 +225,7 @@ static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid)
             if (ret != AM_SUCCESS)
                 goto error;
             ALOGE("[open_dmx]AM_DMX_SetPesFilter");
-        } else if (14 == DemuxSource::getCurrentInstance()->subType) {
+        } else if (14 == DemuxSource::getCurrentInstance()->mSubType) {
             //the scte27 data is section
             ALOGE("[open_dmx] scte27 demux: start section filter");
             memset(&param, 0, sizeof(param));
@@ -273,7 +274,6 @@ bool DemuxSource::start() {
     ALOGE(" DemuxSource start  mPid:%d", mPid);
     mState = E_SOURCE_STARTED;
     int total = 0;
-    int subtype = 0;
     TVSubtitleData *mDvbContext;
     mSegment = std::shared_ptr<BufferSegment>(new BufferSegment());
     mDemuxContext = new TVSubtitleData();
@@ -322,7 +322,7 @@ void DemuxSource::updateParameter(int type, void *data) {
         close_dvb_dmx(mDemuxContext, mDemuxId);
         open_dvb_dmx(mDemuxContext, mDemuxId, mPid );
      }
-     subType = type;
+    mSubType = type;
     ALOGE(" updateParameter mPid:%d, demuxId = %d", mPid, mDemuxId);
     return;
 }

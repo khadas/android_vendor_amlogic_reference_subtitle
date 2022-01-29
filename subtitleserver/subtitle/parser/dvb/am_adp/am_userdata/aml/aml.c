@@ -215,11 +215,11 @@ const AM_USERDATA_Driver_t aml_ud_drv = {
 
 int64_t am_get_video_pts(void* media_sync)
 {
-#define VIDEO_PTS_PATH "/sys/class/tsync/pts_video"
-	int64_t value;
+	#define VIDEO_PTS_PATH "/sys/class/tsync/pts_video"
+	int64_t value = 0;
 	if (media_sync != NULL) {
 		MediaSync_getTrackMediaTime(media_sync, &value);
-		value = 0x1FFFFFFFF & ((9*value)/100);
+		value = 0xFFFFFFFF & ((9*value)/100);//now userdata pass only 32bit.
 		return value;
 	} else {
 		char buffer[16] = {0};
@@ -414,8 +414,10 @@ static void aml_add_cc_data(AM_USERDATA_Device_t *dev, int poc, int type, uint8_
 	AM_UDDrvData *ud = dev->drv_data;
 	AM_CCData **pcc, *cc;
 	char  buf[256];
-	char *pp = buf;
-	int   left = sizeof(buf), i, pr;
+
+	//for coverity, this code has no effect.0830version index 176
+	//char *pp = buf;
+	//int   left = sizeof(buf), i, pr;
 
 	if (ud->cc_num >= MAX_CC_NUM) {
 #if 0
@@ -432,13 +434,14 @@ static void aml_add_cc_data(AM_USERDATA_Device_t *dev, int poc, int type, uint8_
 #endif
 	}
 
-	for (i = 0; i < len; i ++) {
+	//for coverity, this code has no effect.
+	/*for (i = 0; i < len; i ++) {
 		pr = snprintf(pp, left, "%02x ", p[i]);
 		if (pr < left) {
 			pp   += pr;
 			left -= pr;
 		}
-	}
+	}*/
 
 	AM_DEBUG(AM_DEBUG_LEVEL, "CC poc:%d ptype:%d data:%s", poc, type, buf);
 
@@ -469,6 +472,10 @@ static void aml_add_cc_data(AM_USERDATA_Device_t *dev, int poc, int type, uint8_
 		ud->free_list = cc->next;
 	} else {
 		cc = malloc(sizeof(AM_CCData));
+		if (!cc) {
+			AM_DEBUG(0, "Error! cc data malloc faild!");
+			return;
+		}
 		cc->buf  = NULL;
 		cc->size = 0;
 		cc->cap  = 0;
@@ -477,6 +484,10 @@ static void aml_add_cc_data(AM_USERDATA_Device_t *dev, int poc, int type, uint8_
 
 	if (cc->cap < len) {
 		cc->buf = realloc(cc->buf, len);
+		if (!cc->buf) {
+			AM_DEBUG(0, "Error! cc buf realloc faild!");
+			return;
+		}
 		cc->cap = len;
 	}
 
@@ -508,18 +519,17 @@ len, int64_t pts, int pts_valid, int64_t duration)
 	if (len < 5)
 		return;
 
-	//TODO coverity p size is 4, p[4] overflow, index 174
 	if (p[4] != 3)
 		return;
 
 	if (type == I_TYPE)
 		aml_flush_cc_data(dev);
 
-	if (poc == ud->curr_poc + 1) {
+	if (poc == ud->curr_poc + 1 || poc == ud->curr_poc) {
 		AM_CCData *cc, **pcc;
 
 		aml_write_userdata(dev, p, len, pts, pts_valid, duration);
-		ud->curr_poc ++;
+		ud->curr_poc = poc;
 
 		pcc = &ud->cc_list;
 		while ((cc = *pcc)) {
@@ -664,8 +674,8 @@ static int aml_process_scte_userdata(AM_USERDATA_Device_t *dev, uint8_t *data, i
 			array_position += 3;
 			cc_count++;
 		}
-		else
-			continue;
+		/*else
+			continue;*/ //for coverity useless_continue
 	}
 	cc_data[5] = 0x40 |cc_count;
 	size = 7 + cc_count*3;
@@ -707,7 +717,8 @@ static int aml_process_mpeg_userdata(AM_USERDATA_Device_t *dev, uint8_t *data, i
 			uint32_t v;
 			int pl;
 
-			pp = (uint8_t*)&hdr->atsc_flag;
+			//pp = (uint8_t*)&hdr->atsc_flag;
+			pp = pd + 8;//for coverity, in case p[4] atsc flag overrun
 			pl = 8;
 
 			v = (pd[4] << 24) | (pd[5] << 16) | (pd[6] << 8) | pd[7];

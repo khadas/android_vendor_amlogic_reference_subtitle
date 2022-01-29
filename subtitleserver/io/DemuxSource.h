@@ -36,7 +36,7 @@ public:
     virtual void setPipId (int mode, int id);
     static inline DemuxSource *getCurrentInstance();
     std::shared_ptr<BufferSegment> mSegment;
-    int subType;
+    int mSubType;
     virtual size_t lseek(int offSet, int whence) {return 0;}
 private:
     void loopRenderTime();

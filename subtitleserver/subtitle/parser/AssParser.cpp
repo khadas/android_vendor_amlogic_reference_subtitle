@@ -231,14 +231,10 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
             memcpy(spuBufPiece, mRestbuf, mRestLen);
         }
 
-        if ((currentType == AV_CODEC_ID_DVD_SUBTITLE || currentType == AV_CODEC_ID_VOB_SUBTITLE)
-                && mRestLen > 0) {
-            LOGI("decode rest data!\n");
-        } else {
-            mDataSource->read(spuBufPiece + mRestLen, 20);
-            dataSize -= 20;
-            tmpSpuBuffer += 20;
-        }
+        //for coverity dead error condition
+        mDataSource->read(spuBufPiece + mRestLen, 20);
+        dataSize -= 20;
+        tmpSpuBuffer += 20;
 
         int rdOffset = 0;
         int syncWord = subPeekAsInt32(spuBufPiece + rdOffset);
@@ -249,7 +245,7 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
                     spuBufPiece[4], spuBufPiece[5], spuBufPiece[6], spuBufPiece[7],
                     spuBufPiece[8], spuBufPiece[9], spuBufPiece[10], spuBufPiece[11]);
             mDataSource->read(spuBufPiece, dataSize);
-            dataSize = 0;
+            //dataSize = 0;
             LOGE("\n\n ******* find wrong subtitle header!! ******\n\n");
             delete[] spuBuf;
             return -1;
@@ -269,7 +265,7 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
         if (currentLen > dataSize) {
             LOGI("currentLen > size");
             mDataSource->read(spuBufPiece, dataSize);
-            dataSize = 0;
+            //dataSize = 0;
             delete[] spuBuf;
             return -1;
         }
@@ -366,7 +362,7 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
     //LOGI("[%s::%d] error! spuBuf=%x, \n", __FUNCTION__, __LINE__, spuBuf);
     if (spuBuf) {
         delete[] spuBuf;
-        spuBuf = NULL;
+        //spuBuf = NULL;
     }
     return ret;
 }
@@ -378,7 +374,7 @@ int AssParser::getInterSpu() {
     //TODO: commom place
     spu->sync_bytes = AML_PARSER_SYNC_WORD;//0x414d4c55;
     // simply, use new instead of malloc, can automatically initialize the buffer
-    spu->useMalloc = true;
+    spu->useMalloc = false;
     spu->isSimpleText = true;
     int ret = getSpu(spu);
 

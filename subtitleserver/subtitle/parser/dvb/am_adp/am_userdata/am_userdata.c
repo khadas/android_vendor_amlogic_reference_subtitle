@@ -352,7 +352,7 @@ AM_ErrorCode_t AM_USERDATA_Open(int dev_no, const AM_USERDATA_OpenPara_t *para)
 	if (dev->open_cnt)
 	{
 		AM_DEBUG(1, "userdata device %d has already been openned", dev_no);
-		//dev->open_cnt++;
+		dev->open_cnt++;
 		goto final;
 	}
 

@@ -14,6 +14,7 @@ public:
     DvbParser(std::shared_ptr<DataSource> source);
     virtual ~DvbParser();
     virtual int parse();
+    virtual bool updateParameter(int type, void *data);
     virtual void dump(int fd, const char *prefix);
     void notifyCallerAvail(int avail);
 
@@ -23,8 +24,8 @@ private:
     int getDvbSpu();
     int decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const int size);
 
-    int softDemuxParse(std::shared_ptr<AML_SPUVAR> spu);
-    int hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu);
+    int softDemuxParse();
+    int hwDemuxParse();
 
     void parsePageSegment(const uint8_t *buf, int bufSize);
     void parseRegionSegment(const uint8_t *buf, int bufSize);

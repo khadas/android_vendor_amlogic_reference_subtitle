@@ -143,6 +143,7 @@ class SubtitleContext : public android::RefBase {
 public:
     SubtitleContext() {
         if (DEBUG_CALL) ALOGD("call>> %s [%p]", __func__, this);
+        mClient = nullptr;
     }
 
     ~SubtitleContext() {

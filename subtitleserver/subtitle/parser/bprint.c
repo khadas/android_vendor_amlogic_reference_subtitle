@@ -74,8 +74,10 @@ int ff_fast_malloc(void *ptr, unsigned int *size, size_t min_size, int zero_real
     av_freep(ptr);
     val = zero_realloc ? av_mallocz(min_size) : av_malloc(min_size);
     memcpy(ptr, &val, sizeof(val));
-   if (!val)
-        min_size = 0;
+   if (!val) {
+       av_free(val);
+       min_size = 0;
+   }
     *size = min_size;
     return 1;
 }

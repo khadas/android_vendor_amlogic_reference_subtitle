@@ -23,11 +23,14 @@ using ::vendor::amlogic::hardware::subtitleserver::V1_0::Result;
 
 typedef MessageQueue<uint8_t, kSynchronizedReadWrite> DataMQ;
 
-typedef struct {
+typedef struct SubtitleContext {
     sp<ISubtitleServer> mRemote;
     std::unique_ptr<DataMQ> mDataMQ;
     int sId;
     std::mutex mLock;   // TODO: maybe we need global lock
+    SubtitleContext() {
+        sId = -1;
+    }
 } SubtitleContext;
 
 typedef enum {

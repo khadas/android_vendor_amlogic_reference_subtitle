@@ -40,6 +40,10 @@ FmqReceiver::~FmqReceiver() {
 bool FmqReceiver::readLoop() {
     IpcPackageHeader curHeader;
     rbuf_handle_t bufferHandle = ringbuffer_create(1024*1024, "fmqbuffer");
+    if (bufferHandle == nullptr) {
+        ALOGE("%s ring buffer create error! \n", __func__);
+        return false;
+    }
 
     ALOGD("%s", __func__);
     while (!mStop) {
@@ -54,9 +58,14 @@ bool FmqReceiver::readLoop() {
             size_t available = mReader->availableSize();
             if (available > 0) {
                 char *recvBuf = (char *)malloc(available);
+                if (!recvBuf) {
+                    ALOGE("%s recvBuf malloc error! \n", __func__);
+                    continue;
+                }
                 size_t readed = mReader->read((uint8_t*)recvBuf, available);
                 if (readed <= 0) {
                     usleep(1000);
+                    free(recvBuf);
                     continue;
                 }
 
@@ -97,6 +106,10 @@ bool FmqReceiver::readLoop() {
                 ringbuffer_read(bufferHandle, buffer, sizeof(IpcPackageHeader), RBUF_MODE_BLOCK);
 
                 char *payloads = (char *) malloc(curHeader.dataSize +4);
+                if (!payloads) {
+                    ALOGE("%s payload malloc error! \n", __func__, __LINE__);
+                    continue;
+                }
                 memcpy(payloads, &curHeader.pkgType, 4); // fill package type
                 ringbuffer_read(bufferHandle, payloads+4, curHeader.dataSize, RBUF_MODE_BLOCK);
                 {  // notify listener
@@ -105,9 +118,9 @@ bool FmqReceiver::readLoop() {
                     //ALOGD("payload listener=%p type=%x, %d", listener.get(), peekAsSocketWord(payloads), curHeader.dataSize);
                     if (listener != nullptr) {
                         if (listener->onData(payloads, curHeader.dataSize+4) < 0) {
-                            //free(payloads);
-                            ringbuffer_free(bufferHandle);
-                            //return -1;
+                            //for some ext and internel sub switch, if here return, then ext sub(now this no data) switch
+                            //to internel will no sub. so not return.
+                            ALOGE("%s no need free buffer handle, need wait stop now! \n", __func__);
                         }
                     }
                 }

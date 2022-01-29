@@ -31,7 +31,7 @@ public:
 
 private:
     int mFd;
-    int mFdExtra;
+    //int mFdExtra;
 };
 
 #endif

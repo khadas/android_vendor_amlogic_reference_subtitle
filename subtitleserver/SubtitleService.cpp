@@ -219,6 +219,7 @@ void SubtitleService::setSubPageId(int pageId) {
     switch (mSubParam.dtvSubType) {
         case DTV_SUB_DTVKIT_DVB:
             mSubParam.dtvkitDvbParam.compositionId = pageId;
+            mSubtiles->setParameter(&mSubParam);
         break;
         case DTV_SUB_DTVKIT_TELETEXT:
             mSubParam.ttParam.magazine = pageId;
@@ -231,6 +232,7 @@ void SubtitleService::setSubAncPageId(int ancPageId) {
     switch (mSubParam.dtvSubType) {
         case DTV_SUB_DTVKIT_DVB:
             mSubParam.dtvkitDvbParam.ancillaryId = ancPageId;
+            mSubtiles->setParameter(&mSubParam);
         break;
         case DTV_SUB_DTVKIT_TELETEXT:
             mSubParam.ttParam.page = ancPageId;
@@ -279,7 +281,7 @@ void SubtitleService::setPipId(int mode, int id) {
     if (NULL == mDataSource )
         return;
     mDataSource->setPipId(mode, id);
-   if ((DTV_SUB_DTVKIT_SCTE27 == mSubParam.dtvSubType) && (mode == PIP_MEDIASYNC_ID) && (!same)) {
+   if (/*(DTV_SUB_DTVKIT_SCTE27 == mSubParam.dtvSubType) && */(mode == PIP_MEDIASYNC_ID) && (!same)) {
        mSubtiles->setParameter(&mSubParam);
    }
 }

@@ -12,7 +12,7 @@ Lyrics::~Lyrics() {
 }
 
 std::shared_ptr<ExtSubItem> Lyrics::decodedItem() {
-    int a1, a2, a3;
+    int64_t a1, a2, a3;
     char text[LINE_LEN + 1];
     int pattenLen;
 
@@ -24,7 +24,8 @@ std::shared_ptr<ExtSubItem> Lyrics::decodedItem() {
         }
 
         // parse start and text
-        if (sscanf(mBuffer, "[%d:%d.%d]%[^\n\r]", &a1, &a2, &a3, text) < 4) {
+        //TODO for coverity
+        if (sscanf(mBuffer, "[%lld:%lld.%lld]%[^\n\r]", &a1, &a2, &a3, text) < 4) {
             mReuseBuffer = false;
             // fail, check again.
             continue;
@@ -40,7 +41,7 @@ std::shared_ptr<ExtSubItem> Lyrics::decodedItem() {
             return item;
         }
         // has end??
-        pattenLen = sscanf(mBuffer, "[%d:%d.%d]%[^\n\r]", &a1, &a2, &a3, text);
+        pattenLen = sscanf(mBuffer, "[%lld:%lld.%lld]%[^\n\r]", &a1, &a2, &a3, text);
         if (pattenLen == 4) {
             mReuseBuffer = true;
             return item;

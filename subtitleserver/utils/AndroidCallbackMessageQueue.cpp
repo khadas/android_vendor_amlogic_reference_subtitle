@@ -250,6 +250,7 @@ bool AndroidCallbackMessageQueue::postDisplayData(const char *data,  int type,
 
     bool allocRes = false;
 
+
     Return<void> r = ashmemAllocator->allocate(size+1024, [&](bool success, const hidl_memory& _mem) {
             if (success) {
                 mem  = HidlMemory::getInstance(_mem);

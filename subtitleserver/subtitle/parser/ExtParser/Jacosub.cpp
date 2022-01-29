@@ -86,8 +86,6 @@ void Jacosub::parseHeaderInfo() {
                 default:
                     break;
             }
-        } else {
-            continue;
         }
     }
 
@@ -101,8 +99,20 @@ void Jacosub::parseHeaderInfo() {
 std::shared_ptr<ExtSubItem> Jacosub::decodedItem() {
     char *p, *q;
     char *line1 = (char *)MALLOC(LINE_LEN);
+    if (!line1) {
+        ALOGE("[%s::%d]line1 malloc error!\n", __FUNCTION__, __LINE__);
+        return nullptr;
+    }
     char *line2 = (char *)MALLOC(LINE_LEN);
+    if (!line2) {
+        ALOGE("[%s::%d]line2 malloc error!\n", __FUNCTION__, __LINE__);
+        return nullptr;
+    }
     char *directive = (char *)MALLOC(LINE_LEN);
+    if (!directive) {
+        ALOGE("[%s::%d] directive malloc error!\n", __FUNCTION__, __LINE__);
+        return nullptr;
+    }
     memset(line1, 0, LINE_LEN);
     memset(line2, 0, LINE_LEN);
     memset(directive, 0, LINE_LEN);
@@ -238,7 +248,8 @@ std::shared_ptr<ExtSubItem> Jacosub::decodedItem() {
             }   //-- switch
         }
         *q = '\0';
-        subStr.append(mReader->strdup(line1));
+        char *dupLine1 = mReader->strdup(line1);
+        subStr.append(dupLine1);
         std::shared_ptr<ExtSubItem> item = std::shared_ptr<ExtSubItem>(new ExtSubItem());
         item->start = start;
         item->end = end;
@@ -246,6 +257,7 @@ std::shared_ptr<ExtSubItem> Jacosub::decodedItem() {
         free(line1);
         free(line2);
         free(directive);
+        if (dupLine1) free(dupLine1);
         return item;
     }
     free(line1);

@@ -76,6 +76,7 @@ SubtitleServer::SubtitleServer() {
     mOpenCalled = false;
     mLastOpenType = OpenType::TYPE_APPSDK;
     mLastOpenTime = -1;
+    mDumpMaps = -1;
 
 }
 

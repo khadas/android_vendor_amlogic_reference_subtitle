@@ -205,7 +205,13 @@ static AM_ErrorCode_t dvb_set_pes_filter(AM_DMX_Device_t *dev, AM_DMX_Filter_t *
 
 	UNUSED(dev);
 
-	fcntl(fd,F_SETFL,O_NONBLOCK);
+	//TODO for coverity check_return
+	ret = fcntl(fd,F_SETFL,O_NONBLOCK);
+	if (ret == -1)
+	{
+		AM_DEBUG(1, "fcntl failed (%s)", strerror(errno));
+		return AM_DMX_ERR_SYS;
+	}
 
 	ret = ioctl(fd, DMX_SET_PES_FILTER, params);
 	if (ret == -1)

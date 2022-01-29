@@ -23,7 +23,7 @@ makeNewSpBuffer(const char *buffer, int size) {
 
 SocketSource::SocketSource() : mTotalSubtitle(-1),
                 mSubtitleType(-1), mRenderTimeUs(0), mStartPts(0) {
-    SocketSource(nullptr);
+    SocketSource("");
 }
 
 SubtitleIOType SocketSource::type() {
@@ -32,6 +32,7 @@ SubtitleIOType SocketSource::type() {
 
 SocketSource::SocketSource(const std::string url) : mTotalSubtitle(-1),
                 mSubtitleType(-1), mRenderTimeUs(0), mStartPts(0) {
+    (void) url;
     mNeedDumpSource = false;
     mDumpFd = -1;
     mSegment = std::shared_ptr<BufferSegment>(new BufferSegment());

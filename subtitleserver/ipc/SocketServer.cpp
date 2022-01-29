@@ -239,6 +239,10 @@ int SubSocketServer::clientConnected(int sockfd) {
             // enough data, process it.
             if (ringbuffer_read_avail(bufferHandle) >= curHeader.dataSize) {
                 char *payloads = (char *) malloc(curHeader.dataSize +4);
+                if (!payloads) {
+                    ALOGE("%s payloads malloc error! \n", __func__);
+                    continue;
+                }
                 memcpy(payloads, &curHeader.pkgType, 4); // fill package type
                 ringbuffer_read(bufferHandle, payloads+4, curHeader.dataSize, RBUF_MODE_BLOCK);
                 {  // notify listener

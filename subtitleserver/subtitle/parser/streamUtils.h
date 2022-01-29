@@ -18,8 +18,12 @@ static inline int subAscii2Value(char ascii) {
  *  Peek, do not affect the buffer contents and pointer
  */
 static inline int subPeekAsInt32(const char *buffer) {
-    return (buffer[0] << 24) | (buffer[1] << 16)
-          | (buffer[2] << 8) | buffer[3];
+    int value = 0;
+    for (int i = 0; i < 4; i++) {
+        value <<= 8;
+        value |= buffer[i];
+    }
+    return value;
 }
 
 /**

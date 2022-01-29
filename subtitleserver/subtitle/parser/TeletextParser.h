@@ -144,9 +144,6 @@ struct TeletextContext {
 
     int             gotoPage;
     int             gotoGraphicsSubtitlePage;
-    int             atvSubtitlePage[TELETEXT_SUBTITLE_MAX_NUMBER];
-    int             dtvSubtitlePage[TELETEXT_SUBTITLE_MAX_NUMBER];
-    int             subtitlePageId;
     int             subtitlePageNumber;
     bool            subtitlePageNumberShowTimeOutFlag;
     bool            gotoAtvSubtitleFlg;
@@ -234,7 +231,6 @@ private:
     int convertPageDecimal2Hex(int magazine, int page);
 
     void notifyMixVideoState(int val);
-    bool isSubtitlePage(int array[], int pageNumber);
     int saveTeletextGraphicsRect2Spu(std::shared_ptr<AML_SPUVAR> spu, AVSubtitleRect *subRect) ;
 
     int saveDisplayRect2Spu(std::shared_ptr<AML_SPUVAR> spu, AVSubtitleRect *subRect);

@@ -40,6 +40,7 @@ enum SubtitleType {
 #define SUB_PLAYING     1
 #define SUB_STOP        2
 #define SUB_EXIT        3
+#define HEADER_SIZE 20
 
 #define VOB_SUB_WIDTH 1920
 #define VOB_SUB_HEIGHT 1280

@@ -123,7 +123,10 @@ static void initBitmap(TVSubtitleData *ctx, int bitmap_w, int bitmap_h) {
 static void updateSizeCallback(AM_SCTE27_Handle_t handle, int width, int height) {
     LOGI("scte27_update_size width:%d,height:%d", width, height);
     TVSubtitleData *sub = (TVSubtitleData *)AM_SCTE27_GetUserData(handle);
-
+    if (!sub) {
+        ALOGE("Error!Scte27 get userdata null! ");
+        return;
+    }
     pthread_mutex_lock(&sub->lock);
     sub->sub_w = width;
     sub->sub_h = height;

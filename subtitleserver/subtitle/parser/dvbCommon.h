@@ -18,9 +18,15 @@
 
 
 #ifndef AV_RB16
-#define AV_RB16(x)                           \
-    ((((const uint8_t*)(x))[0] << 8) |          \
-     ((const uint8_t*)(x))[1])
+static inline int AV_RB16(const uint8_t *buffer)
+{
+    int value = 0;
+    for (int i = 0; i < 2; i++) {
+        value <<= 8;
+        value |= buffer[i];
+    }
+    return value;
+}
 #endif
 #ifndef AV_RB32
 #define AV_RB32(x)                                \

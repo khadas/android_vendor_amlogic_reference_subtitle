@@ -67,6 +67,7 @@ void afd_evt_callback(long devno, int eventType, void *param, void *userdata) {
 UserDataAfd::UserDataAfd() {
     mNotifier = nullptr;
     mPlayerId = -1;
+    mMode = -1;
     LOGI("creat UserDataAfd");
     sInstance = this;
     mThread = nullptr;

@@ -1,6 +1,6 @@
 #define LOG_TAG "SubtitleAPI"
 
-#include "jni.h"
+#include <jni.h>
 #include <utils/RefBase.h>
 #include <utils/Mutex.h>
 

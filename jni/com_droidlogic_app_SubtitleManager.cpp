@@ -376,8 +376,16 @@ static void nativeSetSctePid(JNIEnv* env, jclass clazz, jint pid) {
     } else {
         ALOGE("Subtitle Connection not established");
     }
-
 }
+
+static void nativeSetSubPid(JNIEnv* env, jclass clazz, jint pid, jint onid, jint tsid) {
+    if (getJniContext()->mSubContext != nullptr) {
+        getJniContext()->mSubContext->setSubPid(pid, onid, tsid);
+    } else {
+        ALOGE("Subtitle Connection not established");
+    }
+}
+
 static void nativeSetPlayerType(JNIEnv* env, jclass clazz, jint type) {
     if (type == 1) {
         ALOGE("SubtitleServerHidlClient nativeSetPlayerType amu ...");
@@ -519,6 +527,7 @@ static JNINativeMethod SubtitleManager_Methods[] = {
     {"nativeSetSubType", "(I)V", (void *)nativeSetSubType},
     {"nativeSetPlayerType", "(I)V", (void *)nativeSetPlayerType},
     {"nativeSetSctePid", "(I)V", (void *)nativeSetSctePid},
+    {"nativeSetSubPid", "(III)V", (void *)nativeSetSubPid},
     {"nativeResetForSeek", "()V", (void *)nativeResetForSeek},
     {"nativeTtControl", "(IIII)I", (void *)nativeTtControl},
     {"nativeTtGoHome", "()I", (void *)nativeTtGoHome},

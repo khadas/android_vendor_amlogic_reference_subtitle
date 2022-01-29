@@ -79,6 +79,9 @@ typedef struct alm_spuvar
         }
     }
 
+    bool isBitmapSpu() {
+        return spu_width > 0 && spu_height > 0 && buffer_size > 0;
+    }
 
     alm_spuvar() : sync_bytes(0), buffer_size(0), useMalloc(true), isSimpleText(false),
             pid(0), pts(0), isImmediatePresent(false), isExtSub(false), isKeepShowing(false),
@@ -91,9 +94,9 @@ typedef struct alm_spuvar
 
     ~alm_spuvar() {
         if (useMalloc) {
-            if(spu_data != nullptr) free(spu_data);
+            if (spu_data != nullptr) free(spu_data);
         } else {
-            if(spu_data != nullptr) delete[] spu_data;
+            if (spu_data != nullptr) delete[] spu_data;
         }
         spu_data = nullptr;
     }

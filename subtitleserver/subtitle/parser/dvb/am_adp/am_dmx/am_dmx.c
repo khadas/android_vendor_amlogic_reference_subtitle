@@ -160,7 +160,10 @@ static void* dmx_data_thread(void *arg)
 #define BUF_SIZE (4096)
 
 	sec_buf = (uint8_t*)malloc(BUF_SIZE);
-
+	//for coverity
+	if (sec_buf) {
+		memset(sec_buf, 0, BUF_SIZE);
+	}
 	while (dev->enable_thread)
 	{
 		AM_DMX_FILTER_MASK_CLEAR(&mask);

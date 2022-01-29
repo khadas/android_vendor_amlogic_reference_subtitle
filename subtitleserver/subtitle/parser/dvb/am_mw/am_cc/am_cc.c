@@ -401,6 +401,16 @@ static AM_ErrorCode_t am_auto_dectect_data_pgno(AM_CC_Decoder_t *cc, int pgno) {
 
 }
 
+static AM_ErrorCode_t am_q_tone_data_event(AM_CC_Decoder_t *cc, uint8_t * data, int left) {
+	if (cc->cpara.q_tone_cb && left > 0) {
+        AM_DEBUG(0, "am_filter_q_tone_data: %s, size:%d", data, left);
+		cc->cpara.q_tone_cb(cc, data, left);
+		return AM_TRUE;
+	}
+	return AM_FALSE;
+
+}
+
 static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data)
 {
 	AM_CC_Decoder_t *cc = (AM_CC_Decoder_t*)user_data;
@@ -412,6 +422,18 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data)
 	if (ev->type == VBI_EVENT_CAPTION) {
 		if (cc->hide)
 			return;
+
+		/*q_tone event*/
+		if (cc->decoder.dtvcc.has_q_tone_data) {
+			int len = cc->decoder.dtvcc.index_q_tone;
+			am_q_tone_data_event(cc, cc->decoder.dtvcc.q_tone, len);
+			for (int i = 0; i < len; i++) {
+				cc->decoder.dtvcc.index_q_tone = 0;
+			}
+			cc->decoder.dtvcc.index_q_tone = 0;
+			AM_DEBUG(AM_DEBUG_LEVEL, "q_tone_data event, no need show!");
+			return;
+		}
 
 		AM_DEBUG(AM_DEBUG_LEVEL, "VBI Caption event: pgno %d, cur_pgno %d, cc->auto_detect_play:%d",
 			ev->ev.caption.pgno, cc->vbi_pgno, cc->auto_detect_play);
@@ -819,33 +841,6 @@ static void *am_vbi_data_thread(void *arg)
 	return NULL;
 }
 
-static AM_ErrorCode_t am_filter_q_tone_data(AM_CC_Decoder_t *cc, uint8_t * data, int left) {
-	static char display2_buffer[10*1024];
-	static char tone_buffer[10*1024];
-	int m = 0;
-	for (m = 0; m < left; m++) {
-		sprintf(&display2_buffer[m*3], " %02x", (char)data[m]);
-		if (data[m] == FLAG_Q_TONE_DATA) {
-			break;
-		}
-	}
-	int n = 0;
-	for (int j = m; j < left; j++) {
-		sprintf(&tone_buffer[n*3], " %02x", (char)data[j]);
-		n++;
-	}
-	if (n > 0) {
-		AM_DEBUG(0, "am_filter_q_tone_data: %s, size:%d", tone_buffer, strlen(tone_buffer));
-		if (cc->cpara.q_tone_cb) {
-			cc->cpara.q_tone_cb(cc, tone_buffer, strlen(tone_buffer));
-			return AM_TRUE;
-		}
-	}
-	return AM_FALSE;
-
-}
-
-
 /**\brief CC data thread*/
 static void *am_cc_data_thread(void *arg)
 {
@@ -908,11 +903,7 @@ static void *am_cc_data_thread(void *arg)
 				AM_DEBUG(AM_DEBUG_LEVEL, "Unprocessed user_data_type_code 0x%02x, we only expect 0x03", cc_data[4]);
 				continue;
 			}
-			//TODO coverity index 177 178
-			if (am_filter_q_tone_data(cc, cc_data+4, cc_data_cnt-4)) {
-				AM_DEBUG(AM_DEBUG_LEVEL, "q_tone_data, no need decoder and draw!");
-				continue;
-			}
+
 			if (vout_fd != -1)
 				am_cc_set_tv(cc_data+4, cc_data_cnt-4);
 			AM_DEBUG(AM_DEBUG_LEVEL, "debug-cc index:%d frame", index);
@@ -1182,6 +1173,9 @@ AM_ErrorCode_t AM_CC_Create(AM_CC_CreatePara_t *para, AM_CC_Handle_t *handle)
 
 	memset(cc, 0, sizeof(AM_CC_Decoder_t));
 	cc->json_chain_head = (AM_CC_JsonChain_t*) calloc (sizeof(AM_CC_JsonChain_t), 1);
+	if (cc->json_chain_head == NULL)
+		return AM_CC_ERR_NO_MEM;
+
 	cc->json_chain_head->json_chain_next = cc->json_chain_head;
 	cc->json_chain_head->json_chain_prior = cc->json_chain_head;
 	cc->json_chain_head->count = 0;

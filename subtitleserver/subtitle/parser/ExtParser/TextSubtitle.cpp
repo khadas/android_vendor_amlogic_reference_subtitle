@@ -45,6 +45,7 @@ std::shared_ptr<AML_SPUVAR> TextSubtitle::popDecodedItem() {
     if (totalItems() <= 0) {
         return nullptr;
     }
+    ALOGD("TextSubtitle::popDecodedItem");
     std::shared_ptr<ExtSubItem> item = mSubData.subtitles.front();
     mSubData.subtitles.pop_front();
     std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
@@ -64,7 +65,6 @@ std::shared_ptr<AML_SPUVAR> TextSubtitle::popDecodedItem() {
     spu->buffer_size = str.length();
     spu->isExtSub = true;
 
-    ALOGD("TextSubtitle::popDecodedItem [%lld->%lld] %s", spu->pts, spu->m_delay, spu->spu_data);
     return spu;
 }
 

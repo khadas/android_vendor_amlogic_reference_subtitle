@@ -173,10 +173,10 @@ void VbiSource::loopDriverData() {
 
             if (ret >= (int)sizeof(struct vbi_data_s)) {
                 while (ret >= (int)sizeof(struct vbi_data_s)) {
-                    ALOGD("loopDriverData=line:%d data:%s", pd->line_num, pd->b);
+                    //ALOGD("loopDriverData=line:%d data:%s", pd->line_num, pd->b);
                     unsigned char sub_header[ATV_TELETEXT_SUB_HEADER_LEN] = {0x41, 0x4d, 0x4c, 0x55, 0x41, 0};
-                    sub_header[5] = (pd->line_num >> 24) & 0xff;
-                    sub_header[6] = (pd->line_num >> 16) & 0xff;
+                    sub_header[5] = 0;//line_num 16 bit, for coverity
+                    sub_header[6] = 0;//line_num 16 bit, for coverity
                     sub_header[7] = (pd->line_num >> 8) & 0xff;
                     sub_header[8] = pd->line_num & 0xff;
 

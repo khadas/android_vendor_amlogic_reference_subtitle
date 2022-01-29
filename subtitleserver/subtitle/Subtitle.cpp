@@ -162,7 +162,8 @@ bool Subtitle::setParameter(void *params) {
     mSubPrams->update();// need update before use
 
     //process ttx skip page func.
-    if ((mSubPrams->subType == TYPE_SUBTITLE_DVB_TELETEXT) || (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_TELETEXT)) {
+    if ((mSubPrams->subType == TYPE_SUBTITLE_DVB_TELETEXT) || (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_TELETEXT)
+        || (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_DVB)) {
         mPendingAction = ACTION_SUBTITLE_SET_PARAM;
         mCv.notify_all();
         return true;

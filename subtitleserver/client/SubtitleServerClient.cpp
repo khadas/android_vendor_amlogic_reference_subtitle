@@ -168,6 +168,7 @@ SubtitleServerClient::SubtitleServerClient(bool isFallback, sp<SubtitleListener>
     mIsFallback = isFallback;
     mListener = listener;
     mOpenType = openType;
+    mSessionId = -1;
     initRemoteLocked();
 }
 
@@ -264,6 +265,10 @@ bool SubtitleServerClient::open(int fd, int fdData, int trackId, int ioType) {
     ::lseek(fd, 0, SEEK_SET);
     LOG(INFO) << "open session:" << mSessionId << " fd:" << fd << " fdData:" << fdData;
     nativeHandle = native_handle_create(2, 1);
+    if (nativeHandle == nullptr) {
+        LOG(ERROR) << "Creat native handle failed!";
+        return false;
+    }
     nativeHandle->data[0] = fd;
     nativeHandle->data[1] = fdData;
     nativeHandle->data[2] = trackId;
@@ -291,7 +296,7 @@ bool SubtitleServerClient::open(int fd, int ioType) {
         ::lseek(fd, 0, SEEK_SET);
         LOG(INFO) << "open session:" << mSessionId << " fd:" << fd;
         nativeHandle = native_handle_create(1, 0);
-        nativeHandle->data[0] = fd;
+        if (nativeHandle != nullptr) nativeHandle->data[0] = fd;
     } else {
         nativeHandle = native_handle_create(0, 0);
     }

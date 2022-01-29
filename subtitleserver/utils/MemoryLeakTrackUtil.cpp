@@ -87,6 +87,7 @@ public:
                 unsigned long inode =0;
                 int pathIndex = 0;
 
+                static unsigned long lastStartAddr;
                 if (sscanf(line, "%lx-%lx %4c %llx %hhx:%hhx %lu %n",
                          &startAddrValue, &endAddrValue, permissions, &offset,
                          &devMajor, &devMinor, &inode, &pathIndex) == 7) {
@@ -97,13 +98,18 @@ public:
                         continue;
                     }
 
+                    if (strncmp(permissions, "r--p", 4) == 0) {
+                        lastStartAddr = startAddrValue;
+                        continue;
+                    }
+
                     if (strncmp(permissions, "r-xp", 4) != 0) {
                         continue;
                     }
 
                     MmapInfo *info = new MmapInfo();
                     info->fileName.setTo(trim(line+pathIndex));
-                    info->startAddr = startAddrValue;
+                    info->startAddr = lastStartAddr;//startAddrValue;
                     info->endAddr = endAddrValue;
                     maptable.push_back(info);
                 }
@@ -124,12 +130,12 @@ public:
         for (size_t i = 0; i < maptable.size(); ++i) {
             MmapInfo *info = maptable[i];
             if ((info->startAddr <= addr) && (info->endAddr >= addr)) {
-                sprintf(buf, "PC %08lu ", addr-info->startAddr);
+                sprintf(buf, "PC %08lx ", addr-info->startAddr);
                 return String8(buf) + info->fileName;
             }
         }
 
-        sprintf(buf, "PC %08lu [No map Info]", addr);
+        sprintf(buf, "PC %08lx [No map Info]", addr);
         return String8(buf);
     }
 
