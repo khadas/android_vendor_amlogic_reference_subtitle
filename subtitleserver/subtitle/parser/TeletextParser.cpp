@@ -496,7 +496,7 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
                 if ((ctx->atvTeletext && isSubtitlePage(gVBIStatus.atvSubtitlePage, ctx->gotoPage)) || (ctx->dtvTeletext && isSubtitlePage(gVBIStatus.dtvSubtitlePage, ctx->gotoPage))) {
                     vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
                         0, 2*0 + chopTop, page->columns, height,
-                        /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 0/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
+                        /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 1/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
                 } else {
                     vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
                         0, 2*ctx->heightIndex + chopTop, page->columns, height,
@@ -506,11 +506,11 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
                 if ((ctx->atvTeletext && isSubtitlePage(gVBIStatus.atvSubtitlePage, ctx->gotoPage)) || (ctx->dtvTeletext && isSubtitlePage(gVBIStatus.dtvSubtitlePage, ctx->gotoPage))) {
                     vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
                         0, 2*0 + chopTop, page->columns, height,
-                        /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 0/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
+                        /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 1/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
                 } else {
                     vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
                         0, 2*ctx->heightIndex + chopTop, page->columns, height,
-                        /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 1/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
+                        /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 0/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
                 }
 
             }
