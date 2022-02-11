@@ -1037,7 +1037,7 @@ static void *am_cc_render_thread(void *arg)
 	if (cc->media_sync_id >= 0) {
 		media_sync = MediaSync_create();
 		if (NULL != media_sync) {
-			MediaSync_bindInstance(media_sync, cc->media_sync_id, MEDIA_VIDEO);
+			MediaSync_bindInstance(media_sync, cc->media_sync_id, MEDIA_SUBTITLE);
 		}
 	}
 	while (cc->running)

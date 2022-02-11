@@ -753,7 +753,7 @@ static void* scte27_thread(void *arg)
 	if (media_sync_id >= 0) {
 		media_sync = MediaSync_create();
 		if (NULL != media_sync) {
-			MediaSync_bindInstance(media_sync, media_sync_id, MEDIA_VIDEO);
+			MediaSync_bindInstance(media_sync, media_sync_id, MEDIA_SUBTITLE);
 			parser->media_sync_handler = media_sync;
 		}
 	}

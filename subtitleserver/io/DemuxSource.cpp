@@ -93,7 +93,7 @@ DemuxSource::DemuxSource() : mRdFd(-1), mState(E_SOURCE_INV),
     mMediaSyncId = -1;
     mSubType = -1;
     mMediaSync = MediaSync_create();
-    ALOGD("DemuxSource");
+    ALOGD("DemuxSource, subtitle mediasync create.");
 }
 
 DemuxSource::~DemuxSource() {
@@ -338,7 +338,7 @@ void DemuxSource::setPipId (int mode, int id) {
                MediaSync_destroy(mMediaSync);
                mMediaSync = MediaSync_create();
            }
-           MediaSync_bindInstance(mMediaSync, mMediaSyncId, MEDIA_VIDEO);
+           MediaSync_bindInstance(mMediaSync, mMediaSyncId, MEDIA_SUBTITLE);
        }
    }
 }

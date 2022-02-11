@@ -905,7 +905,7 @@ static void* aml_userdata_thread (void *arg)
 	if (ud->mediasync_id >= 0) {
 		media_sync = MediaSync_create();
 		if (NULL != media_sync) {
-			MediaSync_bindInstance(media_sync, ud->mediasync_id, MEDIA_VIDEO);
+			MediaSync_bindInstance(media_sync, ud->mediasync_id, MEDIA_SUBTITLE);
 		}
 	}
 	int kernel_version = get_kernel_version();
