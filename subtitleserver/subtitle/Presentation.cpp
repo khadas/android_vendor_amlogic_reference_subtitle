@@ -578,15 +578,18 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                     uint64_t ahead_delay_tor = ((spu->isExtSub)?5:100)*1000*1000*1000LL;
                     if ((delayed <= timestamp) && (delayed*5 > timestamp)) {
                         mPresent->mEmittedFaddingSpu.pop_front();
-                        ALOGD("1 fade SPU: TimeStamp:%lld startAtPts=%lld ItemPts=%lld(%lld) duration:%lld(%lld) data:%p(%p)",
+                        ALOGD("1 fade SPU: TimeStamp:%lld startAtPts=%lld ItemPts=%lld(%lld) duration:%lld(%lld) data:%p(%p)，isKeepShowing:%d, isImmediatePresent:%d, isTtxSubtitle:%d",
                                 ns2ms(mPresent->mCurrentPresentRelativeTime),
                                 ns2ms(mPresent->mStartTimeModifier),
                                 spu->pts, spu->pts/DVB_TIME_MULTI,
                                 spu->m_delay, spu->m_delay/DVB_TIME_MULTI,
-                                spu->spu_data, spu->spu_data);
+                                spu->spu_data, spu->spu_data,
+                                spu->isKeepShowing,
+                                spu->isImmediatePresent,
+                                spu->isTtxSubtitle);
 
                         if (spu->isKeepShowing == false) {
-                            mPresent->mRender->hideSubtitleItem(spu);
+                            if (!spu->isTtxSubtitle) mPresent->mRender->hideSubtitleItem(spu); //SWPL-71632
                         } else {
                             mPresent->mRender->removeSubtitleItem(spu);
                         }

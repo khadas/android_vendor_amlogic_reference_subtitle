@@ -146,6 +146,7 @@ struct TeletextContext {
     int             gotoGraphicsSubtitlePage;
     int             subtitlePageNumber;
     bool            subtitlePageNumberShowTimeOutFlag;
+    bool            resetShowSubtitlePageNumberTimeFlag;
     bool            gotoAtvSubtitleFlg;
     bool            gotoDtvSubtitleFlg;
 

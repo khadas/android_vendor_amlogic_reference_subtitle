@@ -24,6 +24,7 @@ typedef struct alm_spuvar
     bool     isImmediatePresent;
     bool     isExtSub;
     bool     isKeepShowing; //no auto fading out, until close
+    bool     isTtxSubtitle;
 
     int64_t m_delay;
     unsigned char *spu_data;
