@@ -219,7 +219,9 @@ void SubtitleService::setSubPageId(int pageId) {
     switch (mSubParam.dtvSubType) {
         case DTV_SUB_DTVKIT_DVB:
             mSubParam.dtvkitDvbParam.compositionId = pageId;
-            mSubtiles->setParameter(&mSubParam);
+            if (mSubtiles != nullptr) {
+                mSubtiles->setParameter(&mSubParam);
+            }
         break;
         case DTV_SUB_DTVKIT_TELETEXT:
             mSubParam.ttParam.magazine = pageId;
@@ -232,7 +234,9 @@ void SubtitleService::setSubAncPageId(int ancPageId) {
     switch (mSubParam.dtvSubType) {
         case DTV_SUB_DTVKIT_DVB:
             mSubParam.dtvkitDvbParam.ancillaryId = ancPageId;
-            mSubtiles->setParameter(&mSubParam);
+            if (mSubtiles != nullptr) {
+                mSubtiles->setParameter(&mSubParam);
+            }
         break;
         case DTV_SUB_DTVKIT_TELETEXT:
             mSubParam.ttParam.page = ancPageId;
