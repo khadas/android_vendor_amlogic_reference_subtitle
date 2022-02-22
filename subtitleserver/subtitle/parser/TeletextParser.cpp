@@ -1938,7 +1938,7 @@ bool TeletextParser::updateParameter(int type, void *data) {
     if (mContext->vbi == nullptr || mUpdateParamCount == 0) {
         ALOGD("This is the first? pid:%d onid:%d tsid:%d  %d", ttParam->pid, ttParam->onid, ttParam->tsid, ttParam->event);
         // tricky for check need keep using vbi or not
-        gVBIStatus.updateProgramInfo( ttParam->pid, ttParam->onid, ttParam->tsid);
+        gVBIStatus.updateProgramInfo(ttParam->pid, ttParam->onid, ttParam->tsid);
 
         // The first page, is setup by dtvkit. modify to the last
         if (gVBIStatus.needReuseVbiDecoder() && gVBIStatus.lastShowingPage >= 100) {
@@ -1959,6 +1959,18 @@ bool TeletextParser::updateParameter(int type, void *data) {
                 gVBIStatus.dtvSubtitlePage[j] = 0;
             }
             gVBIStatus.subtitlePageId = 0;
+            mContext->gotoPage = 0;
+            gVBIStatus.lastShowingPage = 100;
+            LOGD(" %s, re-register VBI\n", __FUNCTION__);
+            vbi_decoder_delete(gVBIStatus.getVbiInstance());
+            gVBIStatus.registerVbiInstance(nullptr);
+            if ((ttParam->event == TT_EVENT_GO_TO_PAGE && ttParam->pageNo <= 1 && ttParam->subPageNo == 0)
+                || (ttParam->event == TT_EVENT_INDEXPAGE)) {
+                ttParam->event = TT_EVENT_GO_TO_PAGE;
+                int pageNum =vbi_dec2bcd(gVBIStatus.lastShowingPage);
+                ttParam->pageNo =  pageNum >> 8;
+                ttParam->subPageNo = pageNum & 0xFF;
+            }
         }
     }
 
@@ -2185,6 +2197,7 @@ int TeletextParser::initContext() {
     mContext->subPageNum = AM_TT2_ANY_SUBNO;
     mContext->pageState = TT2_DISPLAY_STATE;
     mContext->searchDir = 1;
+    mContext->gotoPage = 0;
     //1:transparent 0:black default transparent
     mContext->transparentBackground = 1;
     //display backGround, page not full Green, need add prop define non-page display backGround
@@ -2229,6 +2242,7 @@ int TeletextParser::teletextDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *s
 #ifdef NEED_CACHE_ZVBI_STATUS
         if (!gVBIStatus.needReuseVbiDecoder()) {
             if (gVBIStatus.getVbiInstance() != nullptr) {
+                LOGD(" %s, re-register VBI\n", __FUNCTION__);
                 vbi_decoder_delete(gVBIStatus.getVbiInstance());
                 gVBIStatus.registerVbiInstance(nullptr);
             }
