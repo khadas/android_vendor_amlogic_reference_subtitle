@@ -436,6 +436,17 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
             std::shared_ptr<AML_SPUVAR> spu = mPresent->mParser->tryConsumeDecodedItem();
             if (spu != nullptr) {
                 // has subtitle to show! Post to render list
+                uint64_t timestamp = mPresent->mStartTimeModifier + mPresent->mCurrentPresentRelativeTime;
+                uint64_t pts = convertDvbTime2Ns(spu->pts);
+                uint64_t ptsDiff = (pts>timestamp) ? (pts-timestamp) : (timestamp-pts);
+                // The subtitle pts ahead more than 100S of video...maybe aheam more 20s
+                if ((ptsDiff >= 200*1000*1000*1000LL) && !(spu->isExtSub)) {
+                    ALOGD("Got  SPU: spu is ptsDiff >= 200s");
+                    // we cannot check it's valid or not, so delay 1s(common case) and show
+                    spu->pts = convertNs2DvbTime(timestamp+1*1000*1000*1000LL);
+                    spu->m_delay = spu->pts + 10*1000*DVB_TIME_MULTI;
+                    pts = convertDvbTime2Ns(spu->pts);
+                }
                 ALOGD("Got  SPU: TimeStamp:%lld startAtPts=%lld ItemPts=%lld(%lld) duration:%lld(%lld) data:%p(%p)",
                         ns2ms(mPresent->mCurrentPresentRelativeTime),
                         ns2ms(mPresent->mStartTimeModifier),
@@ -511,14 +522,14 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                     }
 
                     uint64_t tolerance = 33*1000*1000LL; // 33ms tolerance
-                    uint64_t ptsDiff = (pts>timestamp) ? (pts-timestamp) : (timestamp-pts);
+                    /*uint64_t ptsDiff = (pts>timestamp) ? (pts-timestamp) : (timestamp-pts);
                     // The subtitle pts ahead more than 100S of video...maybe aheam more 20s
                     if ((ptsDiff >= 200*1000*1000*1000LL) && !(spu->isExtSub)) {
                         // we cannot check it's valid or not, so delay 1s(common case) and show
                         spu->pts = convertNs2DvbTime(timestamp+1*1000*1000*1000LL);
                         spu->m_delay = spu->pts + 10*1000*DVB_TIME_MULTI;
                         pts = convertDvbTime2Ns(spu->pts);
-                    }
+                    }*/
 
                     if (spu->m_delay <= 0) {
                         spu->m_delay = spu->pts + (ADDJUST_NO_PTS_MS * DVB_TIME_MULTI);
