@@ -179,14 +179,13 @@ struct DVBSubContext {
 
 //#define __DEBUG
 #ifdef __DEBUG
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-#define  TRACE()    LOGI("[%s::%d]\n",__FUNCTION__,__LINE__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define  TRACE()    LOGI("[%s::%d]\n", __FUNCTION__, __LINE__)
 #else
 #define  LOGI(...)
-#define  LOGE(...)
 #define  TRACE()
 #endif
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 /* define for segment type */
 #define DVBSUB_PAGE_SEGMENT                         0x10

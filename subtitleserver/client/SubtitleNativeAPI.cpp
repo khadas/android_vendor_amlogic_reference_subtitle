@@ -231,8 +231,8 @@ AmlSubtitleStatus amlsub_Destroy(AmlSubtitleHnd handle) {
     //ctx->mClient = nullptr;
     ctx->mAdaptorListener = nullptr;
 
-    __eraseFromContext(ctx);
     delete ctx->mClient;
+    __eraseFromContext(ctx);
 
     return SUB_STAT_OK;
 }

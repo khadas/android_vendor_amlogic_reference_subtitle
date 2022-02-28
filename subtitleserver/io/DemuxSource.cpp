@@ -157,19 +157,22 @@ void DemuxSource::loopRenderTime() {
                 ALOGV("[threadLoop] lstn null.\n");
                 continue;
             }
-            int64_t value = 0;;
+
+            int64_t value = -1;
             if (-1 == mMediaSyncId) {
                 value = sysfsReadInt(SYSFS_VIDEO_PTS.c_str(), 16);
                 mSyncPts = value;
             } else {
-               MediaSync_getTrackMediaTime(mMediaSync, &value);
-               value = 0x1FFFFFFFF & ((9*value)/100);
+                MediaSync_getTrackMediaTime(mMediaSync, &value);
+                value = 0x1FFFFFFFF & ((9*value)/100);
             }
+
             static int i = 0;
             if (i++%300 == 0) {
                 ALOGE(" read pts: %lld %llu", value, value);
             }
-            if (!mExitRequested) {
+
+            if (!mExitRequested && value > 0) {
                 if (auto lstn = wk_lstner.lock()) {
                     lstn->onRenderTimeChanged(value);
                 }
@@ -299,15 +302,17 @@ bool DemuxSource::start() {
     TVSubtitleData *mDvbContext;
     mSegment = std::shared_ptr<BufferSegment>(new BufferSegment());
     mDemuxContext = new TVSubtitleData();
+
+
+    mRenderTimeThread = std::shared_ptr<std::thread>(new std::thread(&DemuxSource::loopRenderTime, this));
     int ret = open_dvb_dmx(mDemuxContext, mDemuxId, mPid );
     if (ret == -1)
       return false;
 
-    mRenderTimeThread = std::shared_ptr<std::thread>(new std::thread(&DemuxSource::loopRenderTime, this));
 
     notifyInfoChange();
 
-    return false;
+    return true;
 }
 
 void DemuxSource::updateParameter(int type, void *data) {

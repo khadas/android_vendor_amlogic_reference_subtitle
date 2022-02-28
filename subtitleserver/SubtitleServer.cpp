@@ -522,12 +522,13 @@ Return<void> SubtitleServer::removeCallback(const sp<ISubtitleCallback>& callbac
 
         int clientSize = mCallbackClients.size();
         ALOGI("[removeCallback] remove:%p clientSize=%d", callback.get(), clientSize);
-        for (auto it = mCallbackClients.begin(); it != mCallbackClients.end();) {
-            if (it->second != nullptr) {
-                ALOGI("[removeCallback] %p", (it->second).get());
+        for (auto it = mCallbackClients.begin(); it != mCallbackClients.end(); it++) {
+            if ((it->second != nullptr) && interfacesEqual(it->second, callback)) {
+                ALOGI("[removeCallback] remove %p  req:%p", (it->second).get(), callback.get());
                 it->second->unlinkToDeath(mDeathRecipient);
+                it = mCallbackClients.erase(it);
+                break;
             }
-            it = mCallbackClients.erase(it);
         }
     }
     return Void();

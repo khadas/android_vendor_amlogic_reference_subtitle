@@ -9,6 +9,7 @@
 #include <fmq/MessageQueue.h>
 #include <hidl/MQDescriptor.h>
 #include <hidl/Status.h>
+#include <hidl/HidlTransportSupport.h>
 #include <utils/Mutex.h>
 #include "SubtitleService.h"
 
@@ -30,6 +31,7 @@ using ::android::hardware::hidl_handle;
 using ::android::hardware::hidl_memory;
 using ::android::hardware::hidl_string;
 using ::android::hardware::hidl_vec;
+using ::android::hardware::interfacesEqual;
 using ::android::hardware::Return;
 using ::android::hardware::Void;
 using ::android::sp;

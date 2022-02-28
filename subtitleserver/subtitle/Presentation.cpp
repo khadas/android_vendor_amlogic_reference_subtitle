@@ -139,12 +139,20 @@ bool Presentation::notifyStartTimeStamp(int64_t startTime) {
     return true;
 }
 
-
+// amumediaplayer may report 33bit invalid pts, we must filter this value!
+#define INVALID_PTS 0x1ffffffff
 bool Presentation::syncCurrentPresentTime(int64_t pts) {
     if (mSubtitlePts32Bit) {
         pts &= TSYNC_32_BIT_PTS;
     }
 
+    //ALOGD("%s %llx %lld", __func__, pts, pts);
+
+    if (INVALID_PTS == pts) {
+        ALOGD("Error! got invalid pts");
+        mCurrentPresentRelativeTime = mStartPresentMonoTimeNs = -1;
+        return false;
+    }
     mCurrentPresentRelativeTime = convertDvbTime2Ns(pts);
 
     // the time
@@ -274,11 +282,11 @@ void Presentation::notifySubdataAdded() {
 
 void Presentation::dump(int fd, const char *prefix) {
     dprintf(fd, "%s Presentation:\n", prefix);
-    dprintf(fd, "%s   CurrentPresentRelativeTime[dvb time]: %d\n",
+    dprintf(fd, "%s   CurrentPresentRelativeTime[dvb time]: %lld\n",
             prefix, convertNs2DvbTime(mCurrentPresentRelativeTime));
-    dprintf(fd, "%s   StartPresentMonoTime[dvb time]: %d\n",
+    dprintf(fd, "%s   StartPresentMonoTime[dvb time]: %lld\n",
             prefix, convertNs2DvbTime(mStartPresentMonoTimeNs));
-    dprintf(fd, "%s   StartTimeModifier[dvb time]: %d\n",
+    dprintf(fd, "%s   StartTimeModifier[dvb time]: %lld\n",
             prefix, convertNs2DvbTime(mStartTimeModifier));
     dprintf(fd, "\n");
     if (mParser != nullptr) {
@@ -351,6 +359,13 @@ bool Presentation::MessageProcess::notifyMessage(int what) {
 }
 
 void Presentation::MessageProcess::handleMessage(const Message& message) {
+    // we sync from video pts. but some player not start video
+    // when decoded and present subtitle. so we need wait video pts
+    if (mPresent->mCurrentPresentRelativeTime < 0) {
+        ALOGE("Video not started, wait. 200ms ...");
+        mLooper->sendMessageDelayed(ms2ns(200), this, Message(MSG_PTS_TIME_CHECK_SPU));
+        return;
+    }
     return mIsExtSub ? handleExtSub(message) : handleStreamSub(message);
 }
 
@@ -644,7 +659,11 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
 
 void Presentation::MessageProcess::looperLoop() {
     mLooper = new Looper(false);
-    mLooper->sendMessageDelayed(100LL, this, Message(MSG_PTS_TIME_CHECK_SPU));
+    if (mPresent->mCurrentPresentRelativeTime <= 0) {
+        mLooper->sendMessageDelayed(ms2ns(100), this, Message(MSG_PTS_TIME_CHECK_SPU));
+    } else {
+        mLooper->sendMessageDelayed(100LL, this, Message(MSG_PTS_TIME_CHECK_SPU));
+    }
     mLooper->incStrong(nullptr);
 
     mPresent->mEmittedShowingSpu.clear();
