@@ -6,6 +6,7 @@
 #include <list>
 #include <memory>
 #include <mutex>
+#include "../subtitle/parser/Parser.h"
 
 class BufferSegment;
 
@@ -30,6 +31,38 @@ public:
             needRead = mRemainSize;
         } else {
             needRead = size;
+        }
+
+        memcpy(buf, ptr+mPtr, needRead);
+        mPtr += needRead;
+        mRemainSize -= needRead;
+        return needRead;
+    }
+
+    int read_check(char *buf, int size, int *isReadItemEnd, int type) {
+        int needRead = 0;
+        if (size == 0 || mRemainSize == 0) {
+            return 0;
+        }
+
+        char *ptr = mBuffer.get();
+
+        if (size > mRemainSize){
+            needRead = mRemainSize;
+        } else {
+            needRead = size;
+        }
+
+        if(needRead >=4){
+            for (int i = 0; i < needRead - 4; i++) {
+                char *p = ptr+mPtr + i;
+                if (TYPE_SUBTITLE_DTVKIT_DVB == type &&(p[0] == 0) && (p[1] == 0) && (p[2] == 1) && (p[3] == 0xbd)){
+                    ALOGD("read_l i:%d type:%d needRead:%d", i, type, needRead);
+                    *isReadItemEnd = -1;
+                    needRead = i;
+                    break;
+                }
+            }
         }
 
         memcpy(buf, ptr+mPtr, needRead);

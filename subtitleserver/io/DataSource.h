@@ -98,6 +98,7 @@ public:
     }
 
     virtual void dump(int fd, const char *prefix) = 0;
+    int mDumpFd;
 
     // for idx sub to parse sub picture.
     int getExtraFd() {return mExtraFd;}
@@ -105,7 +106,6 @@ protected:
 
     std::mutex mLock;
     bool mNeedDumpSource;
-    int mDumpFd;
     int mPlayerId;
     int mMediaSyncId;
 

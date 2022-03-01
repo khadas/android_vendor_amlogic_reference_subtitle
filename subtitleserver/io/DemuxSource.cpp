@@ -92,7 +92,9 @@ DemuxSource::DemuxSource() : mRdFd(-1), mState(E_SOURCE_INV),
     mPlayerId = -1;
     mMediaSyncId = -1;
     mSubType = -1;
+    mDumpSub = false;
     mMediaSync = MediaSync_create();
+    checkDebug();
     ALOGD("DemuxSource, subtitle mediasync create.");
 }
 
@@ -121,6 +123,14 @@ size_t DemuxSource::totalSize() {
     return 0;
 }
 
+void DemuxSource::checkDebug() {
+    char value[PROPERTY_VALUE_MAX] = {0};
+    memset(value, 0, PROPERTY_VALUE_MAX);
+    property_get("vendor.subtitle.dump", value, "false");
+    if (!strcmp(value, "true")) {
+        mDumpSub = true;
+    }
+}
 
 bool DemuxSource::notifyInfoChange() {
     std::unique_lock<std::mutex> autolock(mLock);
@@ -176,6 +186,18 @@ static void pes_data_cb(int dev_no, int fhandle, const uint8_t *data, int len, v
     memcpy(rdBuffer, data, len);
     std::shared_ptr<char> spBuf = std::shared_ptr<char>(rdBuffer, [](char *buf) { delete [] buf; });
     DemuxSource::getCurrentInstance()->mSegment->push(spBuf, len);
+
+    if (DemuxSource::getCurrentInstance()->mDumpSub) {
+        if (DemuxSource::getCurrentInstance()->mDumpFd == -1) {
+            ALOGD("#pes_data_cb len:%d", len);
+            DemuxSource::getCurrentInstance()->mDumpFd = ::open("/data/local/traces/cur_sub.dump", O_RDWR | O_CREAT, 0666);
+            ALOGD("need dump Source2: mDumpFd=%d %d", DemuxSource::getCurrentInstance()->mDumpFd, errno);
+        }
+
+        if (DemuxSource::getCurrentInstance()->mDumpFd > 0) {
+            write(DemuxSource::getCurrentInstance()->mDumpFd, data, len);
+        }
+   }
 }
 
 
@@ -369,7 +391,7 @@ size_t DemuxSource::availableDataSize() {
 
 size_t DemuxSource::read(void *buffer, size_t size) {
     int readed = 0;
-
+    int isReadItemEnd = 0;
     //Current design of Parser Read, do not need add lock protection.
     // because all the read, is in Parser's parser thread.
     // We only need add lock here, is for protect access the mCurrentItem's
@@ -386,9 +408,9 @@ size_t DemuxSource::read(void *buffer, size_t size) {
                 //if size is 0xffff, it means to get all the data of the current item
                 size = mCurrentItem->getSize();
             }
-            readed += mCurrentItem->read_l(((char *)buffer+readed), size-readed);
-            //ALOGD("readed:%d,size:%d", readed, size);
-            if (readed == size) return readed;
+            readed += mCurrentItem->read_check(((char *)buffer+readed), size-readed, &isReadItemEnd, mSubType);
+            ALOGD("readed:%d,size:%d isReadItemEnd:%d mSubType:%d", readed, size, isReadItemEnd, mSubType);
+            if (readed == size || isReadItemEnd ==-1) return readed;
         } else {
             //ALOGD("mCurrentItem null, pop next buffer item");
             mCurrentItem = mSegment->pop();

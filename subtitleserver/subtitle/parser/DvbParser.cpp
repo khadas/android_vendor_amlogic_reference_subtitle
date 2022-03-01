@@ -188,13 +188,34 @@ struct DVBSubContext {
 #define  TRACE()
 #endif
 
+/* define for segment type */
+#define DVBSUB_PAGE_SEGMENT                         0x10
+#define DVBSUB_REGION_SEGMENT                       0x11
+#define DVBSUB_CLUT_SEGMENT                         0x12
+#define DVBSUB_OBJECT_SEGMENT                       0x13
+#define DVBSUB_DISPLAYDEFINITION_SEGMENT            0x14
+#define DVBSUB_DISPLAY_SEGMENT                      0x80
+#define DVBSUB_ST_STUFFING                          0xff
 
-#define DVBSUB_PAGE_SEGMENT     0x10
-#define DVBSUB_REGION_SEGMENT   0x11
-#define DVBSUB_CLUT_SEGMENT     0x12
-#define DVBSUB_OBJECT_SEGMENT   0x13
-#define DVBSUB_DISPLAYDEFINITION_SEGMENT 0x14
-#define DVBSUB_DISPLAY_SEGMENT  0x80
+/* define for object type */
+#define DVBSUB_OT_BASIC_BITMAP                      (0x00)
+#define DVBSUB_OT_BASIC_CHARACTER                   (0x01)
+#define DVBSUB_OT_COMPOSITE_STRING                  (0x02)
+
+/* define for page composition segment state */
+#define DVBSUB_PCS_STATE_NORMAL_CASE                (0x00)
+#define DVBSUB_PCS_STATE_ACQUISITION                (0x01)
+#define DVBSUB_PCS_STATE_MODE_CHANGE                (0x02)
+
+/* define for pixel data sub block */
+#define DVBSUB_DT_2BP_CODE_STRING                   0x10
+#define DVBSUB_DT_4BP_CODE_STRING                   0x11
+#define DVBSUB_DT_8BP_CODE_STRING                   0x12
+#define DVBSUB_DT_24_MAP_TABLE_DATA                 0x20
+#define DVBSUB_DT_28_MAP_TABLE_DATA                 0x21
+#define DVBSUB_DT_48_MAP_TABLE_DATA                 0x22
+#define DVBSUB_DT_END_OF_OBJECT_LINE                0xf0
+
 /* pixel operations */
 
 #define DVB_TIME_OUT_LONG_DURATION  30
@@ -684,7 +705,7 @@ int DvbParser::parsePixelDatablock(DVBSubObjectDisplay *display,
         }
 
         switch (*buf++) {
-            case 0x10:
+            case DVBSUB_DT_2BP_CODE_STRING:
                 if (region->depth == 8)
                     mapTable = map2to8;
                 else if (region->depth == 4)
@@ -696,7 +717,7 @@ int DvbParser::parsePixelDatablock(DVBSubObjectDisplay *display,
                         region->width - xPos, &buf,
                         needReads/*bufEnd - buf*/, nonMod, mapTable);
                 break;
-            case 0x11:
+            case DVBSUB_DT_4BP_CODE_STRING:
                 if (region->depth < 4) {
                    LOGE("4-bit pixel string in %d-bit region!\n", region->depth);
                     return 0;
@@ -711,7 +732,7 @@ int DvbParser::parsePixelDatablock(DVBSubObjectDisplay *display,
                         region->width - xPos, &buf,
                         needReads/*bufEnd - buf*/, nonMod, mapTable);
                 break;
-            case 0x12:
+            case DVBSUB_DT_8BP_CODE_STRING:
                 if (region->depth < 8) {
                     LOGE("8-bit pixel string in %d-bit region!\n", region->depth);
                     return 0;
@@ -721,7 +742,7 @@ int DvbParser::parsePixelDatablock(DVBSubObjectDisplay *display,
                         region->width - xPos, &buf,
                         needReads/*bufEnd - buf*/, nonMod, NULL);
                 break;
-            case 0x20:
+            case DVBSUB_DT_24_MAP_TABLE_DATA:
                 if ((bufEnd - buf) < 2) {
                     ALOGE("Malformed source! break");
                     break;
@@ -731,7 +752,7 @@ int DvbParser::parsePixelDatablock(DVBSubObjectDisplay *display,
                 map2to4[2] = (*buf) >> 4;
                 map2to4[3] = (*buf++) & 0xf;
                 break;
-            case 0x21:
+            case DVBSUB_DT_28_MAP_TABLE_DATA:
                 if ((bufEnd - buf) < 4) {
                     ALOGE("Malformed source! break");
                     break;
@@ -739,7 +760,7 @@ int DvbParser::parsePixelDatablock(DVBSubObjectDisplay *display,
                 for (i = 0; i < 4; i++)
                     map2to8[i] = *buf++;
                 break;
-            case 0x22:
+            case DVBSUB_DT_48_MAP_TABLE_DATA:
                 if ((bufEnd - buf) < 16) {
                     ALOGE("Malformed source! break");
                     break;
@@ -747,7 +768,7 @@ int DvbParser::parsePixelDatablock(DVBSubObjectDisplay *display,
                 for (i = 0; i < 16; i++)
                     map4to8[i] = *buf++;
                 break;
-            case 0xf0:
+            case DVBSUB_DT_END_OF_OBJECT_LINE:
                 xPos = display->xPos;
                 yPos += 2;
                 break;
@@ -1138,7 +1159,7 @@ void DvbParser::parseRegionSegment(const uint8_t *buf, int bufSize) {
         buf += 2;
         display->yPos = AV_RB16(buf) & 0xfff;
         buf += 2;
-        if ((object->type == 1 || object->type == 2)
+        if ((object->type == DVBSUB_OT_BASIC_CHARACTER || object->type == DVBSUB_OT_COMPOSITE_STRING)
                 && buf + 1 < bufEnd) {
             display->fgcolor = *buf++;
             display->bgcolor = *buf++;
@@ -1167,7 +1188,7 @@ void DvbParser::parsePageSegment(const uint8_t *buf, int bufSize) {
     }
     page_state = ((*buf++) >> 2) & 3;
     LOGI("Page time out %ds, state %d\n", mContext->timeOut, page_state);
-    if (page_state == 1 || page_state == 2) {
+    if (page_state == DVBSUB_PCS_STATE_ACQUISITION || page_state == DVBSUB_PCS_STATE_MODE_CHANGE) {
         LOGI("[%s::%d] dvbsub_parse_page_segment\n", __FUNCTION__,__LINE__);
         deleteRegions(mContext);
         deleteObjects(mContext);
@@ -1488,6 +1509,9 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
                 case DVBSUB_DISPLAY_SEGMENT:
                     dataSize = displayEndSegment(spu);
                     break;
+                case DVBSUB_ST_STUFFING:
+                    dataSize = displayEndSegment(spu);
+                    break;
                 default:
                     LOGI("Subtitling segment type 0x%x, page id %d, length %d\n", segmentType, pageId, segmentLength);
                     break;
@@ -1549,7 +1573,7 @@ int DvbParser::hwDemuxParse() {
     char tmpbuf[256] = {0};
     int64_t pts = 0, dts = 0;
     int64_t tempPts = 0, tempDts = 0;
-    int packetLen = 0, pesHeaderLen = 0;
+    int packetLen = 0, pesHeaderLen = 0, realityPacketLen = 0;
     bool needSkipData = false;
     int ret = 0;
     int avil = 0;
@@ -1635,10 +1659,11 @@ int DvbParser::hwDemuxParse() {
 
             if (buf) {
                 memset(buf, 0x0, packetLen);
-                if (mDataSource->read(buf, packetLen) == packetLen) {
+                realityPacketLen = mDataSource->read(buf, packetLen);
+                if (realityPacketLen == packetLen) {
                     LOGI("start decode dvb subtitle\n\n");
                     ret = decodeSubtitle(spu, buf, packetLen);
-                    LOGI("dump-pts-hwdmx parse ret:%d,width:%d, height:%d, buffer_size:%d", ret, spu->spu_width, spu->spu_height, spu->buffer_size);
+                    LOGI("dump-pts-hwdmx parse ret:%d,width:%d, height:%d, buffer_size:%d spu->pts:%lld", ret, spu->spu_width, spu->spu_height, spu->buffer_size, spu->pts);
                     if (ret != -1 && spu->buffer_size > 0) {
                         LOGI("dump-pts-hwdmx!success pts(%lld)frame was add\n", spu->pts);
                         addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
@@ -1654,8 +1679,10 @@ int DvbParser::hwDemuxParse() {
 
                         return -1;
                     }
-                } else {
-                        notifySubtitleErrorInfo(ERROR_DECODER_TIMEERROR);
+                } else if (realityPacketLen != packetLen){
+                        LOGI("realityPacketLen Error packetLen:%d reality packetLen:%d",packetLen, realityPacketLen);
+                        free(buf);
+                        return 1;
                 }
 
                 LOGI("packetLen buf free=%p\n", buf);

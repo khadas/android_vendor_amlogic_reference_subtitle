@@ -1822,10 +1822,6 @@ int TeletextParser::gotoDefaultAtvSubtitleLocked(int atvSubtitlepageId) {
         mContext->dispUpdate = 1;
     }
 
-    if (NULL != mContext->vbi) {
-        vbi_set_subtitle_page(mContext->vbi, vbi_dec2bcd(mContext->gotoGraphicsSubtitlePage));
-    }
-
     return TT2_SUCCESS;
 }
 
@@ -1846,10 +1842,6 @@ int TeletextParser::gotoDefaultDtvSubtitleLocked(int dtvSubtitlepageId) {
         LOGI("%s no valid dtvSubtitlePage:%d, need wait! \n", __FUNCTION__, gVBIStatus.dtvSubtitlePage[dtvSubtitlepageId]);
         mContext->gotoDtvSubtitleFlg = TRUE;
         mContext->dispUpdate = 1;
-    }
-
-    if (NULL != mContext->vbi) {
-        vbi_set_subtitle_page(mContext->vbi, vbi_dec2bcd(mContext->gotoGraphicsSubtitlePage));
     }
 
     return TT2_SUCCESS;
@@ -2047,9 +2039,6 @@ bool TeletextParser::handleControl() {
             mContext->subtitleMode = TT2_GRAPHICS_MODE;
             mContext->resetShowSubtitlePageNumberTimeFlag = true;
             page = convertPageDecimal2Hex(ttParam->pageNo, ttParam->subPageNo);
-            if (NULL != mContext->vbi) {
-                vbi_set_subtitle_page(mContext->vbi, vbi_dec2bcd(page));
-            }
             mContext->gotoGraphicsSubtitlePage = page;
             return gotoPageLocked(page, AM_TT2_ANY_SUBNO);
         case TT_EVENT_GO_TO_SUBTITLE:

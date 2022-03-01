@@ -29,7 +29,7 @@ static const int64_t FIVE_SECONDS_NS = 5*1000*1000*1000LL;
 static const int64_t ONE_SECONDS_NS = 1*1000*1000*1000LL;
 
 static const int64_t ADDJUST_VERY_SMALL_PTS_MS = 5*1000LL;
-static const int64_t ADDJUST_NO_PTS_MS = 4*1000LL;
+static const int64_t ADDJUST_NO_PTS_MS = 20*1000LL;
 static bool mSubtitlePts32Bit = false;
 static inline int64_t convertDvbTime2Ns(int64_t dvbMillis) {
     return ms2ns(dvbMillis)/DVB_TIME_MULTI; // dvbTime is multi 90.
@@ -600,7 +600,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                                 spu->isTtxSubtitle);
 
                         if (spu->isKeepShowing == false) {
-                            if (!spu->isTtxSubtitle) mPresent->mRender->hideSubtitleItem(spu); //SWPL-71632
+                            mPresent->mRender->hideSubtitleItem(spu);
                         } else {
                             mPresent->mRender->removeSubtitleItem(spu);
                         }

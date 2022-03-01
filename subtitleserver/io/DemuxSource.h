@@ -38,11 +38,13 @@ public:
     std::shared_ptr<BufferSegment> mSegment;
     int mSubType;
     virtual size_t lseek(int offSet, int whence) {return 0;}
+    bool mDumpSub;
 private:
     void loopRenderTime();
     void pes_data_cb(int dev_no, int fhandle, const uint8_t *data, int len, void *user_data);
 
     bool notifyInfoChange();
+    void checkDebug();
     int mRdFd;
     std::shared_ptr<std::thread> mRenderTimeThread;
     std::shared_ptr<std::thread> mReadThread;
