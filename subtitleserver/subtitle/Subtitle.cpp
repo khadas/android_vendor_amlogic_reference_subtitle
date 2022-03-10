@@ -43,6 +43,10 @@ Subtitle::Subtitle(bool isExtSub, int trackId, ParserEventNotifier *notifier) :
     mIdxSubTrack = trackId;
 
     mSubPrams = std::shared_ptr<SubtitleParamType>(new SubtitleParamType());
+    mSubPrams->dtvkitDvbParam.demuxId = 0;
+    mSubPrams->dtvkitDvbParam.pid= 0;
+    mSubPrams->dtvkitDvbParam.ancillaryId = 0;
+    mSubPrams->dtvkitDvbParam.compositionId= 0;
 
     mPresentation = std::shared_ptr<Presentation>(new Presentation(nullptr));
 }

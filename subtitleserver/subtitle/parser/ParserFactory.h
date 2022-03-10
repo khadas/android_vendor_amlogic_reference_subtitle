@@ -93,29 +93,29 @@ enum VideoFormat {
 
 
 typedef struct {
-    int ChannelID;
-    int vfmt;  //Video format
-    char lang[64];  //channel language
+    int ChannelID = 0 ;
+    int vfmt = 0;  //Video format
+    char lang[64] = {0};  //channel language
 } CcParam;
 
 
 typedef struct {
-    int SCTE27_PID;
-    int demuxId;
+    int SCTE27_PID = 0;
+    int demuxId = 0;
 } Scte27Param;
 
 typedef struct {
-   int demuxId;
-   int pid;
-   int compositionId;
-   int ancillaryId;
+   int demuxId = 0;
+   int pid = 0;
+   int compositionId = 0;
+   int ancillaryId = 0;
 }DtvKitDvbParam;
 
 typedef struct {
-   int demuxId;
-   int pid;
-   int magazine;
-   int page;
+   int demuxId = 0;
+   int pid = 0;
+   int magazine = 0;
+   int page = 0;
 }DtvKitTeletextParam;
 typedef enum {
     CMD_INVALID        = -1,
