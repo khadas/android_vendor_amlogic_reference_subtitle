@@ -2028,7 +2028,7 @@ bool TeletextParser::handleControl() {
         case TT_EVENT_DOUBLE_SCROLL_DOWN:
             return doubleScrollLocked(-1);
         case TT_EVENT_INDEXPAGE:
-            mContext->transparentBackground = 0;
+            //mContext->transparentBackground = 0; //SWPL-74650, TransparentBackground is not initialized here
             mContext->opacity = mContext->transparentBackground ? 0 : 255;
             mContext->subtitleMode = TT2_GRAPHICS_MODE;
             return goHomeLocked();
