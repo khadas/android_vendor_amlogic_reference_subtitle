@@ -303,6 +303,13 @@ static AM_ErrorCode_t userdata_package_poll(AM_USERDATA_Device_t *dev, int timeo
 	int rv, ret = AM_SUCCESS, cnt;
 	struct timespec rt;
 
+	// not opened or deinitilized.
+	// If client call userdata close before stop decode, may has problem.
+	// Add more protection here.
+	if (dev->open_cnt <= 0) {
+		return AM_FAILURE;
+	}
+
 	cnt = userdata_ring_buf_avail(&dev->pkg_buf);
 	if (cnt <= 0)
 	{
@@ -344,7 +351,6 @@ AM_ErrorCode_t AM_USERDATA_Open(int dev_no, const AM_USERDATA_OpenPara_t *para)
 	int i;
 
 	assert(para);
-
 	AM_TRY(userdata_get_dev(dev_no, &dev));
 
 	pthread_mutex_lock(&am_gAdpLock);
@@ -388,6 +394,8 @@ final:
  *   - AM_SUCCESS 成功
  *   - 其他值 错误代码(见am_userdata.h)
  */
+
+
 AM_ErrorCode_t AM_USERDATA_Close(int dev_no)
 {
 	AM_USERDATA_Device_t *dev;
@@ -399,8 +407,11 @@ AM_ErrorCode_t AM_USERDATA_Close(int dev_no)
 
 	if (dev->open_cnt > 0)
 	{
-		if (dev->open_cnt == 1)
+		dev->open_cnt--;
+		if (dev->open_cnt == 0)
 		{
+			//Notify cond(if has), we're exiting, should break polling
+			pthread_cond_broadcast(&dev->pkg_buf.cond);
 			if (dev->drv->close)
 			{
 				dev->drv->close(dev);
@@ -410,7 +421,6 @@ AM_ErrorCode_t AM_USERDATA_Close(int dev_no)
 
 			userdata_ring_buf_deinit(&dev->pkg_buf);
 		}
-		dev->open_cnt--;
 	}
 
 	pthread_mutex_unlock(&am_gAdpLock);
