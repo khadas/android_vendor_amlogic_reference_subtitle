@@ -133,21 +133,22 @@ typedef enum {
 typedef struct {
     const char *extSubPath;
     AmlSubtitleIOType ioSource;
-    int subtitleType;
-    int pid;
-    int videoFormat;             //cc
-    int channelId;               //cc
-    int ancillaryPageId;         //dvb
-    int compositionPageId;       //dvb
+    int subtitleType = 0;
+    int pid = 0;
+    int videoFormat = 0;             //cc
+    int channelId = 0;               //cc
+    int ancillaryPageId = 0;         //dvb
+    int compositionPageId = 0;       //dvb
     int dmxId;
-    int fd;
+    int fd = 0;
+    int flag = 0;
     const char *lang;
 } AmlSubtitleParam;
 
 
 typedef struct {
-    int magazine;
-    int page;
+    int magazine = 0;
+    int page = 0;
     AmlTeletextEvent event;
 } AmlTeletextCtrlParam;
 

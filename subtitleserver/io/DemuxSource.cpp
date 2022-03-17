@@ -37,6 +37,9 @@ static const std::string SUBTITLE_READ_DEVICE = "/dev/amstream_sub_read";
 #define AMSTREAM_IOC_SUB_LENGTH  _IOR(AMSTREAM_IOC_MAGIC, 0x1b, int)
 #define AMSTREAM_IOC_SUB_RESET   _IOW(AMSTREAM_IOC_MAGIC, 0x1a, int)
 #define SECTION_DEMUX_INDEX 2
+#define DMX_SUBTITLE_NO_SEC 0
+#define DMX_SUBTITLE_SEC   (2 << 10)
+
 
 DemuxSource *DemuxSource::sInstance = nullptr;
 DemuxSource *DemuxSource::getCurrentInstance() {
@@ -204,9 +207,9 @@ static void pes_data_cb(int dev_no, int fhandle, const uint8_t *data, int len, v
 }
 
 
-static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid)
+static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid, int flag)
 {
-        ALOGE("[open_dmx]dmx_id:%d,pid:%d", dmx_id, pid);
+        ALOGE("[open_dmx]dmx_id:%d,pid:%d,flag:%d", dmx_id, pid, flag);
         AM_DMX_OpenPara_t op;
         struct dmx_pes_filter_params pesp;
         struct dmx_sct_filter_params param;
@@ -234,6 +237,11 @@ static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid)
         memset(&pesp, 0, sizeof(pesp));
         pesp.pid = pid;
         pesp.output = DMX_OUT_TAP;
+        if (flag) {
+          pesp.flags= DMX_SUBTITLE_SEC;
+        } else {
+          pesp.flags= DMX_SUBTITLE_NO_SEC;
+        }
         if (12 == DemuxSource::getCurrentInstance()->mSubType) {
             ALOGE("[open_dmx] dvb demux");
             pesp.pes_type = DMX_PES_SUBTITLE;
@@ -296,7 +304,7 @@ bool DemuxSource::start() {
         ALOGE("already stated");
         return false;
     }
-    ALOGE(" DemuxSource start  mPid:%d", mPid);
+    ALOGE(" DemuxSource start  mPid:%d mSecureLevelFlag:%d", mPid, mSecureLevelFlag);
     mState = E_SOURCE_STARTED;
     int total = 0;
     TVSubtitleData *mDvbContext;
@@ -305,7 +313,7 @@ bool DemuxSource::start() {
 
 
     mRenderTimeThread = std::shared_ptr<std::thread>(new std::thread(&DemuxSource::loopRenderTime, this));
-    int ret = open_dvb_dmx(mDemuxContext, mDemuxId, mPid );
+    int ret = open_dvb_dmx(mDemuxContext, mDemuxId, mPid, mSecureLevelFlag);
     if (ret == -1)
       return false;
 
@@ -325,6 +333,7 @@ void DemuxSource::updateParameter(int type, void *data) {
         }
         mDemuxId = pDvbParam->demuxId;
         mPid = pDvbParam->pid;
+        mSecureLevelFlag = pDvbParam->flag;
         mParam1 = pDvbParam->compositionId;
         mParam2 = pDvbParam->ancillaryId;
     } else if (TYPE_SUBTITLE_DTVKIT_TELETEXT == type) {
@@ -334,6 +343,7 @@ void DemuxSource::updateParameter(int type, void *data) {
         }
         mDemuxId = pTeleteParam->demuxId;
         mPid = pTeleteParam->pid;
+        mSecureLevelFlag = pTeleteParam->flag;
         mParam1 = pTeleteParam->magazine;
         mParam2 = pTeleteParam->page;
     } else if (TYPE_SUBTITLE_DTVKIT_SCTE27 == type) {
@@ -343,11 +353,12 @@ void DemuxSource::updateParameter(int type, void *data) {
         }
         mDemuxId = pScteParam->demuxId;
         mPid = pScteParam->SCTE27_PID;
+        mSecureLevelFlag = pScteParam->flag;
     }
     ALOGE(" in updateParameter restartDemux=%d ",restartDemux);
     if (restartDemux) {
         close_dvb_dmx(mDemuxContext, mDemuxId);
-        open_dvb_dmx(mDemuxContext, mDemuxId, mPid );
+        open_dvb_dmx(mDemuxContext, mDemuxId, mPid, mSecureLevelFlag);
      }
     mSubType = type;
     ALOGE(" updateParameter mPid:%d, demuxId = %d", mPid, mDemuxId);

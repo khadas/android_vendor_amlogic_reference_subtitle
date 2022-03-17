@@ -58,6 +58,7 @@ private:
 
     int mPid = -1;
     int mDemuxId = -1;
+    int mSecureLevelFlag = 0;
     int mParam1;
     int mParam2; //ancillary_id
     static DemuxSource *sInstance;

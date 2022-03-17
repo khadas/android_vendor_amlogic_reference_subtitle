@@ -324,6 +324,15 @@ Return<Result> SubtitleServer::setAncPageId(int32_t sId, int32_t ancPageId) {
     return Result {};
 }
 
+Return<Result> SubtitleServer::setSecureLevel(int32_t sId, int32_t flag) {
+    std::shared_ptr<SubtitleService>  ss = getSubtitleService(flag);
+    ALOGV("%s ss=%p", __func__, ss.get());
+    if (ss != nullptr) {
+        ss->setSecureLevel(flag);
+    }
+    return Result {};
+}
+
 Return<Result> SubtitleServer::setChannelId(int32_t sId, int32_t channelId) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
     ALOGV("%s ss=%p", __func__, ss.get());

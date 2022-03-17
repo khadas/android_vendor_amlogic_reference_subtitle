@@ -270,6 +270,7 @@ AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
     // server will filter the parameter, select to use according from the type.
     ctx->mClient->setSubType(__mapApiType2SubtitleType(param->subtitleType));
     ctx->mClient->setSubPid(param->pid);
+    ctx->mClient->setSecureLevel(param->flag);
     ctx->mClient->setClosedCaptionId(param->channelId);
     ctx->mClient->setClosedCaptionVfmt(param->videoFormat);
     ctx->mClient->setCompositionPageId(param->ancillaryPageId);
@@ -293,6 +294,7 @@ AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
 
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
+
 AmlSubtitleStatus amlsub_Close(AmlSubtitleHnd handle) {
     if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;

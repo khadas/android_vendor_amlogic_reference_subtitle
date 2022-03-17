@@ -433,6 +433,17 @@ bool SubtitleServerClient::setSubPid(int pid, int onid, int tsid) {
     return r.isOk();
 }
 
+bool SubtitleServerClient::setSecureLevel(int flag) {
+    Mutex::Autolock _l(mLock);
+    if (mRemote == nullptr) {
+        initRemoteLocked();
+    }
+    LOG(INFO) << "setSecureLevel select session:" << mSessionId << ",flag=" << flag;
+    auto r = mRemote->setSecureLevel(mSessionId, flag);
+    checkRemoteResultLocked(r);
+    return r.isOk();
+}
+
 bool SubtitleServerClient::setClosedCaptionLang(const char *lang) {
     LOG(INFO) << "select session:" << mSessionId << ",lang=" << lang;
     Mutex::Autolock _l(mLock);

@@ -583,7 +583,7 @@ AM_ErrorCode_t AM_DMX_SetPesFilter(int dev_no, int fhandle, const struct dmx_pes
 	if (ret == AM_SUCCESS)
 	{
 		ret = dev->drv->set_pes_filter(dev, filter, params);
-		AM_DEBUG(2, "set pes filter %d PID %d", fhandle, params->pid);
+		AM_DEBUG(2, "set pes filter %d PID %d flags %d", fhandle, params->pid, params->flags);
 	}
 
 	pthread_mutex_unlock(&dev->lock);

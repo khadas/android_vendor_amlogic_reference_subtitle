@@ -65,6 +65,7 @@ public:
     Return<Result> setSubPid(int32_t sId, int32_t pid, int onid, int tsid) override;
     Return<Result> setPageId(int32_t sId, int32_t pageId) override;
     Return<Result> setAncPageId(int32_t sId, int32_t ancPageId) override;
+    Return<Result> setSecureLevel(int32_t sId, int32_t flag) override;
     Return<Result> setChannelId(int32_t sId, int32_t channelId) override;
     Return<Result> setClosedCaptionVfmt(int32_t sId, int32_t vfmt) override;
     Return<Result> setClosedCaptionLang(int32_t sId, const hidl_string& lang) override;

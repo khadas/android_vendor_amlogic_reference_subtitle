@@ -40,6 +40,7 @@ public:
     void setClosedCaptionLang(const char *lang);
     void setChannelId(int channelId);
     void setDemuxId(int demuxId);
+    void setSecureLevel(int flag);
     void setPipId(int mode, int id);
     //ttx control api
     bool ttControl(int cmd, int magazine, int page, int regionId, int param);

@@ -100,6 +100,9 @@ public:
     bool setSubPid(int pid);
     bool setSubPid(int pid, int onid, int tsid);
 
+    bool setSecureLevel(int flag);
+
+
     // for select CC index
     bool selectCcChannel(int idx);
     bool selectCcChannel(int idx, const char *lang);

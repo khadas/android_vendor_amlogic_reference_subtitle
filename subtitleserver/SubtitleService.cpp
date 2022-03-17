@@ -186,6 +186,32 @@ void SubtitleService::setDemuxId(int demuxId) {
         mDataSource->updateParameter(mSubParam.subType, &mSubParam.scteParam);
     }
 }
+
+void SubtitleService::setSecureLevel(int flag) {
+    switch (mSubParam.dtvSubType) {
+        case  DTV_SUB_DTVKIT_SCTE27:
+            mSubParam.scteParam.flag = flag;
+        break;
+        case DTV_SUB_DTVKIT_DVB:
+            mSubParam.dtvkitDvbParam.flag = flag;
+        break;
+        case DTV_SUB_DTVKIT_TELETEXT:
+            mSubParam.ttParam.flag = flag;
+        break;
+        default:
+        break;
+    }
+    if (NULL == mDataSource )
+      return;
+    if (mSubParam.subType == TYPE_SUBTITLE_DTVKIT_DVB)  {
+        mDataSource->updateParameter(mSubParam.subType, &mSubParam.dtvkitDvbParam);
+    } else if (mSubParam.subType == TYPE_SUBTITLE_DTVKIT_TELETEXT) {
+        mDataSource->updateParameter(mSubParam.subType, &mSubParam.ttParam);
+    } else if (mSubParam.subType == TYPE_SUBTITLE_DTVKIT_SCTE27) {
+        mDataSource->updateParameter(mSubParam.subType, &mSubParam.scteParam);
+    }
+}
+
 void SubtitleService::setSubPid(int pid, int onid, int tsid) {
     switch (mSubParam.dtvSubType) {
         case  DTV_SUB_SCTE27:
