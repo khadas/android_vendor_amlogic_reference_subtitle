@@ -50,7 +50,6 @@
 #define LOGI ALOGI
 #define LOGD ALOGD
 #define LOGE ALOGE
-#define LOGV ALOGV
 
 #define TELETEXT_ROW 26
 #define TELETEXT_COL 41
@@ -1952,10 +1951,11 @@ bool TeletextParser::updateParameter(int type, void *data) {
             }
             gVBIStatus.subtitlePageId = 0;
             mContext->gotoPage = 0;
+            mContext->vbi = NULL;
             gVBIStatus.lastShowingPage = 100;
-            LOGD(" %s, re-register VBI\n", __FUNCTION__);
             vbi_decoder_delete(gVBIStatus.getVbiInstance());
             gVBIStatus.registerVbiInstance(nullptr);
+            LOGD(" %s, re-register VBI mContext->vbi:%p after\n", __FUNCTION__,mContext->vbi);
             if ((ttParam->event == TT_EVENT_GO_TO_PAGE && ttParam->pageNo <= 1 && ttParam->subPageNo == 0)
                 || (ttParam->event == TT_EVENT_INDEXPAGE)) {
                 ttParam->event = TT_EVENT_GO_TO_PAGE;
@@ -2301,7 +2301,7 @@ int TeletextParser::teletextDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *s
             if ((lines = slice2VbiLines(mContext, srcData+1, srcLen-1)) < 0)
                 return lines;
 
-            LOGV("ctx=%p buf_size=%d lines=%u\n", mContext, srcLen, lines);
+            if (mDumpSub) LOGI("ctx=%p buf_size=%d lines=%u\n", mContext, srcLen, lines);
             if (lines > 0) {
                int i;
                //LOGI("line numbers:");
@@ -2311,7 +2311,7 @@ int TeletextParser::teletextDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *s
                 //LOGI("--%s, ctx->vbi->time=%f\n", __FUNCTION__, ctx->vbi->time);
                 vbi_decode(mContext->vbi, mContext->sliced, lines, 0.0);
                 mContext->linesProcessed += lines;
-                LOGV("%s, after vbi decode,ctx->linesProcessed=%d\n",__FUNCTION__,mContext->linesProcessed);
+                if (mDumpSub) LOGI("%s, after vbi decode,ctx->linesProcessed=%d\n",__FUNCTION__,mContext->linesProcessed);
             }
         }
         mContext->pts = AV_NOPTS_VALUE;
@@ -2319,11 +2319,11 @@ int TeletextParser::teletextDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *s
     }
 
     if (ret < 0) {
-        LOGV("--%s,ret=%d, ctx->handlerRet=%d\n", __FUNCTION__, ret, mContext->handlerRet);
+        if (mDumpSub) LOGI("--%s,ret=%d, ctx->handlerRet=%d\n", __FUNCTION__, ret, mContext->handlerRet);
         return ret;
     }
 
-    LOGV("--%s,ret=%d, ctx->handlerRet=%d, ctx->totalPages=%d, ctx->formatId=%d\n",
+    if (mDumpSub) LOGI("--%s,ret=%d, ctx->handlerRet=%d, ctx->totalPages=%d, ctx->formatId=%d\n",
             __FUNCTION__, ret, mContext->handlerRet, mContext->totalPages, mContext->formatId);
 
     // is there a subtitle to pass?
@@ -2364,7 +2364,7 @@ int TeletextParser::getDvbTeletextSpu() {
     char tmpbuf[8];
     int64_t packetHeader = 0;
 
-    LOGV("enter get_dvb_teletext_spu\n");
+    if (mDumpSub) LOGI("enter get_dvb_teletext_spu\n");
     int ret = -1;
 
     while (mDataSource->read(tmpbuf, 1) == 1) {
@@ -2376,7 +2376,7 @@ int TeletextParser::getDvbTeletextSpu() {
         spu->sync_bytes = AML_PARSER_SYNC_WORD;
 
         packetHeader = ((packetHeader<<8) & 0x000000ffffffffff) | tmpbuf[0];
-        LOGV("## get_dvb_spu %x, %llx,-------------\n",tmpbuf[0], packetHeader);
+        if (mDumpSub) LOGI("## get_dvb_spu %x, %llx,-------------\n",tmpbuf[0], packetHeader);
 
         if ((packetHeader & 0xffffffff) == 0x000001bd) {
             ret = hwDemuxParse(spu);
@@ -2644,7 +2644,8 @@ int TeletextParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
     // read package header info
     if (mDataSource->read(tmpbuf, 19) == 19) {
-        LOGV("## 333 get_dvb_spu %x,%x,%x,  %x,%x,%x,  %x,%x,-------------\n",
+        if (mDumpSub) LOGI("## %s get_dvb_spu %x,%x,%x,  %x,%x,%x,  %x,%x,-------------\n",
+                __FUNCTION__,
                 tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3],
                 tmpbuf[4], tmpbuf[5], tmpbuf[6], tmpbuf[7]);
 
@@ -2654,9 +2655,9 @@ int TeletextParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
         spu->subtitle_type = TYPE_SUBTITLE_DVB_TELETEXT;
         spu->pts = dvbPts;
-        LOGV("## spu-> pts:%lld,dvPts:%lld\n", spu->pts, dvbPts);
-        LOGV("## 4444 datalen=%d,pts=%llx,delay=%llx,diff=%llx, data: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
-                dataLen, dvbPts, spu->m_delay, ptsDiff,
+        if (mDumpSub) LOGI("## %s spu-> pts:%lld,dvPts:%lld\n", __FUNCTION__, spu->pts, dvbPts);
+        if (mDumpSub) LOGI("## %s datalen=%d,pts=%llx,delay=%llx,diff=%llx, data: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
+                __FUNCTION__, dataLen, dvbPts, spu->m_delay, ptsDiff,
                 tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4],
                 tmpbuf[5], tmpbuf[6], tmpbuf[7], tmpbuf[8], tmpbuf[9],
                 tmpbuf[10], tmpbuf[11], tmpbuf[12], tmpbuf[13], tmpbuf[14]);
@@ -2666,19 +2667,19 @@ int TeletextParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             LOGE("[%s::%d]malloc error! \n", __FUNCTION__,__LINE__);
             return -1;
         }
-        LOGV("@@[%s::%d]malloc ptr=%p, size = %d\n",__FUNCTION__, __LINE__, data, dataLen);
+        if (mDumpSub) LOGI("@@[%s::%d]malloc ptr=%p, size = %d\n",__FUNCTION__, __LINE__, data, dataLen);
         memset(data, 0x0, dataLen);
         ret = mDataSource->read(data, dataLen);
-        LOGV("## ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
+        if (mDumpSub) LOGI("## ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
                 ret, dataLen, data[0], data[1], data[2], data[3],
                 data[4], data[5], data[6], data[7]);
 
         ret = teletextDecodeFrame(spu, data, dataLen);
-        LOGV("## dvb: (width=%d,height=%d), (x=%d,y=%d),ret =%d,spu->buffer_size=%d--------\n",
+        if (mDumpSub) LOGI("## dvb: (width=%d,height=%d), (x=%d,y=%d),ret =%d,spu->buffer_size=%d--------\n",
                 spu->spu_width, spu->spu_height, spu->spu_start_x, spu->spu_start_y, ret, spu->buffer_size);
 
         if (ret != -1 && spu->buffer_size > 0) {
-            LOGV("dump-pts-swdmx!success pts(%lld) mIndex:%d frame was add\n", spu->pts, ++mIndex);
+            if (mDumpSub) LOGI("dump-pts-swdmx!success pts(%lld) mIndex:%d frame was add\n", spu->pts, ++mIndex);
             if (spu->spu_origin_display_w <= 0 || spu->spu_origin_display_h <= 0) {
                 spu->spu_origin_display_w = VideoInfo::Instance()->getVideoWidth();
                 spu->spu_origin_display_h = VideoInfo::Instance()->getVideoHeight();
@@ -2688,7 +2689,7 @@ int TeletextParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             spu->isKeepShowing = true;
             addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
         } else {
-            LOGV("dump-pts-swdmx!error this pts(%lld) frame was abondon\n", spu->pts);
+            if (mDumpSub) LOGI("dump-pts-swdmx!error this pts(%lld) frame was abondon\n", spu->pts);
         }
 
         if (data) {
@@ -2709,7 +2710,7 @@ int TeletextParser::atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
         // read package header info
         if (mDataSource->read(tmpbuf, 4) == 4) {
             mContext->lineNum = subPeekAsInt32(tmpbuf);
-            LOGV("[%s::%d]line num:%d\n", __FUNCTION__,__LINE__, mContext->lineNum);
+            if (mDumpSub) LOGI("[%s::%d]line num:%d\n", __FUNCTION__,__LINE__, mContext->lineNum);
 
             spu->subtitle_type = TYPE_SUBTITLE_DVB_TELETEXT;
             mContext->atvTeletext = true;
@@ -2720,16 +2721,16 @@ int TeletextParser::atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             }
             memset(data, 0x0, ATV_TELETEXT_DATA_LEN);
             ret = mDataSource->read(data, ATV_TELETEXT_DATA_LEN);
-            LOGV("[%s::%d] ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
+            if (mDumpSub) LOGI("[%s::%d] ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
                     __FUNCTION__, __LINE__, ret, ATV_TELETEXT_DATA_LEN, data[0], data[1], data[2], data[3],
                     data[4], data[5], data[6], data[7]);
 
             ret = teletextDecodeFrame(spu, data, ATV_TELETEXT_DATA_LEN);
-            LOGV("[%s::%d] (width=%d,height=%d), (x=%d,y=%d),ret =%d,spu->buffer_size=%d--------\n", __FUNCTION__, __LINE__,
+            if (mDumpSub) LOGI("[%s::%d] (width=%d,height=%d), (x=%d,y=%d),ret =%d,spu->buffer_size=%d--------\n", __FUNCTION__, __LINE__,
                     spu->spu_width, spu->spu_height, spu->spu_start_x, spu->spu_start_y, ret, spu->buffer_size);
 
             if (ret != -1 && spu->buffer_size > 0) {
-                LOGV("[%s::%d]dump-pts-atvHwDmx!success pts(%lld) mIndex:%d frame was add\n", __FUNCTION__,__LINE__, spu->pts, ++mIndex);
+                if (mDumpSub) LOGI("[%s::%d]dump-pts-atvHwDmx!success pts(%lld) mIndex:%d frame was add\n", __FUNCTION__,__LINE__, spu->pts, ++mIndex);
                 if (spu->spu_origin_display_w <= 0 || spu->spu_origin_display_h <= 0) {
                     spu->spu_origin_display_w = VideoInfo::Instance()->getVideoWidth();
                     spu->spu_origin_display_h = VideoInfo::Instance()->getVideoHeight();
@@ -2739,7 +2740,7 @@ int TeletextParser::atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                 spu->isKeepShowing = true;
                 addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
             } else {
-                LOGV("[%s::%d]dump-pts-atvHwDmx!error this pts(%lld) frame was abondon\n", __FUNCTION__,__LINE__, spu->pts);
+                if (mDumpSub) LOGI("[%s::%d]dump-pts-atvHwDmx!error this pts(%lld) frame was abondon\n", __FUNCTION__,__LINE__, spu->pts);
             }
 
             if (data) {
