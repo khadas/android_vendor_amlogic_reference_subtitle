@@ -439,9 +439,14 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                 uint64_t timestamp = mPresent->mStartTimeModifier + mPresent->mCurrentPresentRelativeTime;
                 uint64_t pts = convertDvbTime2Ns(spu->pts);
                 uint64_t ptsDiff = (pts>timestamp) ? (pts-timestamp) : (timestamp-pts);
+                if (isMore32Bit(spu->pts)) {
+                    mSubtitlePts32Bit = false;
+                } else {
+                    mSubtitlePts32Bit = true;
+                }
                 // The subtitle pts ahead more than 100S of video...maybe aheam more 20s
                 if ((ptsDiff >= 200*1000*1000*1000LL) && !(spu->isExtSub)) {
-                    ALOGD("Got  SPU: spu is ptsDiff >= 200s");
+                    ALOGD("Got  SPU: spu is ptsDiff >= 200s pts:%lld spu->pts:%lld",pts, spu->pts);
                     // we cannot check it's valid or not, so delay 1s(common case) and show
                     spu->pts = convertNs2DvbTime(timestamp+1*1000*1000*1000LL);
                     spu->m_delay = spu->pts + 10*1000*DVB_TIME_MULTI;
@@ -460,11 +465,6 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                 int maxAllowedItem = spu->isBitmapSpu() ? MAX_ALLOWED_STREAM_SPU_NUM : MAX_ALLOWED_STREAM_SPU_NUM*50;
                 while (mPresent->mEmittedShowingSpu.size() > maxAllowedItem) {
                     mPresent->mEmittedShowingSpu.pop_front();
-                }
-                if (isMore32Bit(spu->pts)) {
-                    mSubtitlePts32Bit = false;
-                } else {
-                    mSubtitlePts32Bit = true;
                 }
             }
 
