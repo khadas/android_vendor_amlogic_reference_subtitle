@@ -47,6 +47,19 @@
 #define TELETEX_WARN_PAGE_2 0x548000
 #define TELETEX_WARN_PAGE_3 0xb18081
 
+#define C4_ERASE_PAG        0x000080
+#define C5_NEWSFLASH        0x004000
+#define C6_SUBTITLE         0x008000
+#define C7_SUPPRESS_HEADER  0x010000
+#define C8_UPDATE           0x020000
+#define C9_INTERRUPTED      0x040000
+#define C10_INHIBIT_DISPLAY 0x080000
+#define C11_MAGAZINE_SERIAL 0x100000
+#define C12_FRAGMENT        0x200000
+#define C13_PARTIAL_PAGE    0x400000
+#define C14_RESERVED        0x800000
+
+
 #define LOGI ALOGI
 #define LOGD ALOGD
 #define LOGE ALOGE
@@ -460,8 +473,8 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
         return -1;//AVERROR(ENOMEM);
     }
 
-    LOGI("%s, display mode:%d, isSubtitle:%d, ctx->time:%s, subtitlePageNumber:%d, gotoGraphicsSubtitlePage:%d, lockSubpg:%d, page->columns:%d, rows:%d, heightIndex:%d, doubleHeight:%d, x:%d, y:%d, w:%d, h:%d, choptop:%d\n", __FUNCTION__,
-     ctx->dispMode, ctx->isSubtitle, ctx->time, ctx->subtitlePageNumber, ctx->gotoGraphicsSubtitlePage, ctx->lockSubpg, page->columns, page->rows, ctx->heightIndex, ctx->doubleHeight, subRect->x,
+    LOGI("%s, display mode:%d, isSubtitle:%d, ctx->pageType:0x%x, ctx->time:%s, subtitlePageNumber:%d, gotoGraphicsSubtitlePage:%d, lockSubpg:%d, page->columns:%d, rows:%d, heightIndex:%d, doubleHeight:%d, x:%d, y:%d, w:%d, h:%d, choptop:%d\n", __FUNCTION__,
+     ctx->dispMode, ctx->isSubtitle, ctx->pageType, ctx->time, ctx->subtitlePageNumber, ctx->gotoGraphicsSubtitlePage, ctx->lockSubpg, page->columns, page->rows, ctx->heightIndex, ctx->doubleHeight, subRect->x,
      subRect->y, subRect->w, subRect->h, chopTop);
 
     if ((ctx->atvTeletext && isSubtitlePage(gVBIStatus.atvSubtitlePage, ctx->gotoPage)) || (ctx->dtvTeletext && isSubtitlePage(gVBIStatus.dtvSubtitlePage, ctx->gotoPage))) {
@@ -474,8 +487,8 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
         }
     }
 
-    if (ctx->atvTeletext && isSubtitlePage(gVBIStatus.atvSubtitlePage, ctx->gotoPage)) {
-        LOGI("%s this is ATV ctx->gotoPage", __FUNCTION__, ctx->gotoPage);
+    if (ctx->atvTeletext && (isSubtitlePage(gVBIStatus.atvSubtitlePage, ctx->gotoPage) || ctx->pageType & C6_SUBTITLE || ctx->pageType & C5_NEWSFLASH)) {
+        LOGI("%s This ATV ctx->gotoPage:%d is a subtitle or newflash.", __FUNCTION__, ctx->gotoPage);
         ctx->isSubtitle = true;
     }
 
@@ -498,7 +511,8 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
             }
 
             if (page->pgno < 0) {
-                if ((ctx->atvTeletext && isSubtitlePage(gVBIStatus.atvSubtitlePage, ctx->gotoPage)) || (ctx->dtvTeletext && isSubtitlePage(gVBIStatus.dtvSubtitlePage, ctx->gotoPage))) {
+                if ((ctx->atvTeletext && (isSubtitlePage(gVBIStatus.atvSubtitlePage, ctx->gotoPage) || (ctx->pageType & C6_SUBTITLE || ctx->pageType & C5_NEWSFLASH)))
+                        || (ctx->dtvTeletext && (isSubtitlePage(gVBIStatus.dtvSubtitlePage, ctx->gotoPage) || (ctx->pageType & C6_SUBTITLE || ctx->pageType & C5_NEWSFLASH)))) {
                     vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
                         0, 2*0 + chopTop, page->columns, height,
                         /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 1/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
@@ -508,7 +522,8 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
                         /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 0/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
                 }
             } else {
-                if ((ctx->atvTeletext && isSubtitlePage(gVBIStatus.atvSubtitlePage, ctx->gotoPage)) || (ctx->dtvTeletext && isSubtitlePage(gVBIStatus.dtvSubtitlePage, ctx->gotoPage))) {
+                if ((ctx->atvTeletext && (isSubtitlePage(gVBIStatus.atvSubtitlePage, ctx->gotoPage) || (ctx->pageType & C6_SUBTITLE || ctx->pageType & C5_NEWSFLASH)))
+                        || (ctx->dtvTeletext && (isSubtitlePage(gVBIStatus.dtvSubtitlePage, ctx->gotoPage)|| (ctx->pageType & C6_SUBTITLE || ctx->pageType & C5_NEWSFLASH)))) {
                     vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
                         0, 2*0 + chopTop, page->columns, height,
                         /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 1/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
@@ -705,7 +720,7 @@ static void handler(vbi_event *ev, void *userData) {
             if (!res) {
                 LOGE("%s, atv page cannot get now!\n",__FUNCTION__);
             } else {
-                if (pageType & 0x8000) {//atv subtitle
+                if (pageType & C6_SUBTITLE) {//atv subtitle
                     for (int i=0;i<TELETEXT_SUBTITLE_MAX_NUMBER;i++) {
                         LOGI("%s, save atv subtitle page:%d, gotoAtvSubtitleFlg:%d\n",__FUNCTION__, pgno, ctx->gotoAtvSubtitleFlg);
                         if (!isRedundantSubtitlePage(gVBIStatus.atvSubtitlePage, pgno, i) && gVBIStatus.atvSubtitlePage[i] == 0 && atvSubtitlePageInsertFlag == 0) {
@@ -731,7 +746,7 @@ static void handler(vbi_event *ev, void *userData) {
             if (!res) {
                 LOGE("%s, dtv page cannot get now!\n",__FUNCTION__);
             } else {
-                if (pageType & 0x8000) {//dtv subtitle
+                if (pageType & C6_SUBTITLE) {//dtv subtitle
                     for (int i=0;i<TELETEXT_SUBTITLE_MAX_NUMBER;i++) {
                         LOGI("%s, save dtv subtitle page:%d, gotoDtvSubtitleFlg:%d\n",__FUNCTION__, pgno, ctx->gotoDtvSubtitleFlg);
                         if (!isRedundantSubtitlePage(gVBIStatus.dtvSubtitlePage, pgno, i) && gVBIStatus.dtvSubtitlePage[i] == 0 && dtvSubtitlePageInsertFlag == 0) {
@@ -793,7 +808,7 @@ static void handler(vbi_event *ev, void *userData) {
         free(page);
         return;
     }
-    ctx->isSubtitle = pageType & 0x8000; //pageType subtitle: 32768, graphics:0
+    ctx->isSubtitle = pageType & C6_SUBTITLE; //pageType subtitle: 32768, graphics:0
     ctx->pageType = pageType;
     int subArray[36];
     int len = 36;
@@ -1307,7 +1322,7 @@ int TeletextParser::fetchVbiPageLocked(int pageNum, int subPageNum) {
     int len = 36;
     bool ret = vbi_get_sub_info(mContext->vbi, vbi_dec2bcd(pageNum), subArray, &len);
     //this only show graphics, and smoe graphics have subtitle.
-   mContext->isSubtitle = pageType & 0x8000;
+   mContext->isSubtitle = (pageType & C6_SUBTITLE || pageType & C5_NEWSFLASH);
    mContext->pageType = pageType;
 #ifndef SUPPORT_LOAD_ANIMATION
     if (!mContext->atvTeletext && !mContext->dtvTeletext && mContext->isSubtitle && len <= 1) {
