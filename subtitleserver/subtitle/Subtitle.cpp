@@ -251,13 +251,13 @@ void Subtitle::run() {
             }
             break;
             case ACTION_SUBTITLE_RECEIVED_SUBTYPE: {
+                if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CATPTION) {
+                    break;
+                }
                 if (mParser != nullptr) {
                     mParser->stopParse();
                     mPresentation->stopPresent();
                     mParser = nullptr;
-                }
-                if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CATPTION) {
-                    break;
                 }
                 mParser = ParserFactory::create(mSubPrams, mDataSource);
                 mParser->startParse(mParserNotifier, mPresentation.get());
