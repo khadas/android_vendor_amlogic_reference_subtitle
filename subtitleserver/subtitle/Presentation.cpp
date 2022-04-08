@@ -564,7 +564,11 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                                 spu->pts, spu->pts/DVB_TIME_MULTI,
                                 spu->m_delay, spu->m_delay/DVB_TIME_MULTI,
                                 spu->spu_data, spu->spu_data);
-                        mPresent->mRender->showSubtitleItem(spu, mPresent->mParser->getParseType());
+                        if (spu->spu_data == nullptr) {
+                             mPresent->mRender->hideSubtitleItem(spu);
+                        } else {
+                             mPresent->mRender->showSubtitleItem(spu, mPresent->mParser->getParseType());
+                        }
 
                         // fix fadding time, if not valid.
                         if (spu->isImmediatePresent) {

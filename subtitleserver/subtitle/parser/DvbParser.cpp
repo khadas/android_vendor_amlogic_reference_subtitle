@@ -1663,7 +1663,7 @@ int DvbParser::hwDemuxParse() {
                     LOGI("start decode dvb subtitle\n\n");
                     ret = decodeSubtitle(spu, buf, packetLen);
                     LOGI("dump-pts-hwdmx parse ret:%d,width:%d, height:%d, buffer_size:%d spu->pts:%lld", ret, spu->spu_width, spu->spu_height, spu->buffer_size, spu->pts);
-                    if (ret != -1 && spu->buffer_size > 0) {
+                    if (ret != -1) {
                         LOGI("dump-pts-hwdmx!success pts(%lld)frame was add\n", spu->pts);
                         addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
                         notifySubtitleDimension(spu->spu_origin_display_w, spu->spu_origin_display_h);

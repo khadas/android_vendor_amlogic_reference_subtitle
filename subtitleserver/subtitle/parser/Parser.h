@@ -153,7 +153,7 @@ public:
         }
 
         // validate the item: do not sent empty items due to parser error.
-        if (item == nullptr || (item->spu_data == nullptr && item->dynGen == false)) {
+        if (item == nullptr ) {
             __android_log_print(ANDROID_LOG_ERROR, "Parser", "add invalid empty spu!");
             return;
         }
