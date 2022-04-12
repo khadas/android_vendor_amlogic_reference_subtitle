@@ -78,6 +78,7 @@ UserDataAfd::~UserDataAfd() {
     LOGI("~UserDataAfd");
     sInstance = nullptr;
     mPlayerId = -1;
+    std::unique_lock<std::mutex> autolock(mMutex);
     if (mThread != nullptr) {
         stop();
         mThread->join();
@@ -124,7 +125,7 @@ void UserDataAfd::run() {
 
 
 int UserDataAfd::stop() {
-    //LOGI("stopUserData");
+    LOGI("stopUserData");
     // TODO: should impl a real status/notify manner
     // this is tooo simple...
     {
@@ -136,6 +137,11 @@ int UserDataAfd::stop() {
     AM_EVT_Unsubscribe(USERDATA_DEVICE_NUM, AM_USERDATA_EVT_AFD, afd_evt_callback, NULL);
     if ((mMode & AM_USERDATA_MODE_CC) ==  AM_USERDATA_MODE_CC)
         AM_USERDATA_Close(USERDATA_DEVICE_NUM);
+    std::unique_lock<std::mutex> autolock(mMutex);
+    if (mThread != nullptr) {
+        mThread->join();
+        mThread = nullptr;
+    }
     return 0;
 }
 

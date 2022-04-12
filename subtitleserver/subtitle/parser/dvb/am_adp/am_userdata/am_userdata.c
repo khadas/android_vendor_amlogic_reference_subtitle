@@ -416,7 +416,7 @@ AM_ErrorCode_t AM_USERDATA_Close(int dev_no)
 			{
 				dev->drv->close(dev);
 			}
-
+			AM_DEBUG(1, "AM_USERDATA_Close pthread_mutex_destroy");
 			pthread_mutex_destroy(&dev->lock);
 
 			userdata_ring_buf_deinit(&dev->pkg_buf);
