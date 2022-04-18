@@ -87,6 +87,11 @@
 #define BITMAP_CHAR_WIDTH  12
 #define BITMAP_CHAR_HEIGHT 10
 
+#define TELETEXT_LIVETV_DEFAULT_SUBPAGE   0
+#define TELETEXT_INVALID_SUBPAGE_NUMBER_1 -1
+#define TELETEXT_INVALID_SUBPAGE_NUMBER_2 0xffffffff
+
+
 #define DOUBLE_HEIGHT_SCROLL_FACTOR 2
 #define DOUBLE_HEIGHT_SCROLL_SECTION 6
 #define DOUBLE_HEIGHT_SCROLL_SECTION_PLUS DOUBLE_HEIGHT_SCROLL_SECTION+1  //+1 for sub page row
@@ -640,7 +645,12 @@ static inline void setNavigatorPageNumber(vbi_page *page, int currentPage)
      for (int i = 0; i < NAVIGATOR_COLORBAR_LINK_SIZE; i++) {
          NavigatorPageT navigatorPage;
          navigatorPage.pageNo = page->nav_link[i].pgno;
-         navigatorPage.subPageNo= page->nav_link[i].subno;
+         if (page->nav_link[i].subno == TELETEXT_INVALID_SUBPAGE_NUMBER_1 ||
+            page->nav_link[i].subno == TELETEXT_INVALID_SUBPAGE_NUMBER_2) {
+                navigatorPage.subPageNo= 0;
+         } else {
+                navigatorPage.subPageNo= page->nav_link[i].subno;
+         }
          parser->mCurrentNavigatorPage.push_back(navigatorPage);
      }
 }
@@ -1438,7 +1448,7 @@ int TeletextParser::fetchCountPageLocked(int dir, int count) {
         LOGI("%s, error! Context is null\n", __FUNCTION__);
         return TT2_FAILURE;
     }
-    LOGI("%s,  gotopage:%d\n", __FUNCTION__, mContext->gotoPage);
+    LOGI("%s,  gotopage:%d NavigatorPage.size:%d\n", __FUNCTION__, mContext->gotoPage, mCurrentNavigatorPage.size());
 
     if (mContext->lockSubpg == 1) {
         mContext->lockSubpg = 0;
@@ -1481,11 +1491,17 @@ int TeletextParser::fetchCountPageLocked(int dir, int count) {
     } else {
         pgno = mCurrentNavigatorPage[count-1].pageNo;
         subno = mCurrentNavigatorPage[count-1].subPageNo;
+        LOGI("%s, pgno:%x subno:%x\n",__FUNCTION__,pgno,subno);
         if (0 == pgno) {
             LOGI("%s, error! don't get the navigator pageno\n", __FUNCTION__);
             return TT2_FAILURE;
         }
         vbi_set_subtitle_page(mContext->vbi, pgno);
+        int res = fetchVbiPageLocked(vbi_bcd2dec(pgno), subno);
+        if (!res) {
+            LOGE("%s, return, page get error\n",__FUNCTION__);
+            return TT2_FAILURE;
+        }
         mContext->pageNum = vbi_bcd2dec(pgno);
         mContext->subPageNum = vbi_bcd2dec(subno);;
         mContext->acceptSubPage = getSubPageInfoLocked();
@@ -2053,7 +2069,11 @@ bool TeletextParser::handleControl() {
             mContext->pageState = TT2_SEARCH_STATE;
             mContext->subtitleMode = TT2_GRAPHICS_MODE;
             mContext->resetShowSubtitlePageNumberTimeFlag = true;
-            page = convertPageDecimal2Hex(ttParam->pageNo, ttParam->subPageNo);
+            if (ttParam->subPageNo == TELETEXT_LIVETV_DEFAULT_SUBPAGE) {
+                page = convertPageDecimal2Hex(ttParam->pageNo, ttParam->subPageNo);
+            } else {
+                page = ttParam->subPageNo;
+            }
             mContext->gotoGraphicsSubtitlePage = page;
             return gotoPageLocked(page, AM_TT2_ANY_SUBNO);
         case TT_EVENT_GO_TO_SUBTITLE:
