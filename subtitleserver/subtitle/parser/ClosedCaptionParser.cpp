@@ -314,6 +314,11 @@ int ClosedCaptionParser::startAmlCC() {
     if (source != AM_CC_INPUT_VBI) {
         mVfmt = VideoInfo::Instance()->getVideoFormat();
     }
+
+    if (sInstance == nullptr) {
+        sInstance = this;
+    }
+
     LOGI(" start cc source:%d, channel:%d, mvfmt:%d", source, channel, mVfmt);
     startAtscCc(source, mVfmt, channel, 0, 0, 0, 0, 0, 0);
 
