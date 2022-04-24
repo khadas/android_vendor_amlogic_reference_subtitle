@@ -445,9 +445,9 @@ static jint nativeTtGoHome(JNIEnv* env, jclass clazz) {
 }
 
 
-static jint nativeTtGotoPage(JNIEnv* env, jclass clazz, jint page, jint subPage) {
+static jint nativeTtGotoPage(JNIEnv* env, jclass clazz, jint magazine, jint page) {
     if (getJniContext()->mSubContext != nullptr) {
-        getJniContext()->mSubContext->ttControl(TT_EVENT_GO_TO_PAGE, page, subPage, -1, -1);
+        getJniContext()->mSubContext->ttControl(TT_EVENT_GO_TO_PAGE, magazine, page, -1, -1);
     } else {
         ALOGE("Subtitle Connection not established");
     }

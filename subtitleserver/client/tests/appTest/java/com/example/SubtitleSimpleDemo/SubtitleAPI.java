@@ -65,8 +65,8 @@ public class SubtitleAPI {
         return nativeSubtitleClose(mHandle);
     }
 
-    public boolean teletextGotoPage(int pageNo, int subPageNo) {
-        return nativeTTgotoPage(mHandle, pageNo, subPageNo);
+    public boolean teletextGotoPage(int maganize, int page) {
+        return nativeTTgotoPage(mHandle, maganize, page);
     }
 
     public boolean teletextGoHome() {
@@ -93,6 +93,6 @@ public class SubtitleAPI {
     private native boolean nativeTTgoHome(long handle);
     private native boolean nativeTTnextPage(long handle, boolean dir);
     private native boolean nativeTTnextSubPage(long handle, boolean dir);
-    private native boolean nativeTTgotoPage(long handle, int pageNo, int subPageNo);
+    private native boolean nativeTTgotoPage(long handle, int maganize, int page);
 
 }
