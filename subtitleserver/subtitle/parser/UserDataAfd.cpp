@@ -35,11 +35,7 @@ void UserDataAfd:: setPlayerId(int id) {
     if (-1 == id) return;
 
     mPlayerId = id;
-    if (mThread != nullptr) {
-        stop();
-        mThread->join();
-        mThread = nullptr;
-    }
+    stop();
     start(mNotifier);
 }
 
@@ -78,12 +74,7 @@ UserDataAfd::~UserDataAfd() {
     LOGI("~UserDataAfd");
     sInstance = nullptr;
     mPlayerId = -1;
-    std::unique_lock<std::mutex> autolock(mMutex);
-    if (mThread != nullptr) {
-        stop();
-        mThread->join();
-        mThread = nullptr;
-    }
+    stop();
 
 }
 int UserDataAfd::start(ParserEventNotifier *notify)
