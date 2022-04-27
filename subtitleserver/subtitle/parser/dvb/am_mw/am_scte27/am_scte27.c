@@ -65,6 +65,8 @@
 #define DISPLAY_STATUS_INIT 0
 #define DISPLAY_STATUS_SHOW 1
 
+#define DISPLAY_FREERUN_THRESHOLD    200 * PTS_PER_SEC
+
 typedef struct scte_simple_bitmap_s
 {
 	uint8_t     show_status;
@@ -633,6 +635,7 @@ static void node_check(AM_SCTE27_Parser_t *parser)
 	scte_simple_bitmap_t *simple_bitmap, *tmp, *pre_clear_bmp = NULL;
 	int has_sub = 0;
 	int need_redraw = 0;
+	int need_freerun = 0; // if sub_pts >> video_pts, display directly
 	uint32_t video_pts;
 	if (!parser)
 		return;
@@ -651,6 +654,17 @@ static void node_check(AM_SCTE27_Parser_t *parser)
 			if (simple_bitmap->show_status == DISPLAY_STATUS_INIT)
 				need_redraw = 1;
 		}
+
+		/* SCTE27 freerun case */
+		if (pts_bigger_than(simple_bitmap->reveal_pts, video_pts)
+				&& simple_bitmap->reveal_pts - video_pts >= DISPLAY_FREERUN_THRESHOLD) {
+			has_sub = 1;
+			if (simple_bitmap->show_status == DISPLAY_STATUS_INIT) {
+				need_redraw = 1;
+				need_freerun = 1;
+			}
+		}
+
 	}
 
 	scte_log("has sub: %d", has_sub);
@@ -681,7 +695,7 @@ static void node_check(AM_SCTE27_Parser_t *parser)
 		}
 
 		if (pts_bigger_than(video_pts, simple_bitmap->reveal_pts) ||
-			simple_bitmap->immediate)
+			simple_bitmap->immediate || need_freerun)
 		{
 
 			if (simple_bitmap->pre_clear)
@@ -717,7 +731,7 @@ static void node_check(AM_SCTE27_Parser_t *parser)
 			scte_log(" node_check vpts %llx bmp_pts %llx outdata_pts %llx",video_pts,simple_bitmap->reveal_pts,simple_bitmap->disapear_pts);
 			//Draw node
 			if (pts_bigger_than(video_pts, simple_bitmap->reveal_pts) ||
-				simple_bitmap->immediate)
+				simple_bitmap->immediate || need_freerun)
 			{
 
 				if (simple_bitmap->show_status == DISPLAY_STATUS_INIT)
