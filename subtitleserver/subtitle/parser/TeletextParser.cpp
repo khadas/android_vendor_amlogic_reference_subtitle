@@ -978,8 +978,9 @@ static void handler(vbi_event *ev, void *userData) {
     }
 
 #ifdef NEED_CACHE_ZVBI_STATUS
-    if (ctx->handlerRet >= 0 && ctx->pageState == TT2_DISPLAY_STATE) {
+    if (ctx->handlerRet >= 0 && ctx->pageState == TT2_DISPLAY_STATE && ctx->subtitleMode == TT2_GRAPHICS_MODE) {
         gVBIStatus.lastShowingPage = pgno; // we only record the success page
+        LOGD("%s, lastShowingPage:%d\n",__FUNCTION__,gVBIStatus.lastShowingPage);
     }
 #endif
 
@@ -1394,10 +1395,11 @@ int TeletextParser::fetchVbiPageLocked(int pageNum, int subPageNum) {
     free(page);
 
 #ifdef NEED_CACHE_ZVBI_STATUS
-    if (mContext->handlerRet >= 0) {
+    if (mContext->handlerRet >= 0 && mContext->subtitleMode == TT2_GRAPHICS_MODE) {
         gVBIStatus.lastShowingPage = pageNum; // we only record the success page
         gVBIStatus.searchLastPageFinished();
-    } else {
+        LOGD("%s, lastShowingPage:%d\n",__FUNCTION__,gVBIStatus.lastShowingPage);
+    } else if (mContext->subtitleMode == TT2_GRAPHICS_MODE) {
         if (gVBIStatus.isSearchLastPageTimeout()) {
             goHomeLocked();
         }
@@ -1986,7 +1988,7 @@ bool TeletextParser::updateParameter(int type, void *data) {
                 gVBIStatus.updateSearchLastPageStart();
             }
         } else {
-            ALOGD("gotoDefaultDtvSubtitleLocked This is the first");
+            ALOGD("%s gotoDefaultDtvSubtitleLocked This is the first",__FUNCTION__);
             for (int j = 0; j < TELETEXT_SUBTITLE_MAX_NUMBER; j++) {
                 gVBIStatus.atvSubtitlePage[j] = 0;
                 gVBIStatus.dtvSubtitlePage[j] = 0;
@@ -2005,7 +2007,7 @@ bool TeletextParser::updateParameter(int type, void *data) {
         }
     }
 
-    ALOGD("mContext->pageNum=%d mContext->gotoPage=%d, lastGotoPage=%d", mContext->pageNum, mContext->gotoPage, gVBIStatus.lastShowingPage);
+    ALOGD("%s mContext->pageNum=%d mContext->gotoPage=%d, lastGotoPage=%d", __FUNCTION__, mContext->pageNum, mContext->gotoPage, gVBIStatus.lastShowingPage);
 #endif
     mControlCmds.push_back(ttParam);
     mUpdateParamCount ++;
@@ -2083,10 +2085,10 @@ bool TeletextParser::handleControl() {
         case TT_EVENT_GO_TO_SUBTITLE:
             mContext->transparentBackground = 0;
             mContext->opacity = mContext->transparentBackground ? 0 : 255;
-            mContext->subtitleMode = TT2_SUBTITLE_MODE;
             mContext->resetShowSubtitlePageNumberTimeFlag = true;
             LOGI("gVBIStatus.subtitlePageId:%d mContext->atvTeletext:%d mContext->dtvTeletext:%d", gVBIStatus.subtitlePageId, mContext->atvTeletext, mContext->dtvTeletext);
             if (mContext->atvTeletext && ttParam->magazine == -1 && ttParam->subPageNo == -1) {
+                mContext->subtitleMode = TT2_GRAPHICS_MODE;
                 if (gVBIStatus.atvSubtitlePage[gVBIStatus.subtitlePageId] == 0 && gVBIStatus.subtitlePageId == 0) {
                     LOGI("mContext->dtvTeletext:%d gVBIStatus.dtvSubtitlePage[0]:%d no subtitle or null page", mContext->atvTeletext,gVBIStatus.atvSubtitlePage[gVBIStatus.subtitlePageId]);
                 } else if (gVBIStatus.atvSubtitlePage[gVBIStatus.subtitlePageId] == 0 && gVBIStatus.subtitlePageId != 0) {
@@ -2104,6 +2106,7 @@ bool TeletextParser::handleControl() {
                 }
             }
             if (mContext->dtvTeletext && ttParam->magazine == -1 && ttParam->subPageNo == -1) {
+                mContext->subtitleMode = TT2_GRAPHICS_MODE;
                 if (gVBIStatus.dtvSubtitlePage[gVBIStatus.subtitlePageId] == 0 && gVBIStatus.subtitlePageId == 0) {
                     LOGI("mContext->dtvTeletext:%d gVBIStatus.dtvSubtitlePage[0]:%d no subtitle or null page", mContext->dtvTeletext,gVBIStatus.dtvSubtitlePage[gVBIStatus.subtitlePageId]);
                 } else if (gVBIStatus.dtvSubtitlePage[gVBIStatus.subtitlePageId] == 0 && gVBIStatus.subtitlePageId != 0) {
@@ -2120,6 +2123,7 @@ bool TeletextParser::handleControl() {
                     }
                 }
             }
+            mContext->subtitleMode = TT2_SUBTITLE_MODE;
             page = convertPageDecimal2Hex(ttParam->magazine, ttParam->subPageNo);
             return gotoPageLocked(page, AM_TT2_ANY_SUBNO);
          case TT_EVENT_0:
