@@ -632,8 +632,13 @@ static inline void setNavigatorPageNumber(vbi_page *page, int currentPage)
          parser->mNavigatorPage = page->pgno;
          parser->mNavigatorSubPage = page->subno;
      } else {
-         LOGI("%s, return : same page. don't need to set the navigator page \n", __FUNCTION__);
-         return;
+         LOGI("%s, same page or same subpage. only update the four-color key value \n", __FUNCTION__);
+         // SWPL-79903
+         // When the reported page numbers and sub-pages are the same,
+         // the updated four-color key may be different from the previous one,
+         // so it cannot be returned directly.
+         // Need to update the four-color key value in time.
+         // return;
      }
      if (0 == page->nav_link[0].pgno) {
          LOGI("%s, return : don't have the navigator bar \n", __FUNCTION__);
