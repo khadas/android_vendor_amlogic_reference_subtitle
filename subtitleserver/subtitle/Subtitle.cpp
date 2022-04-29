@@ -251,7 +251,9 @@ void Subtitle::run() {
             }
             break;
             case ACTION_SUBTITLE_RECEIVED_SUBTYPE: {
-                if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CATPTION) {
+                ALOGD("ACTION_SUBTITLE_RECEIVED_SUBTYPE, type:%d", mSubPrams->subType);
+                if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CATPTION || mSubPrams->subType == TYPE_SUBTITLE_INVALID) {
+                    ALOGD("CC type or invalid type, break, do nothings!");
                     break;
                 }
                 if (mParser != nullptr) {

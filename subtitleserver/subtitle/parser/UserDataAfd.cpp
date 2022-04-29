@@ -101,6 +101,7 @@ void UserDataAfd::run() {
     if (mPlayerId != -1) {
         para.playerid = mPlayerId;
     }
+    para.mediasyncid = -1;
     UserDataAfd::sNewAfdValue = -1;
     if (AM_USERDATA_Open(USERDATA_DEVICE_NUM, &para) != AM_SUCCESS) {
          LOGI("Cannot open userdata device %d", USERDATA_DEVICE_NUM);

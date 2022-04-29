@@ -168,6 +168,7 @@ void DemuxSource::loopRenderTime() {
             } else {
                 MediaSync_getTrackMediaTime(mMediaSync, &value);
                 value = 0x1FFFFFFFF & ((9*value)/100);
+                mSyncPts = value;
             }
 
             static int i = 0;
@@ -218,17 +219,20 @@ static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid, int flag)
         data->dmx_id = -1;
         data->filter_handle = -1;
         memset(&op, 0, sizeof(op));
-
+        data->dmx_id = dmx_id;
+        if (data->dmx_id == -1) {
+            ALOGE("[open_dmx]ERROR invalid argument,data->dmx_id is -1");
+            return -1;
+        }
         ret = AM_DMX_Open(dmx_id, &op);
         if (ret != AM_SUCCESS)
             goto error;
-        data->dmx_id = dmx_id;
         ALOGE("[open_dmx]AM_DMX_Open");
 
         ret = AM_DMX_AllocateFilter(dmx_id, &data->filter_handle);
         if (ret != AM_SUCCESS)
             goto error;
-        ALOGE("[open_dmx]AM_DMX_AllocateFilter");
+        ALOGE("[open_dmx]AM_DMX_AllocateFilter data->filter_handle:%d,mSubType:%d",data->filter_handle,DemuxSource::getCurrentInstance()->mSubType);
 
         ret = AM_DMX_SetBufferSize(dmx_id, data->filter_handle, 0x80000);
         if (ret != AM_SUCCESS)
@@ -356,12 +360,16 @@ void DemuxSource::updateParameter(int type, void *data) {
         mSecureLevelFlag = pScteParam->flag;
     }
     ALOGE(" in updateParameter restartDemux=%d ",restartDemux);
+    mSubType = type;
     if (restartDemux) {
         close_dvb_dmx(mDemuxContext, mDemuxId);
-        open_dvb_dmx(mDemuxContext, mDemuxId, mPid, mSecureLevelFlag);
+        int ret =  open_dvb_dmx(mDemuxContext, mDemuxId, mPid, mSecureLevelFlag);
+        if (ret == 0) {
+            mRenderTimeThread = std::shared_ptr<std::thread>(new std::thread(&DemuxSource::loopRenderTime, this));
+            notifyInfoChange();
+        }
      }
-    mSubType = type;
-    ALOGE(" updateParameter mPid:%d, demuxId = %d", mPid, mDemuxId);
+    ALOGE(" updateParameter mPid:%d, demuxId = %d", mPid, mDemuxId, mSecureLevelFlag);
     return;
 }
 
