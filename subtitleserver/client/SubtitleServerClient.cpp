@@ -329,6 +329,10 @@ bool SubtitleServerClient::open(const char *path, int ioType) {
 
 bool SubtitleServerClient::close() {
     LOG(INFO) << "close session: " << mSessionId;
+    if (this == nullptr) {
+        LOG(ERROR) << "maybe not exsit!";
+        return false;
+    }
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
@@ -559,6 +563,10 @@ bool SubtitleServerClient::userDataOpen() {
 }
 
 bool SubtitleServerClient::userDataClose() {
+    if (this == nullptr) {
+        LOG(ERROR) << "maybe not exsit!";
+        return false;
+    }
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
