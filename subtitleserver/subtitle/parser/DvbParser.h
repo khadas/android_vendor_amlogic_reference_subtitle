@@ -30,7 +30,7 @@ private:
     void parsePageSegment(const uint8_t *buf, int bufSize);
     void parseRegionSegment(const uint8_t *buf, int bufSize);
     void parseClutSegment(const uint8_t *buf, int bufSize);
-    int parseObjectSegment(const uint8_t *buf, int bufSize);
+    int parseObjectSegment(const uint8_t *buf, int bufSize, int cntObject, int totalObject);
     void parseDisplayDefinitionSegment(const uint8_t *buf, int bufSize);
     int parsePixelDatablock(DVBSubObjectDisplay *display,
             const uint8_t *buf, int bufSize, int top_bottom, int non_mod);
