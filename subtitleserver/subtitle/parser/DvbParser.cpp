@@ -215,6 +215,13 @@ struct DVBSubContext {
 #define DVBSUB_DT_48_MAP_TABLE_DATA                 0x22
 #define DVBSUB_DT_END_OF_OBJECT_LINE                0xf0
 
+#define SINGLE_OBJECT_DATA        4
+#define SINGLE_FIRST_OBJECT_DATA  1
+
+
+#define TOP_FIELD           0
+#define BOTTOM_FIELD        1
+
 /* pixel operations */
 
 #define DVB_TIME_OUT_LONG_DURATION  30
@@ -939,7 +946,7 @@ bool DvbParser::updateParameter(int type, void *data) {
     return true;
 }
 
-int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize) {
+int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize, int cntObject, int totalObject) {
     const uint8_t *bufEnd = buf + bufSize;
     const uint8_t *block;
     int objectId;
@@ -972,7 +979,7 @@ int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize) {
             int ret = 0;
             block = buf;
 
-            ret = parsePixelDatablock(display, block, topFieldLen, 0, nonModifyingColor);
+            ret = parsePixelDatablock(display, block, topFieldLen, (totalObject >=SINGLE_OBJECT_DATA && (cntObject % SINGLE_OBJECT_DATA != SINGLE_FIRST_OBJECT_DATA)) ? BOTTOM_FIELD: TOP_FIELD , nonModifyingColor);
             if (ret == -1)
                 return ret;
 
@@ -981,7 +988,7 @@ int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize) {
             } else {
                 bottomFieldLen = topFieldLen;
             }
-            ret = parsePixelDatablock(display, block, bottomFieldLen, 1, nonModifyingColor);
+            ret = parsePixelDatablock(display, block, bottomFieldLen,  (totalObject >=SINGLE_OBJECT_DATA && (cntObject % SINGLE_OBJECT_DATA != SINGLE_FIRST_OBJECT_DATA)) ? TOP_FIELD : BOTTOM_FIELD, nonModifyingColor);
             if (ret == -1)
                 return ret;
         }
@@ -1448,7 +1455,9 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
     int pageId;
     int segmentLength;
     int dataSize;
-
+    //for special subtitle who has 4 or more object segments
+    int cnt_object = 0;
+    int totalObject = 0;
     spu->spu_width = 0;
     spu->spu_height = 0;
     spu->spu_start_x = 0;
@@ -1488,6 +1497,42 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
                 || mContext->ancillaryId == -1) {
             int ret = 0;
             switch (segmentType) {
+                case DVBSUB_OBJECT_SEGMENT:
+                    totalObject++;
+                    break;
+                default:
+                    LOGI("Subtitling segment type 0x%x, page id %d, length %d\n", segmentType, pageId, segmentLength);
+                    break;
+            }
+        }
+        p += segmentLength;
+    }
+    ALOGD("dvbsub_decode, object segment total:%d", totalObject);
+    p = buf;
+    pEnd = buf + bufSize;
+
+    while (pEnd - p >= 6 && *p == 0x0f) {
+        if (mState == SUB_STOP) {
+            return -1;
+        }
+
+        p += 1;
+        segmentType = *p++;
+        pageId = AV_RB16(p);
+        p += 2;
+        segmentLength = AV_RB16(p);
+        p += 2;
+        if (pEnd - p < segmentLength) {
+            LOGI("incomplete or broken packet");
+            return -1;
+        }
+        LOGI("## dvbsub_decode segmentType=%x", segmentType);
+        if (pageId == mContext->compositionId
+                || pageId == mContext->ancillaryId
+                || mContext->compositionId == -1
+                || mContext->ancillaryId == -1) {
+            int ret = 0;
+            switch (segmentType) {
                 case DVBSUB_PAGE_SEGMENT:
                     parsePageSegment(p, segmentLength);
                     dataSize = displayEndSegment(spu);
@@ -1499,7 +1544,8 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
                     parseClutSegment(p, segmentLength);
                     break;
                 case DVBSUB_OBJECT_SEGMENT:
-                    ret = parseObjectSegment(p, segmentLength);
+                    cnt_object++;
+                    ret = parseObjectSegment(p, segmentLength, cnt_object, totalObject);
                     if (ret == -1) return -1;
                     break;
                 case DVBSUB_DISPLAYDEFINITION_SEGMENT:
