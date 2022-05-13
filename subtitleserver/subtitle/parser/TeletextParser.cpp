@@ -462,7 +462,7 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
     }
 
     if (vc >= vcend) {
-        if (ctx->isSubtitle) {
+        if (ctx->isSubtitle && ctx->subtitleMode == TT2_GRAPHICS_MODE) {
             LOGI("Currently request show null subtitle data, so draw it will clear screen.");
             // if this page is subtitle, and nothing need to draw.
             // then request to draw, draw an empty clear screen.
@@ -505,7 +505,7 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
     }
 
     #ifdef TELETEXT_GRAPHICS_SUBTITLE_PAGENUMBER_BLACKGROUND
-        if (ctx->isSubtitle) {
+        if (ctx->isSubtitle && ctx->subtitleMode == TT2_GRAPHICS_MODE) {
             if (ctx->resetShowSubtitlePageNumberTimeFlag || (ctx->subtitlePageNumber != ctx->gotoGraphicsSubtitlePage && ctx->gotoGraphicsSubtitlePage != 0) || (ctx->gotoGraphicsSubtitlePage > 0 && ctx->gotoGraphicsSubtitlePage <= TELETEXT_MIN_PAGE_NUMBER)) {
                 page->pgno = vbi_dec2bcd(ctx->gotoGraphicsSubtitlePage);
                 ctx->subtitlePageNumber = ctx->gotoGraphicsSubtitlePage;
