@@ -2236,7 +2236,7 @@ int TeletextParser::initContext() {
     mContext->searchDir = 1;
     mContext->gotoPage = 0;
     //1:transparent 0:black default transparent
-    mContext->transparentBackground = 1;
+    mContext->transparentBackground = 0;
     //display backGround, page not full Green, need add prop define non-page display backGround
     //1:transparent 0:black
     mContext->disPlayBackground = 0;
