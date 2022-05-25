@@ -373,7 +373,7 @@ AmlSubtitleStatus amlsub_TeletextControl(AmlSubtitleHnd handle, AmlTeletextCtrlP
         return SUB_STAT_INV;
     }
 
-    ctx->mClient->ttControl(param->event, param->magazine, param->page, 1, 1);
+    ctx->mClient->ttControl(param->event, param->magazine, param->page, param->regionid, param->subpagedir);
     return SUB_STAT_OK;
 }
 

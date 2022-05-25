@@ -150,6 +150,8 @@ typedef struct {
     int magazine = 0;
     int page = 0;
     AmlTeletextEvent event;
+    int regionid;
+    int subpagedir;
 } AmlTeletextCtrlParam;
 
 

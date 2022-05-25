@@ -2128,6 +2128,7 @@ bool TeletextParser::handleControl() {
                     }
                 }
             }
+            if (ttParam->regionId > 0) mContext->regionId = ttParam->regionId;
             mContext->subtitleMode = TT2_SUBTITLE_MODE;
             page = convertPageDecimal2Hex(ttParam->magazine, ttParam->subPageNo);
             return gotoPageLocked(page, AM_TT2_ANY_SUBNO);
