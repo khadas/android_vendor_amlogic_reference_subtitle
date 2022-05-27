@@ -1087,10 +1087,11 @@ void VobSubIndex::convert2bto32b(const unsigned char *source, long length, int b
 
     aAlpha[0] = 1; // background need transparent
 
-    RGBA_Pal[0] = ((aAlpha[0] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[0]-1];
-    RGBA_Pal[1] = ((aAlpha[1] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[1]-1];
-    RGBA_Pal[2] = ((aAlpha[2] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[2]-1];
-    RGBA_Pal[3] = ((aAlpha[3] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[3]-1];
+    RGBA_Pal[0] = ((aAlpha[0] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[0]-1];//backgroud color
+    RGBA_Pal[1] = 0xffffffff;//((aAlpha[1] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[1]-1];//fill color during outline
+    RGBA_Pal[2] = ((aAlpha[2] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[2]-1];//color of outline
+    RGBA_Pal[3] = ((aAlpha[3] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[3]-1];//backgroud color
+    //ALOGD("RAGB:%0x,%0x,%0x,%0x",RGBA_Pal[0],RGBA_Pal[1],RGBA_Pal[2],RGBA_Pal[3]);
 
     static int k = 0;
      char name[1024];

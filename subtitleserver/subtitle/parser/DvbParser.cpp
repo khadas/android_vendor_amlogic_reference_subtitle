@@ -1458,6 +1458,7 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
     //for special subtitle who has 4 or more object segments
     int cnt_object = 0;
     int totalObject = 0;
+    int total_RegionSegment = 0;
     spu->spu_width = 0;
     spu->spu_height = 0;
     spu->spu_start_x = 0;
@@ -1497,6 +1498,11 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
                 || mContext->ancillaryId == -1) {
             int ret = 0;
             switch (segmentType) {
+                case DVBSUB_REGION_SEGMENT:
+                    total_RegionSegment ++;
+                    break;
+                case DVBSUB_CLUT_SEGMENT:
+                    break;
                 case DVBSUB_OBJECT_SEGMENT:
                     totalObject++;
                     break;
@@ -1507,7 +1513,7 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
         }
         p += segmentLength;
     }
-    ALOGD("dvbsub_decode, object segment total:%d", totalObject);
+    ALOGD("dvbsub_decode, object segment total:%d, region segment total:%d", totalObject, total_RegionSegment);
     p = buf;
     pEnd = buf + bufSize;
 
@@ -1545,6 +1551,9 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
                     break;
                 case DVBSUB_OBJECT_SEGMENT:
                     cnt_object++;
+                    if (totalObject >= SINGLE_OBJECT_DATA && total_RegionSegment == SINGLE_OBJECT_DATA) {
+                        cnt_object = SINGLE_FIRST_OBJECT_DATA;
+                    }
                     ret = parseObjectSegment(p, segmentLength, cnt_object, totalObject);
                     if (ret == -1) return -1;
                     break;

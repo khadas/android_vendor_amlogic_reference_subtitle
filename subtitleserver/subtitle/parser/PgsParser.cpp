@@ -136,6 +136,15 @@ static inline void readWindowHeader(unsigned char *buf, PgsInfo *pgsInfo) {
     pgsInfo->windowWidth = (buf[6] << 8) | buf[7];
     pgsInfo->windowHeight = (buf[8] << 8) | buf[9];
 }
+static inline void readWindonInfo(unsigned char *buf, PgsInfo *pgsInfo) {
+    pgsInfo->windowWidth = (buf[0] << 8) | buf[1];
+    pgsInfo->windowHeight = (buf[2] << 8) | buf[3];
+    pgsInfo->x = (buf[15] << 8) | buf[16];
+    pgsInfo->y = (buf[17] << 8) | buf[18];
+    LOGI("readWindowInfo:bitmapx:%d,bitmapy:%d,windowwidth:%d,windowHeigh:%d",
+    pgsInfo->x,pgsInfo->y,pgsInfo->windowWidth,pgsInfo->windowHeight);
+}
+
 
 static inline void readColorTable(unsigned char *buf, int size, PgsInfo *pgsInfo) {
     LOGI("--readColorTable-- %d, %d\n", pgsInfo->imageWidth, pgsInfo->imageHeight);
@@ -349,6 +358,8 @@ int PgsParser::parserOnePgs(std::shared_ptr<AML_SPUVAR> spu) {
     spu->spu_data = mPgsEpgs->showdata.resultBuf;
     spu->spu_width = mPgsEpgs->showdata.imageWidth;
     spu->spu_height = mPgsEpgs->showdata.imageHeight;
+    spu->spu_origin_display_w = mPgsEpgs->showdata.windowWidth;
+    spu->spu_origin_display_h = mPgsEpgs->showdata.windowHeight;
     spu->pts = mPgsEpgs->showdata.pts;
     spu->buffer_size = spu->spu_width * spu->spu_height * 4;
     if (spu->buffer_size > 0 && spu->spu_data != NULL) {
@@ -386,6 +397,7 @@ int PgsParser::decode(std::shared_ptr<AML_SPUVAR> spu, unsigned char *buf) {
             } else if (size == 0xb) {
                 //clearSubpictureHeader
                 LOGI("enter type 0x16,0xb, %d %d\n", startTime, endTime);
+                readWindonInfo(curBuf - size,pgsInfo);
                 spu->subtitle_type = TYPE_SUBTITLE_PGS;
                 spu->pts = startTime;
                 if (spu->spu_width != 0 && spu->spu_height != 0) {
@@ -404,7 +416,7 @@ int PgsParser::decode(std::shared_ptr<AML_SPUVAR> spu, unsigned char *buf) {
         case 0x17:      //window
             if (size == 0xa) {
                 //LOGI("enter type 0x17, %d\n", read_pgs_byte);
-                readWindowHeader(curBuf - size, pgsInfo);
+                //readWindowHeader(curBuf - size, pgsInfo);
             }
             break;
         case 0x14:      //color table
