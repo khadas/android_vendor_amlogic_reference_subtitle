@@ -21,7 +21,7 @@ public:
     int parse() {return -1;};
     void dump(int fd, const char *prefix) {return;};
     void notifyCallerAfdChange(int afd);
-    void setPlayerId(int id);
+    void setPipId(int mode, int id);
     static inline UserDataAfd *getCurrentInstance();
 
     static int sNewAfdValue;
@@ -31,6 +31,7 @@ private:
     static UserDataAfd *sInstance;
     ParserEventNotifier *mNotifier;
     int mPlayerId;
+    int mMediasyncId;
     int mMode;
     std::mutex mMutex;
     std::shared_ptr<std::thread> mThread;

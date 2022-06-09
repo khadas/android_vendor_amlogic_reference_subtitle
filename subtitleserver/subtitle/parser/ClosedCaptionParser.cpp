@@ -235,8 +235,8 @@ int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_c
 
     setDvbDebugLogLevel();
 
-    LOGI("start cc: vfmt %d caption %d, fgc %d, bgc %d, fgo %d, bgo %d, fsize %d, fstyle %d",
-            vfmt, caption, fg_color, bg_color, fg_opacity, bg_opacity, font_size, font_style);
+    LOGI("start cc: vfmt %d caption %d, fgc %d, bgc %d, fgo %d, bgo %d, fsize %d, fstyle %d mMediaSyncId:%d",
+            vfmt, caption, fg_color, bg_color, fg_opacity, bg_opacity, font_size, font_style, mMediaSyncId);
 
     memset(&cc_para, 0, sizeof(cc_para));
     memset(&spara, 0, sizeof(spara));

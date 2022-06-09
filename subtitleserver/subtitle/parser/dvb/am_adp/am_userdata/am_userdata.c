@@ -492,3 +492,19 @@ AM_ErrorCode_t AM_USERDATA_GetMode(int dev_no, int *mode)
 	return ret;
 }
 
+AM_ErrorCode_t AM_USERDATA_SetParamters(int dev_no, int para)
+{
+	AM_USERDATA_Device_t *dev;
+	AM_ErrorCode_t ret = AM_SUCCESS;
+
+	AM_TRY(userdata_get_openned_dev(dev_no, &dev));
+
+	pthread_mutex_lock(&dev->lock);
+
+	if (dev->drv->set_param)
+		ret = dev->drv->set_param(dev, para);
+
+	pthread_mutex_unlock(&dev->lock);
+
+	return ret;
+}

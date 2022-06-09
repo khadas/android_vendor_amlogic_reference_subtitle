@@ -23,20 +23,31 @@ void UserDataAfd::notifyCallerAfdChange(int afd) {
     }
 }
 
-void UserDataAfd:: setPlayerId(int id) {
-    LOGI("setPlayerId id=%d",id);
+void UserDataAfd:: setPipId(int mode, int id) {
+    LOGI("setPipId mode = %d, id = %d\n", mode, id);
+
     if (sInstance == nullptr) {
        LOGI("Error: setPlayerId sInstance is null");
        return;
     }
-    if (id == mPlayerId) {
-        return;
-    }
-    if (-1 == id) return;
 
-    mPlayerId = id;
-    stop();
-    start(mNotifier);
+    if (PIP_PLAYER_ID== mode) {
+        if (id == mPlayerId) {
+            return;
+        }
+        if (-1 == id) return;
+
+        mPlayerId = id;
+        stop();
+        start(mNotifier);
+    } else if (PIP_MEDIASYNC_ID == mode) {
+        if (id >= 0 && id != mMediasyncId) {
+            mMediasyncId = id;
+
+            AM_USERDATA_SetParamters(USERDATA_DEVICE_NUM, id);
+        }
+    }
+
 }
 
 UserDataAfd *UserDataAfd::getCurrentInstance() {
@@ -63,6 +74,7 @@ void afd_evt_callback(long devno, int eventType, void *param, void *userdata) {
 UserDataAfd::UserDataAfd() {
     mNotifier = nullptr;
     mPlayerId = -1;
+    mMediasyncId = -1;
     mMode = -1;
     LOGI("creat UserDataAfd");
     sInstance = this;
@@ -101,7 +113,7 @@ void UserDataAfd::run() {
     if (mPlayerId != -1) {
         para.playerid = mPlayerId;
     }
-    para.mediasyncid = -1;
+    para.mediasyncid = mMediasyncId;
     UserDataAfd::sNewAfdValue = -1;
     if (AM_USERDATA_Open(USERDATA_DEVICE_NUM, &para) != AM_SUCCESS) {
          LOGI("Cannot open userdata device %d", USERDATA_DEVICE_NUM);

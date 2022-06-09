@@ -101,6 +101,9 @@ extern AM_ErrorCode_t AM_USERDATA_Open(int dev_no, const AM_USERDATA_OpenPara_t 
  */
 extern AM_ErrorCode_t AM_USERDATA_Close(int dev_no);
 
+
+extern AM_ErrorCode_t AM_USERDATA_SetParamters(int dev_no, int para);
+
 /**\brief Read MPEG user data from the device
  * \param dev_no Device number
  * \param[out] buf Output buffer to store the user data

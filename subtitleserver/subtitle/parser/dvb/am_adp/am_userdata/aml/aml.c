@@ -205,12 +205,14 @@ static AM_ErrorCode_t aml_open(AM_USERDATA_Device_t *dev, const AM_USERDATA_Open
 static AM_ErrorCode_t aml_close(AM_USERDATA_Device_t *dev);
 static AM_ErrorCode_t aml_set_mode(AM_USERDATA_Device_t *dev, int mode);
 static AM_ErrorCode_t aml_get_mode(AM_USERDATA_Device_t *dev, int *mode);
+static AM_ErrorCode_t aml_set_param(AM_USERDATA_Device_t *dev, int para);
 
 const AM_USERDATA_Driver_t aml_ud_drv = {
 .open  = aml_open,
 .close = aml_close,
 .set_mode = aml_set_mode,
 .get_mode = aml_get_mode,
+.set_param = aml_set_param,
 };
 
 int64_t am_get_video_pts(void* media_sync)
@@ -884,7 +886,7 @@ static int get_kernel_version(void)
 static void* aml_userdata_thread (void *arg)
 {
 	AM_USERDATA_Device_t *dev = (AM_USERDATA_Device_t*)arg;
-	AM_UDDrvData *ud = dev->drv_data;
+	AM_UDDrvData *ud = (AM_UDDrvData*)dev->drv_data;
 	int fd = ud->fd;
 	int r, ret, i;
 	struct pollfd pfd;
@@ -918,6 +920,14 @@ static void* aml_userdata_thread (void *arg)
 		AM_DEBUG(AM_DEBUG_LEVEL, "userdata after poll ret %d", ret);
 		if (!ud->running)
 			break;
+
+		if (media_sync == NULL && ud->mediasync_id >= 0) {
+			media_sync = MediaSync_create();
+			if (NULL != media_sync) {
+				MediaSync_bindInstance(media_sync, ud->mediasync_id, MEDIA_SUBTITLE);
+			}
+		}
+
 		if (ret != 1)
 			continue;
 		if (!(pfd.revents & POLLIN))
@@ -1120,5 +1130,15 @@ static AM_ErrorCode_t aml_get_mode(AM_USERDATA_Device_t *dev, int *mode)
 {
 	AM_UDDrvData *ud = dev->drv_data;
 	*mode = ud->mode;
+	return AM_SUCCESS;
+}
+
+static AM_ErrorCode_t aml_set_param(AM_USERDATA_Device_t *dev, int para)
+{
+	if (dev == NULL)
+		return AM_USERDATA_ERR_INVALID_ARG;
+	AM_UDDrvData *ud = dev->drv_data;
+	ud->mediasync_id = para;
+
 	return AM_SUCCESS;
 }

@@ -298,7 +298,7 @@ void SubtitleService::setPipId(int mode, int id) {
     if (PIP_PLAYER_ID== mode) {
         mSubParam.playerId = id;
         if (mUserDataAfd != nullptr) {
-            mUserDataAfd->setPlayerId(id);
+            mUserDataAfd->setPipId(mode, id);
         }
     } else if (PIP_MEDIASYNC_ID == mode) {
         if (mSubParam.mediaId == id) {
@@ -307,6 +307,9 @@ void SubtitleService::setPipId(int mode, int id) {
             same = false;
         }
         mSubParam.mediaId = id;
+        if (mUserDataAfd != nullptr) {
+            mUserDataAfd->setPipId(mode, id);
+        }
     }
     if (NULL == mDataSource )
         return;

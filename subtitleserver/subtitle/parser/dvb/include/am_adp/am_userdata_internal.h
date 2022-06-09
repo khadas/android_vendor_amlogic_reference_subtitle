@@ -57,6 +57,7 @@ typedef struct
 	AM_ErrorCode_t (*close)(AM_USERDATA_Device_t *dev);
 	AM_ErrorCode_t (*set_mode)(AM_USERDATA_Device_t *dev, int mode);
 	AM_ErrorCode_t (*get_mode)(AM_USERDATA_Device_t *dev, int *mode);
+	AM_ErrorCode_t (*set_param)(AM_USERDATA_Device_t *dev, int para);
 } AM_USERDATA_Driver_t;
 
 /**\brief USERDATA设备*/
