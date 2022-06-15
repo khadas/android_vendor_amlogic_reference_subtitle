@@ -172,7 +172,7 @@ public:
         return false;
     }
 
-    ZvbiGlobalStatus() : lastShowingPage(0),subtitlePageId(0), mVbi(nullptr),
+    ZvbiGlobalStatus() : lastShowingPage(0),lastMagazine(-1),lastSubPageNo(-1),subtitlePageId(0), mVbi(nullptr),
         mLastPid(-1), mLastOnid(-1), mLastTsid(-1) {
         mKeepUsingVbi = false;
         for (int j = 0; j < TELETEXT_SUBTITLE_MAX_NUMBER; j++) {
@@ -182,6 +182,8 @@ public:
     }
 
 int lastShowingPage;
+int lastMagazine;
+int lastSubPageNo;
 int subtitlePageId;
 int atvSubtitlePage[TELETEXT_SUBTITLE_MAX_NUMBER];
 int dtvSubtitlePage[TELETEXT_SUBTITLE_MAX_NUMBER];
@@ -1968,10 +1970,10 @@ bool TeletextParser::updateParameter(int type, void *data) {
     if (ttParam->event == TT_EVENT_INVALID) {
         return false; // ignore invalid command requested.
     }
-
+    LOGD(" %s start, ttParam->event:%d magazine:%d subPageNo:0x%x\n", __FUNCTION__,ttParam->event, ttParam->magazine, ttParam->subPageNo);
 #ifdef NEED_CACHE_ZVBI_STATUS
     // teletext not started. this is the first time we check. when not started, vbi is null.
-    if (mContext->vbi == nullptr || mUpdateParamCount == 0) {
+    if ((mContext->vbi == nullptr || mUpdateParamCount == 0) && ttParam->event != TT_EVENT_SET_REGION_ID ) {
         ALOGD("This is the first? pid:%d onid:%d tsid:%d  %d", ttParam->pid, ttParam->onid, ttParam->tsid, ttParam->event);
         // tricky for check need keep using vbi or not
         gVBIStatus.updateProgramInfo(ttParam->pid, ttParam->onid, ttParam->tsid);
@@ -1982,13 +1984,22 @@ bool TeletextParser::updateParameter(int type, void *data) {
             if ((ttParam->event == TT_EVENT_GO_TO_PAGE && ttParam->magazine >= TELETEXT_MIN_MAGAZINE_NUMBER && ttParam->magazine <= TELETEXT_MAX_MAGAZINE_NUMBER&& ttParam->subPageNo >= TELETEXT_MIN_SUBPAGE_NUMBER && ttParam->subPageNo <= TELETEXT_MAX_SUBPAGE_NUMBER)
                 || (ttParam->event == TT_EVENT_INDEXPAGE)) {
                 ttParam->event = TT_EVENT_GO_TO_PAGE;
-                int pageNum =vbi_dec2bcd(gVBIStatus.lastShowingPage);
-                if ( pageNum < TELETEXT_MAX_PAGE_NUMBER && pageNum >= TELETEXT_PAGE_NUMBER_800) {
-                    ttParam->magazine = TELETEXT_MIN_MAGAZINE_NUMBER;
+                int pageNum = 0;
+                if ( gVBIStatus.lastMagazine == ttParam->magazine && gVBIStatus.lastSubPageNo == ttParam->subPageNo) {
+                    pageNum =vbi_dec2bcd(gVBIStatus.lastShowingPage);
+                    if ( pageNum < TELETEXT_MAX_PAGE_NUMBER && pageNum >= TELETEXT_PAGE_NUMBER_800) {
+                        ttParam->magazine = TELETEXT_MIN_MAGAZINE_NUMBER;
+                        gVBIStatus.lastMagazine = TELETEXT_MIN_MAGAZINE_NUMBER;
+                    } else {
+                        ttParam->magazine = pageNum >> 8;
+                    }
+                    ttParam->subPageNo = pageNum & 0xFF;
                 } else {
-                    ttParam->magazine = pageNum >> 8;
+                    pageNum = convertPageDecimal2Hex(ttParam->magazine, ttParam->subPageNo);
+                    gVBIStatus.lastMagazine = ttParam->magazine;
+                    gVBIStatus.lastSubPageNo = ttParam->subPageNo;
                 }
-                ttParam->subPageNo = pageNum & 0xFF;
+                 ALOGD("%s needReuseVbiDecoder magazine:%d subPageNo:0x%x",__FUNCTION__,ttParam->magazine,ttParam->subPageNo);
                 // here, search the last saved page. log start search...
                 gVBIStatus.updateSearchLastPageStart();
             }
@@ -2007,6 +2018,8 @@ bool TeletextParser::updateParameter(int type, void *data) {
             LOGD(" %s, re-register VBI mContext->vbi:%p magazine:%d subPageNo:0x%x after\n", __FUNCTION__,mContext->vbi, ttParam->magazine, ttParam->subPageNo);
             if ((ttParam->event == TT_EVENT_GO_TO_PAGE && ttParam->magazine >= TELETEXT_MIN_MAGAZINE_NUMBER && ttParam->magazine <= TELETEXT_MAX_MAGAZINE_NUMBER&& ttParam->subPageNo >= TELETEXT_MIN_SUBPAGE_NUMBER && ttParam->subPageNo <= TELETEXT_MAX_SUBPAGE_NUMBER)
                 || (ttParam->event == TT_EVENT_INDEXPAGE)) {
+                gVBIStatus.lastMagazine = ttParam->magazine;
+                gVBIStatus.lastSubPageNo = ttParam->subPageNo;
                 mContext->gotoPage = convertPageDecimal2Hex(ttParam->magazine, ttParam->subPageNo);
             }
         }
