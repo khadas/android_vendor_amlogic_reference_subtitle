@@ -23,6 +23,8 @@ mediasync_result MediaSync_bindInstance(void* handle, uint32_t SyncInsId,
                                                              sync_stream_type streamtype);
 mediasync_result MediaSync_getTrackMediaTime(void* handle, int64_t *outMediaUs);
 
+mediasync_result MediaSync_getFirstVideoFrameInfo(void* handle, mediasync_frameinfo * arg);
+
 }
 
 static const std::string SYSFS_VIDEO_PTS = "/sys/class/tsync/pts_video";
@@ -403,8 +405,13 @@ bool DemuxSource::isFileAvailable() {
     //unsigned long firstVpts = sysfsReadInt(SYSFS_VIDEO_FIRSTPTS.c_str(), 16);
     //unsigned long vPts = sysfsReadInt(SYSFS_VIDEO_PTS.c_str(), 16);
     unsigned long firstFrameToggle = sysfsReadInt(SYSFS_VIDEO_FIRSTRRAME.c_str(), 10);
-    //ALOGD("%s firstFrame:%ld\n", __FUNCTION__, firstFrame);
-    return firstFrameToggle == 1;
+    mediasync_frameinfo tempInfo;
+    ALOGD("[%s] mMediaSyncId:%d, mMediaSync:%p\n", __FUNCTION__, mMediaSyncId, mMediaSync);
+    if ((mMediaSyncId != -1) && (mMediaSync != nullptr)) {
+        MediaSync_getFirstVideoFrameInfo(mMediaSync, &tempInfo);
+    }
+    ALOGD("[%s] firstFrameToggle:%ld,tempInfo.framePts:%lld\n", __FUNCTION__, firstFrameToggle, tempInfo.framePts);
+    return (firstFrameToggle == 1 || tempInfo.framePts > 0);
 }
 
 size_t DemuxSource::availableDataSize() {
