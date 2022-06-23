@@ -10,7 +10,7 @@
  * Description:
  */
 /**\file
- * \brief Linux DVB demux 驱动
+ * \brief Linux DVB demux driver
  *
  * \author Gong Ke <ke.gong@amlogic.com>
  * \date 2010-07-21: create the document

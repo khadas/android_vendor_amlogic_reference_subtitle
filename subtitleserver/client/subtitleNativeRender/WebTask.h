@@ -5,7 +5,7 @@
 
 struct WebBuffer {
     char* buf;
-    //buffer orignal size
+    //buffer original size
     int size;
     //length of data that wrote to buffer
     int datalen;
@@ -30,7 +30,7 @@ class WebTask {
     int  WaitTaskDone();
     const char* GetResultString();
 
-    void SetConnectTimeout(int timeo);
+    void SetConnectTimeout(int timeout);
 
 private:
     void _init();

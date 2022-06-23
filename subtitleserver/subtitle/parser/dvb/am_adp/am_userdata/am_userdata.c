@@ -10,9 +10,9 @@
  * Description:
  */
 /**\file am_userdata.c
- * \brief user data 驱动模块
+ * \brief user data driver模块
  *
- * \author Xia Lei Peng <leipeng.xia@amlogic.com>
+ * \author Amlogic
  * \date 2013-3-13: create the document
  ***************************************************************************/
 
@@ -492,7 +492,7 @@ AM_ErrorCode_t AM_USERDATA_GetMode(int dev_no, int *mode)
 	return ret;
 }
 
-AM_ErrorCode_t AM_USERDATA_SetParamters(int dev_no, int para)
+AM_ErrorCode_t AM_USERDATA_SetParameters(int dev_no, int para)
 {
 	AM_USERDATA_Device_t *dev;
 	AM_ErrorCode_t ret = AM_SUCCESS;

@@ -19,7 +19,7 @@ typedef struct SubNativeRenderBuffer {
     /// memory. This may be >= width.
     int32_t stride;
 
-    /// The format of the buffer. One of AHARDWAREBUFFER_FORMAT_*
+    /// The format of the buffer. One of A_HARDWARE_BUFFER_FORMAT_*
     int32_t format;
 
     /// The actual bits.

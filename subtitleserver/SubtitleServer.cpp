@@ -70,7 +70,7 @@ SubtitleServer::SubtitleServer() {
 
     // Here, we create this messageQueue, it automatically start a thread to pump
     // decoded data/event from parser, and call CallbackHandler to send to remote side.
-    mMessagQueue = new AndroidCallbackMessageQueue(new ClientMessageHandlerImpl(this));
+    mMessageQueue = new AndroidCallbackMessageQueue(new ClientMessageHandlerImpl(this));
 
     mCurSessionId = FIRST_SESSION_ID;
     mOpenCalled = false;
@@ -188,7 +188,7 @@ Return<Result> SubtitleServer:: open(int32_t sId, const hidl_handle& handle, int
             mOpenCalled,  mLastOpenTime, now);
 
     if (ss != nullptr) {
-        // because current we test middlware player(e.g CTC) with VideoPlayer, it know nothing about
+        // because current we test middleware player(e.g CTC) with VideoPlayer, it know nothing about
         // middleware calling, if ctc called, close VideoPlayer's request, use CTC's request.
         if (mOpenCalled && openType == OpenType::TYPE_MIDDLEWARE) {
              if ((openType != mLastOpenType && (now-mLastOpenTime) < diff200ms) || mLastOpenTime == -1) {
@@ -207,7 +207,7 @@ Return<Result> SubtitleServer:: open(int32_t sId, const hidl_handle& handle, int
             ALOGD("mOpenCalled : demux id= %d, ioType =%d\n", demuxId, ioType);
             ss->setDemuxId(demuxId);
         }
-        bool r = ss->startSubtitle(fds, idxSubId, (SubtitleIOType)ioType, mMessagQueue.get());
+        bool r = ss->startSubtitle(fds, idxSubId, (SubtitleIOType)ioType, mMessageQueue.get());
 
         mOpenCalled = true;
         mLastOpenType = openType;
@@ -427,7 +427,7 @@ Return<Result> SubtitleServer::userDataOpen(int32_t sId) {
     if (ss == nullptr) {
         return Result::FAIL;
     }
-    ss->userDataOpen(mMessagQueue.get());
+    ss->userDataOpen(mMessageQueue.get());
     return Result::OK;
 }
 
@@ -465,7 +465,7 @@ Return<void> SubtitleServer::prepareWritingQueue(int32_t sId, int32_t size, prep
         mDataMQ = std::move(tempDataMQ);
     }
 
-    //TODO: create new thread for fetch the client writed data.
+    //TODO: create new thread for fetch the client wrote data.
     std::unique_ptr<FmqReader> tempReader(new FmqReaderImpl(mDataMQ.get()));
 
     std::shared_ptr<SubtitleService>  ss = getSubtitleServiceLocked(sId);
@@ -568,7 +568,7 @@ Return<Result> SubtitleServer::hide(int32_t sId) {
 
 /*CMD_UI_SHOW = 0,
 CMD_UI_SET_IMGRATIO,
-CMD_UI_SET_SUBDEMISION,
+CMD_UI_SET_SUBDIMENSION,
 CMD_UI_SET_SURFACERECT*/
 
 Return<Result> SubtitleServer::setTextColor(int32_t sId, int32_t color) {
@@ -721,12 +721,12 @@ void SubtitleServer::sendSubtitleEventNotify(SubtitleHidlParcel &event) {
 
 void SubtitleServer::sendUiEvent(SubtitleHidlParcel &event) {
     //if (!mFallbackPlayStarted) {
-    //    ALOGE("UI event request not procceed, do you called uiShow()?");
+    //    ALOGE("UI event request not proceed, do you called uiShow()?");
     //    return;
     //}
 
     if (mFallbackCallback == nullptr) {
-        ALOGE("Error, no default fallback display registed!");
+        ALOGE("Error, no default fallback display registered!");
         return;
     }
 
@@ -806,7 +806,7 @@ void SubtitleServer::dump(int fd, const std::vector<std::string>& args) {
     //dump client:
     dprintf(fd, "\n\n HIDL Service: \n");
     dprintf(fd, "--------------------------------------------------------------------------------------\n\n");
-    dprintf(fd, "Subtitile Clients:\n");
+    dprintf(fd, "Subtitle Clients:\n");
     if (mFallbackCallback != nullptr) {
         dprintf(fd, "    FallbackDisplayCallback: (%p)%s\n", mFallbackCallback.get(), toString(mFallbackCallback).c_str());
     }
@@ -817,7 +817,7 @@ void SubtitleServer::dump(int fd, const std::vector<std::string>& args) {
             mCallbackClients[i]==nullptr ? "null" : toString(mCallbackClients[i]).c_str());
     }
 
-    // TODO: travsel each service.
+    // TODO: travel each service.
     std::shared_ptr<SubtitleService>  ss = getSubtitleServiceLocked(0);
     if (ss != nullptr) {
         ss->dump(fd);

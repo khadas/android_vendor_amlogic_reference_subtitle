@@ -111,7 +111,7 @@ std::shared_ptr<ExtSubItem> Sami::decodedItem() {
                 }
                 break;
             }
-            case 1: /* find (optionnal) "<P", skip other TAGs */
+            case 1: /* find (optional) "<P", skip other TAGs */
                 //for (; *s == ' ' || *s == '\t'; s++) ;  /* strip blanks, if any */
                 if (*s == '\0')
                     break;

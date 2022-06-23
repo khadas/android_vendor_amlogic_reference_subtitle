@@ -88,11 +88,11 @@ size_t DeviceSource::totalSize() {
 bool DeviceSource::notifyInfoChange() {
     std::unique_lock<std::mutex> autolock(mLock);
     for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-        auto wk_lstner = (*it);
+        auto wk_listener = (*it);
         int value = -1;
 
 
-        if (auto lstn = wk_lstner.lock()) {
+        if (auto lstn = wk_listener.lock()) {
             value = sysfsReadInt(SYSFS_SUBTITLE_TYPE.c_str(), 10);
             if (value > 0) {  //0:no sub
                 lstn->onTypeChanged(value);
@@ -113,9 +113,9 @@ void DeviceSource::loopRenderTime() {
     while (!mExitRequested) {
         mLock.lock();
         for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-            auto wk_lstner = (*it);
+            auto wk_listener = (*it);
 
-            if (wk_lstner.expired()) {
+            if (wk_listener.expired()) {
                 ALOGV("[threadLoop] lstn null.\n");
                 continue;
             }
@@ -127,7 +127,7 @@ void DeviceSource::loopRenderTime() {
                 ALOGD("read pts: %ld %lu", value, value);
             }
             if (!mExitRequested) {
-                if (auto lstn = wk_lstner.lock()) {
+                if (auto lstn = wk_listener.lock()) {
                     lstn->onRenderTimeChanged(value);
                 }
             }
@@ -144,12 +144,12 @@ void DeviceSource::loopDriverData() {
             int r = ::ioctl(mRdFd, AMSTREAM_IOC_SUB_LENGTH, &size);
             if (r < 0) continue;
             char *rdBuffer = new char[size]();
-            int readed = readDriverData(rdBuffer,  size);
+            int read = readDriverData(rdBuffer,  size);
             std::shared_ptr<char> spBuf = std::shared_ptr<char>(rdBuffer, [](char *buf) { delete [] buf; });
-            mSegment->push(spBuf, readed);
+            mSegment->push(spBuf, read);
         } else {
             if (mExitRequested || mRdFd < 0) return;
-            usleep(1);   //in case of little page subtile loss. improve read freq
+            usleep(1);   //in case of little page subtitle loss. improve read freq
         }
     }
 }
@@ -183,7 +183,7 @@ bool DeviceSource::start() {
 
 
 bool DeviceSource::stop() {
-    mState = E_SOURCE_STOPED;
+    mState = E_SOURCE_STOPPED;
     ::ioctl(mRdFd, AMSTREAM_IOC_SUB_RESET);
 
     // If parser has problem, it read more data than provided
@@ -197,7 +197,7 @@ SubtitleIOType DeviceSource::type() {
     return E_SUBTITLE_DEV;
 }
 
-bool DeviceSource::isFileAvailble() {
+bool DeviceSource::isFileAvailable() {
     return false;
 }
 
@@ -236,7 +236,7 @@ size_t DeviceSource::readDriverData(void *buffer, size_t size) {
 }
 
 size_t DeviceSource::read(void *buffer, size_t size) {
-    int readed = 0;
+    int read = 0;
 
     //Current design of Parser Read, do not need add lock protection.
     // because all the read, is in Parser's parser thread.
@@ -247,18 +247,18 @@ size_t DeviceSource::read(void *buffer, size_t size) {
     //in case of applied size more than 1024*2, such as dvb subtitle,
     //and data process error for two reads.
     //so add until read applied data then exit.
-    while (readed != size && mState == E_SOURCE_STARTED) {
+    while (read != size && mState == E_SOURCE_STARTED) {
         if (mCurrentItem != nullptr && !mCurrentItem->isEmpty()) {
-            readed += mCurrentItem->read_l(((char *)buffer+readed), size-readed);
-            //ALOGD("readed:%d,size:%d", readed, size);
-            if (readed == size) return readed;
+            read += mCurrentItem->read_l(((char *)buffer+read), size-read);
+            //ALOGD("read:%d,size:%d", read, size);
+            if (read == size) return read;
         } else {
             //ALOGD("mCurrentItem null, pop next buffer item");
             mCurrentItem = mSegment->pop();
         }
     }
-    //readed += mCurrentItem->read(((char *)buffer+readed), size-readed);
-    return readed;
+    //read += mCurrentItem->read(((char *)buffer+read), size-read);
+    return read;
 
 }
 
@@ -268,9 +268,9 @@ void DeviceSource::dump(int fd, const char *prefix) {
     {
         std::unique_lock<std::mutex> autolock(mLock);
         for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-            auto wk_lstner = (*it);
-            if (auto lstn = wk_lstner.lock())
-                dprintf(fd, "%s   InforListener: %p\n", prefix, lstn.get());
+            auto wk_listener = (*it);
+            if (auto lstn = wk_listener.lock())
+                dprintf(fd, "%s   InfoListener: %p\n", prefix, lstn.get());
         }
     }
     dprintf(fd, "%s   state:%d\n\n", prefix, mState);

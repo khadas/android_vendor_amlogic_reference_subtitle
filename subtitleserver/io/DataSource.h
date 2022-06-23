@@ -18,7 +18,7 @@ typedef enum {
 typedef enum {
     E_SOURCE_INV,
     E_SOURCE_STARTED,
-    E_SOURCE_STOPED,
+    E_SOURCE_STOPPED,
 } SubtitleIOState;
 
 
@@ -56,7 +56,7 @@ public:
         return;
     }
 
-    virtual bool isFileAvailble() {
+    virtual bool isFileAvailable() {
         return false;
     }
 
@@ -65,21 +65,21 @@ public:
     }
 
 
-    // If we got information from the data source, we notify these info to listner
+    // If we got information from the data source, we notify these info to listener
     virtual void registerInfoListener(std::shared_ptr<InfoChangeListener>listener) {
         std::unique_lock<std::mutex> autolock(mLock);
         mInfoListeners.push_back(listener);
     }
 
-    virtual void unregisterInfoListener(std::shared_ptr<InfoChangeListener>listener) {
+    virtual void unregisteredInfoListener(std::shared_ptr<InfoChangeListener>listener) {
         std::unique_lock<std::mutex> autolock(mLock);
         for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-            auto wk_lstner = (*it);
-            if (wk_lstner.expired()) {
+            auto wk_listener = (*it);
+            if (wk_listener.expired()) {
                 mInfoListeners.erase(it);
                 return;
             }
-            auto lsn = wk_lstner.lock();
+            auto lsn = wk_listener.lock();
             if (lsn == listener) {
                 mInfoListeners.erase(it);
                 return;

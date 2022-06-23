@@ -233,7 +233,7 @@ struct SubtitleParamType {
     void update() {
         switch (dtvSubType) {
             case DTV_SUB_CC:
-                subType = TYPE_SUBTITLE_CLOSED_CATPTION;
+                subType = TYPE_SUBTITLE_CLOSED_CAPTION;
                 break;
             case DTV_SUB_SCTE27:
                 subType = TYPE_SUBTITLE_SCTE27;

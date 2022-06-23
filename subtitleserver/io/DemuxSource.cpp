@@ -138,10 +138,10 @@ void DemuxSource::checkDebug() {
 bool DemuxSource::notifyInfoChange() {
     std::unique_lock<std::mutex> autolock(mLock);
     for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-        auto wk_lstner = (*it);
+        auto wk_listener = (*it);
         int value = -1;
 
-        if (auto lstn = wk_lstner.lock()) {
+        if (auto lstn = wk_listener.lock()) {
             lstn->onTypeChanged(mSubType);
             return true;
         }
@@ -154,9 +154,9 @@ void DemuxSource::loopRenderTime() {
     while (!mExitRequested) {
         mLock.lock();
         for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-            auto wk_lstner = (*it);
+            auto wk_listener = (*it);
 
-            if (wk_lstner.expired()) {
+            if (wk_listener.expired()) {
                 ALOGV("[threadLoop] lstn null.\n");
                 continue;
             }
@@ -177,7 +177,7 @@ void DemuxSource::loopRenderTime() {
             }
 
             if (!mExitRequested && value > 0) {
-                if (auto lstn = wk_lstner.lock()) {
+                if (auto lstn = wk_listener.lock()) {
                     lstn->onRenderTimeChanged(value);
                 }
             }
@@ -341,15 +341,15 @@ void DemuxSource::updateParameter(int type, void *data) {
         mParam1 = pDvbParam->compositionId;
         mParam2 = pDvbParam->ancillaryId;
     } else if (TYPE_SUBTITLE_DTVKIT_TELETEXT == type) {
-        TeletextParam *pTeleteParam = (TeletextParam* )data;
-        if ((mState == E_SOURCE_STARTED) && (mPid != pTeleteParam->pid)) {
+        TeletextParam *pTeletextParam = (TeletextParam* )data;
+        if ((mState == E_SOURCE_STARTED) && (mPid != pTeletextParam->pid)) {
              restartDemux = true;
         }
-        mDemuxId = pTeleteParam->demuxId;
-        mPid = pTeleteParam->pid;
-        mSecureLevelFlag = pTeleteParam->flag;
-        mParam1 = pTeleteParam->magazine;
-        mParam2 = pTeleteParam->page;
+        mDemuxId = pTeletextParam->demuxId;
+        mPid = pTeletextParam->pid;
+        mSecureLevelFlag = pTeletextParam->flag;
+        mParam1 = pTeletextParam->magazine;
+        mParam2 = pTeletextParam->page;
     } else if (TYPE_SUBTITLE_DTVKIT_SCTE27 == type) {
         Scte27Param *pScteParam = (Scte27Param* )data;
         if ((mState == E_SOURCE_STARTED) && (mPid != pScteParam->SCTE27_PID)) {
@@ -390,7 +390,7 @@ void DemuxSource::setPipId (int mode, int id) {
 }
 
 bool DemuxSource::stop() {
-    mState = E_SOURCE_STOPED;
+    mState = E_SOURCE_STOPPED;
 
     // If parser has problem, it read more data than provided
     // then stop cannot stopped. need notify exit here.
@@ -399,7 +399,7 @@ bool DemuxSource::stop() {
     return false;
 }
 
-bool DemuxSource::isFileAvailble() {
+bool DemuxSource::isFileAvailable() {
     //unsigned long firstVpts = sysfsReadInt(SYSFS_VIDEO_FIRSTPTS.c_str(), 16);
     //unsigned long vPts = sysfsReadInt(SYSFS_VIDEO_PTS.c_str(), 16);
     unsigned long firstFrameToggle = sysfsReadInt(SYSFS_VIDEO_FIRSTRRAME.c_str(), 10);
@@ -414,7 +414,7 @@ size_t DemuxSource::availableDataSize() {
 }
 
 size_t DemuxSource::read(void *buffer, size_t size) {
-    int readed = 0;
+    int read = 0;
     int isReadItemEnd = 0;
     //Current design of Parser Read, do not need add lock protection.
     // because all the read, is in Parser's parser thread.
@@ -425,23 +425,23 @@ size_t DemuxSource::read(void *buffer, size_t size) {
     //in case of applied size more than 1024*2, such as dvb subtitle,
     //and data process error for two reads.
     //so add until read applied data then exit.
-    while (readed != size && mState == E_SOURCE_STARTED) {
+    while (read != size && mState == E_SOURCE_STARTED) {
         if (mCurrentItem != nullptr && !mCurrentItem->isEmpty()) {
             if (size == 0xffff)
             {
                 //if size is 0xffff, it means to get all the data of the current item
                 size = mCurrentItem->getSize();
             }
-            readed += mCurrentItem->read_check(((char *)buffer+readed), size-readed, &isReadItemEnd, mSubType);
-            ALOGD("readed:%d,size:%d isReadItemEnd:%d mSubType:%d", readed, size, isReadItemEnd, mSubType);
-            if (readed == size || isReadItemEnd ==-1) return readed;
+            read += mCurrentItem->read_check(((char *)buffer+read), size-read, &isReadItemEnd, mSubType);
+            ALOGD("read:%d,size:%d isReadItemEnd:%d mSubType:%d", read, size, isReadItemEnd, mSubType);
+            if (read == size || isReadItemEnd ==-1) return read;
         } else {
             //ALOGD("mCurrentItem null, pop next buffer item");
             mCurrentItem = mSegment->pop();
         }
     }
-    //readed += mCurrentItem->read(((char *)buffer+readed), size-readed);
-    return readed;
+    //read += mCurrentItem->read(((char *)buffer+read), size-read);
+    return read;
 
 }
 
@@ -451,9 +451,9 @@ void DemuxSource::dump(int fd, const char *prefix) {
     {
         std::unique_lock<std::mutex> autolock(mLock);
         for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-            auto wk_lstner = (*it);
-            if (auto lstn = wk_lstner.lock())
-                dprintf(fd, "%s   InforListener: %p\n", prefix, lstn.get());
+            auto wk_listener = (*it);
+            if (auto lstn = wk_listener.lock())
+                dprintf(fd, "%s   InfoListener: %p\n", prefix, lstn.get());
         }
     }
     dprintf(fd, "%s   state:%d\n\n", prefix, mState);

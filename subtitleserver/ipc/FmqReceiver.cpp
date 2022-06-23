@@ -62,16 +62,16 @@ bool FmqReceiver::readLoop() {
                     ALOGE("%s recvBuf malloc error! \n", __func__);
                     continue;
                 }
-                size_t readed = mReader->read((uint8_t*)recvBuf, available);
-                if (readed <= 0) {
+                size_t read = mReader->read((uint8_t*)recvBuf, available);
+                if (read <= 0) {
                     usleep(1000);
                     free(recvBuf);
                     continue;
                 }
 
-                //ALOGD("readed: available %d size: %d", available, readed);
+                //ALOGD("read: available %d size: %d", available, read);
 
-                ringbuffer_write(bufferHandle, recvBuf, readed, RBUF_MODE_BLOCK);
+                ringbuffer_write(bufferHandle, recvBuf, read, RBUF_MODE_BLOCK);
                 free(recvBuf);
             } else {
                 usleep(1000);
@@ -141,7 +141,7 @@ void FmqReceiver::dump(int fd, const char *prefix) {
         for (auto it = mClients.begin(); it != mClients.end(); it++) {
             auto lstn = (*it);
             if (lstn != nullptr)
-                dprintf(fd, "%s   InforListener: %p\n", prefix, lstn.get());
+                dprintf(fd, "%s   InfoListener: %p\n", prefix, lstn.get());
         }
     }
     dprintf(fd, "%s   mStop: %d\n", prefix, mStop);

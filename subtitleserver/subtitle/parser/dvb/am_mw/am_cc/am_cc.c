@@ -12,7 +12,7 @@
 /**\file am_cc.c
  * \brief 数据库模块
  *
- * \author Xia Lei Peng <leipeng.xia@amlogic.com>
+ * \author Amlogic
  * \date 2013-03-10: create the document
  ***************************************************************************/
 #define AM_DEBUG_LEVEL 5
@@ -354,7 +354,7 @@ static void am_cc_override_by_user_options(AM_CC_Decoder_t *cc, struct vbi_page 
 #define MAX_DETECT_COUNTS 30
 //#define KOREAN_DEFAULT_708_CC
 //now think if vbi event callback continuous pano more than 3 times, think have data.
-static AM_ErrorCode_t am_auto_dectect_data_pgno(AM_CC_Decoder_t *cc, int pgno) {
+static AM_ErrorCode_t am_auto_detect_data_pgno(AM_CC_Decoder_t *cc, int pgno) {
 	if (!cc->auto_detect_play || cc->auto_set_play_flag) {
 		return AM_FALSE;
 	}
@@ -447,7 +447,7 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data)
 			}
 		}
 
-		if (am_auto_dectect_data_pgno(cc, pgno)) {
+		if (am_auto_detect_data_pgno(cc, pgno)) {
 			AM_DEBUG(AM_DEBUG_LEVEL, "cc auto detect play pgno:%d", pgno);
 		}
 
@@ -919,7 +919,7 @@ static void *am_cc_data_thread(void *arg)
 			cc_data[2] == 0x2f )
 		{
 			//dump_cc_data(cc_data+4, cc_data_cnt-4);
-			//directv format
+			//direct format
 			if (cc_data[3] != 0x03 /* 0x03 indicates cc_data */)
 			{
 				AM_DEBUG(1, "Unprocessed user_data_type_code 0x%02x, we only expect 0x03", cc_data[3]);
@@ -1239,7 +1239,7 @@ AM_ErrorCode_t AM_CC_Destroy(AM_CC_Handle_t handle)
 
 /**
  * \brief Show close caption.
- * \param handle Close caption parser's handle
+ * \param handle Close caption parser handle
  * \retval AM_SUCCESS On success
  * \return Error code
  */
@@ -1257,7 +1257,7 @@ AM_ErrorCode_t AM_CC_Show(AM_CC_Handle_t handle)
 
 /**
  * \brief Hide close caption.
- * \param handle Close caption parser's handle
+ * \param handle Close caption parser handle
  * \retval AM_SUCCESS On success
  * \return Error code
  */

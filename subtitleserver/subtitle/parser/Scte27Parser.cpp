@@ -187,7 +187,7 @@ static void drawEndCallback(AM_SCTE27_Handle_t handle) {
             char filename[32];
             snprintf(filename, sizeof(filename), "./data/subtitleDump/27_%d", sIndex++);
             save2BitmapFile(filename, (uint32_t *)ctx->buffer, 1920, 1080);
-            LOGI("[scte27_draw_end_cb]dump sucess!");
+            LOGI("[scte27_draw_end_cb]dump success!");
         }
     }
     memset(ctx->buffer, 0, sub->sub_w*sub->sub_h*4);
@@ -297,12 +297,12 @@ int Scte27Parser::startScte27(int dmxId, int pid) {
 
     checkDebug();
 
-    initBitmap(mScteContext, VIEDEO_W, VIEDEO_H);
+    initBitmap(mScteContext, VIDEO_W, VIDEO_H);
 
     mScteContext->dmx_id = dmxId;
     memset(&sctep, 0, sizeof(sctep));
-    sctep.width  = VIEDEO_W;
-    sctep.height = VIEDEO_H;
+    sctep.width  = VIDEO_W;
+    sctep.height = VIDEO_H;
     sctep.draw_begin        = drawBeginCallback;
     sctep.draw_end          = drawEndCallback;
     sctep.lang_cb           = langCallback;

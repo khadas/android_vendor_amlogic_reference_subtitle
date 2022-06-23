@@ -1,5 +1,5 @@
-#ifndef __SUBTILE_SUBTITLE_H__
-#define __SUBTILE_SUBTITLE_H__
+#ifndef __SUBTITLE_SUBTITLE_H__
+#define __SUBTITLE_SUBTITLE_H__
 
 #include <thread>
 #include "InfoChangeListener.h"

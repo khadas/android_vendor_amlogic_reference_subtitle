@@ -136,12 +136,12 @@ static inline void readWindowHeader(unsigned char *buf, PgsInfo *pgsInfo) {
     pgsInfo->windowWidth = (buf[6] << 8) | buf[7];
     pgsInfo->windowHeight = (buf[8] << 8) | buf[9];
 }
-static inline void readWindonInfo(unsigned char *buf, PgsInfo *pgsInfo) {
+static inline void readWindowInfo(unsigned char *buf, PgsInfo *pgsInfo) {
     pgsInfo->windowWidth = (buf[0] << 8) | buf[1];
     pgsInfo->windowHeight = (buf[2] << 8) | buf[3];
     pgsInfo->x = (buf[15] << 8) | buf[16];
     pgsInfo->y = (buf[17] << 8) | buf[18];
-    LOGI("readWindowInfo:bitmapx:%d,bitmapy:%d,windowwidth:%d,windowHeigh:%d",
+    LOGI("readWindowInfo:bitmapx:%d,bitmapy:%d,windowwidth:%d,windowHeight:%d",
     pgsInfo->x,pgsInfo->y,pgsInfo->windowWidth,pgsInfo->windowHeight);
 }
 
@@ -397,7 +397,7 @@ int PgsParser::decode(std::shared_ptr<AML_SPUVAR> spu, unsigned char *buf) {
             } else if (size == 0xb) {
                 //clearSubpictureHeader
                 LOGI("enter type 0x16,0xb, %d %d\n", startTime, endTime);
-                readWindonInfo(curBuf - size,pgsInfo);
+                readWindowInfo(curBuf - size,pgsInfo);
                 spu->subtitle_type = TYPE_SUBTITLE_PGS;
                 spu->pts = startTime;
                 if (spu->spu_width != 0 && spu->spu_height != 0) {
@@ -608,7 +608,7 @@ int PgsParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
     char tmpbuf[256];
     int64_t pts = 0, dts = 0;
     int64_t tmpPts, tmpDts;
-    int packetLen = 0, pesHeadertLen = 0;
+    int packetLen = 0, pesHeaderLen = 0;
     bool needSkipPkt = true;
     //read_pgs_byte = 0;
     LOGI("enter get_pgs_spu\n");
@@ -620,22 +620,22 @@ int PgsParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
         if (packetLen >= 3) {
             if (mDataSource->read(tmpbuf, 3) == 3) {
                 packetLen -= 3;
-                pesHeadertLen = tmpbuf[2];
-                if (packetLen >= pesHeadertLen) {
+                pesHeaderLen = tmpbuf[2];
+                if (packetLen >= pesHeaderLen) {
                     if ((tmpbuf[1] & 0xc0) == 0x80) {
                         needSkipPkt = false;
-                        if (mDataSource->read(tmpbuf, pesHeadertLen) == pesHeadertLen) {
+                        if (mDataSource->read(tmpbuf, pesHeaderLen) == pesHeaderLen) {
                             tmpPts = (int64_t)(tmpbuf[0] & 0xe) << 29;
                             tmpPts = tmpPts | ((tmpbuf[1] & 0xff) << 22);
                             tmpPts = tmpPts | ((tmpbuf[2] & 0xfe) << 14);
                             tmpPts = tmpPts | ((tmpbuf[3] & 0xff) << 7);
                             tmpPts = tmpPts | ((tmpbuf[4] & 0xfe) >> 1);
                             pts = tmpPts; // - pts_aligned;
-                            packetLen -= pesHeadertLen;
+                            packetLen -= pesHeaderLen;
                         }
                     } else if ((tmpbuf[1] & 0xc0) == 0xc0) {
                         needSkipPkt = false;
-                        if (mDataSource->read(tmpbuf, pesHeadertLen) == pesHeadertLen) {
+                        if (mDataSource->read(tmpbuf, pesHeaderLen) == pesHeaderLen) {
                             tmpPts =  (int64_t)(tmpbuf[0] & 0xe) << 29;
                             tmpPts = tmpPts | ((tmpbuf[1] & 0xff) << 22);
                             tmpPts = tmpPts | ((tmpbuf[2] & 0xfe) << 14);
@@ -648,7 +648,7 @@ int PgsParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                             tmpDts = tmpDts | ((tmpbuf[8] & 0xff) << 7);
                             tmpDts = tmpDts | ((tmpbuf[9] & 0xfe) >> 1);
                             dts = tmpDts; // - pts_aligned;
-                            packetLen -= pesHeadertLen;
+                            packetLen -= pesHeaderLen;
                         }
                     }
                 }

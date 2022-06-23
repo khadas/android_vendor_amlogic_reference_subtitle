@@ -79,7 +79,7 @@ std::shared_ptr<ExtSubItem> SubStationAlpha::decodedItem() {
         }
 //===================================================
 
-        // replacer "\n"
+        // replace "\n"
         while ((start = str.find("\\n")) != std::string::npos
                 || (start = str.find("\\N")) != std::string::npos) {
             std::string newline = "\n";

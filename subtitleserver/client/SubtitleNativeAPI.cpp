@@ -23,14 +23,14 @@ static AmlSubDataType __mapServerType2ApiType(int type) {
     switch (type) {
     case TYPE_SUBTITLE_DVB:
     case TYPE_SUBTITLE_PGS:
-        return SUB_DATA_TYPE_POSITON_BITMAP;
+        return SUB_DATA_TYPE_POSITION_BITMAP;
 
     case TYPE_SUBTITLE_EXTERNAL:
     case TYPE_SUBTITLE_MKV_STR:
     case TYPE_SUBTITLE_SSA:
         return SUB_DATA_TYPE_STRING;
 
-    case TYPE_SUBTITLE_CLOSED_CATPTION:
+    case TYPE_SUBTITLE_CLOSED_CAPTION:
         return SUB_DATA_TYPE_CC_JSON;
 
     case 0xAAAA:
@@ -64,7 +64,7 @@ public:
         mChannelUpdateCb = nullptr;
         mSubtitleAvailCb = nullptr;
         mAfdEventCb = nullptr;
-        mDimesionCb  = nullptr;
+        mDimensionCb  = nullptr;
         mLanguageCb  = nullptr;
         mSubtitleInfoCb  = nullptr;
     }
@@ -73,7 +73,7 @@ public:
         mChannelUpdateCb = nullptr;
         mSubtitleAvailCb = nullptr;
         mAfdEventCb = nullptr;
-        mDimesionCb  = nullptr;
+        mDimensionCb  = nullptr;
         mLanguageCb  = nullptr;
         mSubtitleInfoCb  = nullptr;
     }
@@ -101,7 +101,7 @@ public:
     }
 
     virtual void onSubtitleDimension(int width, int height) {
-        if (mDimesionCb != nullptr) mDimesionCb(width, height);
+        if (mDimensionCb != nullptr) mDimensionCb(width, height);
     }
 
     virtual void onSubtitleLanguage(std::string lang) {
@@ -124,7 +124,7 @@ public:
     void setupChannelUpdateCb(AmlChannelUpdateCb cb) { mChannelUpdateCb = cb; }
     void setupSubtitleAvailCb(AmlSubtitleAvailCb cb) { mSubtitleAvailCb = cb; }
     void setupAfdEventCb(AmlAfdEventCb cb) { mAfdEventCb = cb; }
-    void setupDimesionCb(AmlSubtitleDimensionCb cb) { mDimesionCb = cb; }
+    void setupDimensionCb(AmlSubtitleDimensionCb cb) { mDimensionCb = cb; }
     void setupLanguageCb(AmlSubtitleLanguageCb cb) { mLanguageCb = cb; }
     void setupSubtitleInfoCb(AmlSubtitleInfoCb cb) { mSubtitleInfoCb = cb; }
 
@@ -134,7 +134,7 @@ private:
     AmlChannelUpdateCb mChannelUpdateCb;
     AmlSubtitleAvailCb mSubtitleAvailCb;
     AmlAfdEventCb mAfdEventCb;
-    AmlSubtitleDimensionCb mDimesionCb;
+    AmlSubtitleDimensionCb mDimensionCb;
     AmlSubtitleLanguageCb mLanguageCb;
     AmlSubtitleInfoCb mSubtitleInfoCb;
 };
@@ -155,24 +155,24 @@ public:
 };
 
 
-std::vector<sp<SubtitleContext>> gAvailContexMap;
+std::vector<sp<SubtitleContext>> gAvailContextMap;
 android::Mutex gContextMapLock;
 
 static bool __pushContext(sp<SubtitleContext> ctx) {
     android::Mutex::Autolock autoLock(gContextMapLock);
-    auto it = gAvailContexMap.begin();
-    it = gAvailContexMap.insert (it , ctx);
+    auto it = gAvailContextMap.begin();
+    it = gAvailContextMap.insert (it , ctx);
 
-    if (DEBUG_SESSION) ALOGD("%s>> ctx:%p MapSize=%d", __func__, ctx.get(), gAvailContexMap.size());
+    if (DEBUG_SESSION) ALOGD("%s>> ctx:%p MapSize=%d", __func__, ctx.get(), gAvailContextMap.size());
 
     return *it != nullptr;
 }
 
 static bool __checkInContextMap(SubtitleContext *ctx) {
     android::Mutex::Autolock autoLock(gContextMapLock);
-    for (auto it=gAvailContexMap.begin(); it<gAvailContexMap.end(); it++) {
+    for (auto it=gAvailContextMap.begin(); it<gAvailContextMap.end(); it++) {
         if (DEBUG_SESSION) ALOGD("%s>> search ctx:%p current:%p MapSize=%d",
-                __func__, ctx, (*it).get(), gAvailContexMap.size());
+                __func__, ctx, (*it).get(), gAvailContextMap.size());
 
         if (ctx == (*it).get()) {
             return true;
@@ -184,13 +184,13 @@ static bool __checkInContextMap(SubtitleContext *ctx) {
 
 static bool __eraseFromContext(SubtitleContext *ctx) {
     android::Mutex::Autolock autoLock(gContextMapLock);
-    for (auto it=gAvailContexMap.begin(); it<gAvailContexMap.end(); it++) {
+    for (auto it=gAvailContextMap.begin(); it<gAvailContextMap.end(); it++) {
 
         if (DEBUG_SESSION) ALOGD("%s>> search ctx:%p current:%p MapSize=%d",
-                __func__, ctx, (*it).get(), gAvailContexMap.size());
+                __func__, ctx, (*it).get(), gAvailContextMap.size());
 
         if (ctx == (*it).get()) {
-            gAvailContexMap.erase(it);
+            gAvailContextMap.erase(it);
             return true;
         }
     }
@@ -204,10 +204,10 @@ static bool __eraseFromContext(SubtitleContext *ctx) {
 AmlSubtitleHnd amlsub_Create() {
     if (DEBUG_CALL) ALOGD("call>> %s", __func__);
     sp<SubtitleContext> ctx = new SubtitleContext();
-    sp<MyAdaptorListener> listner = new MyAdaptorListener();
+    sp<MyAdaptorListener> listener = new MyAdaptorListener();
 
-    ctx->mClient = new amlogic::SubtitleServerClient(false, listner, OpenType::TYPE_MIDDLEWARE);
-    ctx->mAdaptorListener = listner;
+    ctx->mClient = new amlogic::SubtitleServerClient(false, listener, OpenType::TYPE_MIDDLEWARE);
+    ctx->mAdaptorListener = listener;
 
     __pushContext(ctx);
 
@@ -266,7 +266,7 @@ AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
     }
     ctx->mClient->userDataOpen();
 
-    // Here, we support all the parametes from client to server
+    // Here, we support all the parameters from client to server
     // server will filter the parameter, select to use according from the type.
     ctx->mClient->setSubType(__mapApiType2SubtitleType(param->subtitleType));
     ctx->mClient->setSubPid(param->pid);
@@ -277,7 +277,7 @@ AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
     ctx->mClient->setAncillaryPageId(param->compositionPageId);
 
     // TODO: CTC always use amstream. later we may all change to hwdemux
-    // From middleware, the extSubPath should alway null.
+    // From middleware, the extSubPath should always null.
     if (DEBUG_CALL) ALOGD("call>> %s demuxId[%d] ioSource[%d]", __func__, param->dmxId, param->ioSource);
     int ioType = -1;
     if (param->dmxId >= 0) {
@@ -455,7 +455,7 @@ AmlSubtitleStatus amlsub_RegistAfdEventCB(AmlSubtitleHnd handle, AmlAfdEventCb l
     return SUB_STAT_OK;
 }
 
-AmlSubtitleStatus amlsub_RegistGetDimesionCb(AmlSubtitleHnd handle, AmlSubtitleDimensionCb listener) {
+AmlSubtitleStatus amlsub_RegistGetDimensionCb(AmlSubtitleHnd handle, AmlSubtitleDimensionCb listener) {
     if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
@@ -465,7 +465,7 @@ AmlSubtitleStatus amlsub_RegistGetDimesionCb(AmlSubtitleHnd handle, AmlSubtitleD
         ALOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
-    ctx->mAdaptorListener->setupDimesionCb(listener);
+    ctx->mAdaptorListener->setupDimensionCb(listener);
     return SUB_STAT_OK;
 }
 

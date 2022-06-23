@@ -12,7 +12,7 @@
 //using ::vendor::amlogic::hardware::subtitleserver::V1_0::implementation::SubtitleServerHal;
 using amlogic::AndroidCallbackMessageQueue;
 
-static const int FADDING_SUB = 0;
+static const int FADING_SUB = 0;
 static const int SHOWING_SUB = 1;
 
 bool AndroidHidlRemoteRender::postSubtitleData() {
@@ -24,7 +24,7 @@ bool AndroidHidlRemoteRender::postSubtitleData() {
 
     if (mShowingSubs.size() <= 0) {
         if (queue != nullptr) {
-            queue->postDisplayData(nullptr, mParseType, 0, 0, 0, 0, 0, 0, 0, FADDING_SUB);
+            queue->postDisplayData(nullptr, mParseType, 0, 0, 0, 0, 0, 0, 0, FADING_SUB);
             return true;
         } else {
             ALOGE("Error! should not null here!");
@@ -116,7 +116,7 @@ bool AndroidHidlRemoteRender::hideSubtitleItem(std::shared_ptr<AML_SPUVAR> spu) 
     ALOGD("hideSubtitleItem");
     //some stream is special.some subtitles have pts, but some subtitles don't have pts.
     //In this situation if use the remove() function,it may cause the subtitle contains
-    //pts don't hide untile the subtitle without pts disappear.
+    //pts don't hide until the subtitle without pts disappear.
     //mShowingSubs.remove(spu);
     mShowingSubs.clear();
     return postSubtitleData();

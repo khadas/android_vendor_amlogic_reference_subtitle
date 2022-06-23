@@ -114,7 +114,7 @@ public class FileBrowserActivity extends ListActivity {
         }
 
         this.doubleBackToExitPressedOnce = true;
-        String message = "hohey";
+        String message = "hotkey";
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         back();
 

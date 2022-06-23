@@ -139,7 +139,7 @@ private:
     private:
         sp<SubtitleServer> mSubtitleServer;
     };
-    sp<AndroidCallbackMessageQueue> mMessagQueue;
+    sp<AndroidCallbackMessageQueue> mMessageQueue;
 
     class DeathRecipient : public android::hardware::hidl_death_recipient  {
     public:
@@ -161,7 +161,7 @@ private:
 
     // avoid CTC or other native impl called in middleware which is used by VideoPlayer
     // then VideoPlayer and middleware both call subtitle, but open related api we want
-    // middleware's, other configureation related can from VideoPlayer.
+    // middleware's, other configuration related can from VideoPlayer.
     bool mOpenCalled;
     OpenType mLastOpenType;
     int64_t mLastOpenTime;

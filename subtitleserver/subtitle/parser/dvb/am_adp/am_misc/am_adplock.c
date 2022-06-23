@@ -10,7 +10,7 @@
  * Description:
  */
 /**\file
- * \brief AMLogic adaptor layer全局锁
+ * \brief AMLogic adaptor layer global lock
  *
  * \author Gong Ke <ke.gong@amlogic.com>
  * \date 2010-07-05: create the document

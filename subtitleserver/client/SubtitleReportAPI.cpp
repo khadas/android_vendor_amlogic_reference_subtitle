@@ -107,11 +107,11 @@ static bool prepareWritingQueueLocked(SubtitleContext *ctx) {
 }
 
 static bool fmqSendDataLocked(SubtitleContext *ctx, const char *data, size_t size) {
-    size_t writed = 0;
+    size_t wrote = 0;
     size_t remainSize = size;
     //if (LOGIT) ALOGD("fmqSendDataLocked %p %d", ctx->mDataMQ.get(), size);
     if (data != nullptr) {
-        while (writed < size) {
+        while (wrote < size) {
             size_t availableToWrite = ctx->mDataMQ->availableToWrite();
             size_t needWrite = (remainSize > availableToWrite) ? availableToWrite : remainSize;
 
@@ -120,7 +120,7 @@ static bool fmqSendDataLocked(SubtitleContext *ctx, const char *data, size_t siz
                 return false;
             } else {
                 remainSize -= needWrite;
-                writed += needWrite;
+                wrote += needWrite;
                 //ALOGD("availableToWrite:%d needWrite:%d", availableToWrite, needWrite);
                 // TODO: notify!!!
             }
@@ -299,7 +299,7 @@ SubSourceStatus SubSource_ReportSubTypeString(SubSourceHandle handle, const char
     delete[] buffer;
     return SUB_STAT_OK;
 }
-SubSourceStatus SubSource_ReportLauguageString(SubSourceHandle handle, const char *lang) {
+SubSourceStatus SubSource_ReportLanguageString(SubSourceHandle handle, const char *lang) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     std::lock_guard<std::mutex> guard(ctx->mLock);
     if (ctx == nullptr) return SUB_STAT_INV;

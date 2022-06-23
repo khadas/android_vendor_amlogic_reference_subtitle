@@ -53,13 +53,13 @@ int getSubtitleCurrentPos()
     int pos = 0;
     int sub_type = -1;
     int firstvpts = amsysfs_get_sysfs_ulong("/sys/class/tsync/firstvpts");
-    //ALOGE("firstvpts :%d, subtitleGetTypeDetial:%d,subtitleGetType():%d\n",
-    //	amsysfs_get_sysfs_ulong("/sys/class/tsync/firstvpts"),subtitleGetTypeDetial(),subtitleGetType());
+    //ALOGE("firstvpts :%d, subtitleGetTypeDetail:%d,subtitleGetType():%d\n",
+    //	amsysfs_get_sysfs_ulong("/sys/class/tsync/firstvpts"),subtitleGetTypeDetail(),subtitleGetType());
     //if (firstvpts == 0) {
     //pos = 0;
     //} else {
     sub_type = 5;//amsysfs_get_sysfs_int("/sys/class/subtitle/subtype");
-    if (sub_type == 5){//subtitleGetTypeDetial() == 6) {//dvb sub  return pts_video
+    if (sub_type == 5){//subtitleGetTypeDetail() == 6) {//dvb sub  return pts_video
         //pos = (ctc_mp->GetCurrentPlayTime()/90);
     } else {
         //pos = ((ctc_mp->GetCurrentPlayTime() - firstvpts)/90);
@@ -85,11 +85,11 @@ void subtitleClose()
     return;
 }
 
-void subtitleDestory()
+void subtitleDestroy()
 {
     const sp<SubtitleServerHidlClient>& subser = getSubtitleService();
     if (subser != 0) {
-        subser->subtitleDestory();
+        subser->subtitleDestroy();
     }
     return;
 }
@@ -161,12 +161,12 @@ char* subtitleGetTypeStr()
     return ret;
 }
 
-int subtitleGetTypeDetial()
+int subtitleGetTypeDetail()
 {
     int ret = 0;
     const sp<SubtitleServerHidlClient>& subser = getSubtitleService();
     if (subser != 0) {
-        ret = subser->subtitleGetTypeDetial();
+        ret = subser->subtitleGetTypeDetail();
     }
     return ret;
 }
@@ -310,7 +310,7 @@ const char* subtitleGetLanguage()
         //memset(ret, 0, STR_LEN);
         //strcpy(ret, subser->subtitleGetLanguage(0));
         if (value != "") {
-            ALOGE("subtitleGetLanguage -languege:%s", value.c_str());
+            ALOGE("subtitleGetLanguage -language:%s", value.c_str());
             strncpy(ret, value.c_str(), sizeof(ret));
             ret[sizeof(ret) - 1] = '/0';
             return ret;
@@ -409,18 +409,18 @@ void registerSubtitleMiddleListener()
 
 void EventCallback::notify (const subtitle_parcel_t &parcel) {
     //ALOGD("eventcallback notify parcel.msgType = %d", parcel.msgType);
-    if (parcel.msgType == EVENT_ONSUBTITLEDATA_CALLBACK) {
+    if (parcel.msgType == EVENT_ON_SUBTITLEDATA_CALLBACK) {
          ALOGD("subtitleMiddleClient notify parcel.msgType = %d, event:%d, id:%d", parcel.msgType, parcel.bodyInt[0], parcel.bodyInt[1]);
          if ((sub_p. sub_evt != NULL) && (parcel.bodyInt[0] == 0))
             sub_p. sub_evt(SUBTITLE_EVENT_NONE, parcel.bodyInt[0]);
          else if ((sub_p.sub_evt != NULL) && (parcel.bodyInt[0] == 1))
             sub_p. sub_evt(SUBTITLE_EVENT_DATA, parcel.bodyInt[1]);
-    } else if (parcel.msgType == EVENT_ONSUBTITLEAVAILABLE_CALLBACK) {
+    } else if (parcel.msgType == EVENT_ON_SUBTITLEAVAILABLE_CALLBACK) {
          ALOGD("subtitleMiddleClient notify parcel.msgType = %d, available:%d", parcel.msgType, parcel.bodyInt[0]);
          if ((sub_p. available != NULL) && (parcel.bodyInt[0] == 0))
-            sub_p. available(SUBTITLE_UNAVAIABLE, 0);
+            sub_p. available(SUBTITLE_UNAVAILABLE, 0);
          else if ((sub_p.sub_evt != NULL) && (parcel.bodyInt[0] == 1))
-            sub_p. available(SUBTITLE_AVAIABLE, 1);
+            sub_p. available(SUBTITLE_AVAILABLE, 1);
     }
 }
 

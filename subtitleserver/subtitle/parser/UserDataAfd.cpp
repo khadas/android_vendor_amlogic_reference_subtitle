@@ -44,7 +44,7 @@ void UserDataAfd:: setPipId(int mode, int id) {
         if (id >= 0 && id != mMediasyncId) {
             mMediasyncId = id;
 
-            AM_USERDATA_SetParamters(USERDATA_DEVICE_NUM, id);
+            AM_USERDATA_SetParameters(USERDATA_DEVICE_NUM, id);
         }
     }
 
@@ -131,7 +131,7 @@ void UserDataAfd::run() {
 int UserDataAfd::stop() {
     LOGI("stopUserData");
     // TODO: should impl a real status/notify manner
-    // this is tooo simple...
+    // this is too simple...
     {
         std::unique_lock<std::mutex> autolock(mMutex);
         if (mThread == nullptr) {

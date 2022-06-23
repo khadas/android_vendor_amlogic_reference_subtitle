@@ -62,7 +62,7 @@ extern AM_ErrorCode_t AM_TIME_GetClock(int *clock);
 extern AM_ErrorCode_t AM_TIME_GetTimeSpec(struct timespec *ts);
 
 /**\brief 得到若干毫秒后的timespec值
- * 此函数主要用于pthread_cond_timedwait, sem_timedwait等函数计算超时时间。
+ * 此函数主要用于pthread_cond_timedwait, sem_Functions such as timedwait calculate the timeout time。
  * \param timeout 以毫秒为单位的超时时间
  * \param[out] ts 返回timespec值
  * \return

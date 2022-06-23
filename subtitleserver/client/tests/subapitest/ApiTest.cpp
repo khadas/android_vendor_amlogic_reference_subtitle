@@ -42,7 +42,7 @@ void subtitleCreate(char* args[]) {
     printf("create called, result session id:%p\n", gSubtitleHandle);
 }
 
-void subtitleDestory(char* args[]) {
+void subtitleDestroy(char *args[]) {
     DEBUGP("calling %s\n", __func__);
     AmlSubtitleStatus r = amlsub_Destroy(gSubtitleHandle);
     printf("destroy session:%p, result is: %d\n", gSubtitleHandle, r);
@@ -114,7 +114,7 @@ void subtitleDisplayRect(char* args[]) {
 ApiFuncItem gFuncTable[] = {
     // session
     { "create", subtitleCreate },
-    { "destroy", subtitleDestory },
+    { "destroy", subtitleDestroy },
     // control
     { "open", subtitleOpen },
     { "close", subtitleClose },
@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
             gExitRequested = true;
         });
 
-    // initialze args:
+    // initialize args:
     memset(args, 0, sizeof(args));
 
     while (!gExitRequested) {
@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
 
         if (strcmp(args[0], "exit") == 0) {
             gExitRequested = true;
-            printf("exit requested, quiting...\n");
+            printf("exit requested, quitting...\n");
         } else {
             int i;
             for (i=0; i< sizeof(gFuncTable)/sizeof(ApiFuncItem); i++) {

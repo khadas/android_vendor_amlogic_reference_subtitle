@@ -7,8 +7,8 @@
 #if ANDROID_PLATFORM_SDK_VERSION > 27
     typedef enum
     {
-        SUBTITLE_UNAVAIABLE,
-        SUBTITLE_AVAIABLE
+        SUBTITLE_UNAVAILABLE,
+        SUBTITLE_AVAILABLE
     }SUBTITLE_STATE;
 
     typedef enum
@@ -28,7 +28,7 @@
 
     typedef void (*notifyAvailable) (int available);
     void subtitleCreat();
-    void subtitleDestory();
+    void subtitleDestroy();
     void subtitleOpen(char* path, void *pthis, android::SubtitleServerHidlClient::SUB_Para_t * para);
     void subtitleSetSubPid(int pid);
     int subtitleGetSubHeight();
@@ -55,7 +55,7 @@
     void subtitleOption();
     int subtitleGetType();
     char* subtitleGetTypeStr();
-    int subtitleGetTypeDetial();
+    int subtitleGetTypeDetail();
     void subtitleSetTextColor(int color);
     void subtitleSetTextSize(int size);
     void subtitleSetGravity(int gravity);

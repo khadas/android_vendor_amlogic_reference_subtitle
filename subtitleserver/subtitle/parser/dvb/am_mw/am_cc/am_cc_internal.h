@@ -9,7 +9,7 @@
 /**\file am_cc_internal.h
  * \brief CC模块内部数据
  *
- * \author Xia Lei Peng <leipeng.xia@amlogic.com>
+ * \author Amlogic
  * \date 2011-12-27: create the document
  ***************************************************************************/
 

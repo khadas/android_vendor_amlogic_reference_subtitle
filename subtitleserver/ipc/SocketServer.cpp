@@ -165,7 +165,7 @@ int SubSocketServer::clientConnected(int sockfd) {
 
     rbuf_handle_t bufferHandle = ringbuffer_create(512*1024, "socket_buffer");
 
-    ALOGV("start process chient message connFd=%d.\n", sockfd);
+    ALOGV("start process client message connFd=%d.\n", sockfd);
     while (!mExitRequested) {
 
         if (mClients.size() <= 0) {
@@ -250,7 +250,7 @@ int SubSocketServer::clientConnected(int sockfd) {
                      DataListener *listener = mClients.front();
                     if (listener != nullptr) {
                         if (listener->onData(payloads, curHeader.dataSize+4) < 0) {
-                            // if returen -1, means client exit, this request clientConnected exit!
+                            // if return -1, means client exit, this request clientConnected exit!
                             ringbuffer_free(bufferHandle);
                             free(payloads);
                             close(sockfd);

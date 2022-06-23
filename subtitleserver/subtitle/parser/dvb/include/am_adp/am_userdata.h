@@ -9,7 +9,7 @@
  /**\file am_userdata.h
  * \brief MPEG user data device module
  *
- * \author Xia Lei Peng <leipeng.xia@amlogic.com>
+ * \author Amlogic
  * \date 2013-3-13: create the document
  ***************************************************************************/
 
@@ -102,7 +102,7 @@ extern AM_ErrorCode_t AM_USERDATA_Open(int dev_no, const AM_USERDATA_OpenPara_t 
 extern AM_ErrorCode_t AM_USERDATA_Close(int dev_no);
 
 
-extern AM_ErrorCode_t AM_USERDATA_SetParamters(int dev_no, int para);
+extern AM_ErrorCode_t AM_USERDATA_SetParameters(int dev_no, int para);
 
 /**\brief Read MPEG user data from the device
  * \param dev_no Device number

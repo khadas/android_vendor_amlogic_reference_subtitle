@@ -291,7 +291,7 @@ AM_ErrorCode_t AM_FileRead(const char *name, char *buf, int len)
 	if (fd >= 0) {
 		c = read(fd, buf, len);
 		if (c > 0) {
-			//AM_DEBUG(0, "read sucess val:%s", buf);
+			//AM_DEBUG(0, "read success val:%s", buf);
 		} else {
 			AM_DEBUG(0, "read failed!file %s,err: %s", name, strerror(errno));
 		}

@@ -160,10 +160,10 @@ void ClosedCaptionParser::notifyAvailable(int avil) {
     }
 }
 
-void ClosedCaptionParser::notifyChannelState(int stat, int chnnlId) {
+void ClosedCaptionParser::notifyChannelState(int stat, int channelId) {
     if (mNotifier != nullptr) {
-        ALOGD("CC_DATA_CB: %d %d", stat, chnnlId);
-        mNotifier->onSubtitleDataEvent(stat, chnnlId);
+        ALOGD("CC_DATA_CB: %d %d", stat, channelId);
+        mNotifier->onSubtitleDataEvent(stat, channelId);
     }
 }
 
@@ -177,7 +177,7 @@ ClosedCaptionParser *ClosedCaptionParser::getCurrentInstance() {
 ClosedCaptionParser::ClosedCaptionParser(std::shared_ptr<DataSource> source) {
     LOGI("creat ClosedCaption parser");
     mDataSource = source;
-    mParseType = TYPE_SUBTITLE_CLOSED_CATPTION;
+    mParseType = TYPE_SUBTITLE_CLOSED_CAPTION;
 
     std::unique_lock<std::mutex> autolock(gLock);
     sInstance = this;

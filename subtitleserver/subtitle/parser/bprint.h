@@ -32,7 +32,7 @@ extern "C"
 #define FFMAX(a,b) ((a) > (b) ? (a) : (b))
 
 /**
- * @ingroup lavc_decoding
+ * @group lavc_decoding
  * Required number of additionally allocated bytes at the end of the input bitstream for decoding.
  * This is mainly needed because some optimized bitstream readers read
  * 32 or 64 bit at once and could read over the end.<br>
@@ -45,7 +45,7 @@ extern "C"
 
 void av_fast_padded_malloc(void *ptr, unsigned int *size, size_t min_size);
 
- #define FF_PAD_STRUCTURE(size, ...) \
+ #define FF_PAD_STRUCTRUE(size, ...) \
      __VA_ARGS__ \
      char reserved_padding[size - sizeof(struct { __VA_ARGS__ })];
 
@@ -90,7 +90,7 @@ void av_fast_padded_malloc(void *ptr, unsigned int *size, size_t min_size);
  * such as the current paragraph.
  */
  typedef struct AVBPrint {
-    //FF_PAD_STRUCTURE(1024,
+    //FF_PAD_STRUCTRUE(1024,
     //char *str;         /**< string so far */
     //unsigned len;      /**< length so far */
     //unsigned size;     /**< allocated memory */
@@ -129,9 +129,9 @@ void av_fast_padded_malloc(void *ptr, unsigned int *size, size_t min_size);
 void av_bprint_init(AVBPrint *buf, unsigned size_init, unsigned size_max);
 
 #ifdef __GNUC__
-#    define av_printf_format(fmtpos, attrpos) __attribute__((__format__(__printf__, fmtpos, attrpos)))
+#    define av_printf_format(fmtpos, atropos) __attribute__((__format__(__printf__, fmtpos, atropos)))
 #else
-#    define av_printf_format(fmtpos, attrpos)
+#    define av_printf_format(fmtpos, atropos)
 #endif
 
 

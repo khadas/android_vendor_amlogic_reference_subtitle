@@ -22,7 +22,7 @@ using android::Mutex;
 using amlogic::SubtitleServerClient;
 using amlogic::SubtitleListener;
 
-//Must always keep the same as Java final consts!
+//Must always keep the same as Java final const!
 static const int SUBTITLE_TXT =1;
 static const int SUBTITLE_IMAGE =2;
 static const int SUBTITLE_CC_JASON = 3;
@@ -52,7 +52,7 @@ struct JniContext {
     jmethodID mNotifySubtitleEvent;
     jmethodID mNotifySubtitleUIEvent;
     jmethodID mSubtitleTextOrImage;
-    jmethodID mUpdateChannedId;
+    jmethodID mUpdateChannelId;
     jmethodID mNotifySubtitleAvail;
     jmethodID mNotifySubtitleInfo;
     jmethodID mExtSubtitle;
@@ -89,10 +89,10 @@ struct JniContext {
         return isExtSub;
     }
 
-    jint callJava_subtitleTextOrImage(int paserType) {
+    jint callJava_subtitleTextOrImage(int parserType) {
         bool needDetach = false;
         JNIEnv *env = getJniEnv(&needDetach);
-        jint uiType = env->CallIntMethod(mSubtitleManagerObject, mSubtitleTextOrImage, paserType);
+        jint uiType = env->CallIntMethod(mSubtitleManagerObject, mSubtitleTextOrImage, parserType);
         if (needDetach) DetachJniEnv();
         return uiType;
     }
@@ -134,7 +134,7 @@ struct JniContext {
         bool needDetach = false;
         JNIEnv *env = getJniEnv(&needDetach);
         ALOGD("callJava_notifyDataEvent: %d %d", event, id);
-        env->CallVoidMethod(mSubtitleManagerObject, mUpdateChannedId, event, id);
+        env->CallVoidMethod(mSubtitleManagerObject, mUpdateChannelId, event, id);
         if (needDetach) DetachJniEnv();
     }
 
@@ -186,7 +186,7 @@ class SubtitleDataListenerImpl : public SubtitleListener {
 public:
     SubtitleDataListenerImpl() {}
     ~SubtitleDataListenerImpl() {}
-    // TODO: maybe, we can splict to notify Text and notify Bitmap
+    // TODO: maybe, we can split to notify Text and notify Bitmap
     virtual void onSubtitleEvent(const char *data, int size, int parserType,
             int x, int y, int width, int height,
             int videoWidth, int videoHeight, int cmd)
@@ -206,7 +206,7 @@ public:
 
     }
 
-    // TODO: maybe need reconsidrate the name
+    // TODO: maybe the name needs to be reconsidered
     virtual void onSubtitleDataEvent(int event, int id) {
         getJniContext()->callJava_notifyDataEvent(event, id);
     }
@@ -331,7 +331,7 @@ static jboolean nativeOpenSubIdx(JNIEnv* env, jobject object, jstring jpath, jin
 }
 
 static jboolean nativeOpen(JNIEnv* env, jobject object, jstring jpath, jint ioType) {
-    // negtive index is for normal open.
+    // negative index is for normal open.
     // idx-sub subtitle may has many track, we support select it
     return nativeOpenSubIdx(env, object, jpath, -1, ioType);
 }
@@ -561,7 +561,7 @@ int register_com_droidlogic_app_SubtitleManager(JNIEnv *env) {
     GET_METHOD_ID(getJniContext()->mNotifySubtitleEvent, clazz, "notifySubtitleEvent", "([I[BIIIIIIIZ)V");
     GET_METHOD_ID(getJniContext()->mSubtitleTextOrImage, clazz, "subtitleTextOrImage", "(I)I");
     GET_METHOD_ID(getJniContext()->mNotifySubtitleUIEvent, clazz, "notifySubtitleUIEvent", "(I[I)V");
-    GET_METHOD_ID(getJniContext()->mUpdateChannedId, clazz, "updateChannedId", "(II)V");
+    GET_METHOD_ID(getJniContext()->mUpdateChannelId, clazz, "updateChannelId", "(II)V");
     GET_METHOD_ID(getJniContext()->mNotifySubtitleAvail, clazz, "notifyAvailable", "(I)V");
     GET_METHOD_ID(getJniContext()->mExtSubtitle, clazz, "isExtSubtitle", "()Z");
     GET_METHOD_ID(getJniContext()->mNotifySubtitleInfo, clazz, "notifySubtitleInfo", "(II)V");

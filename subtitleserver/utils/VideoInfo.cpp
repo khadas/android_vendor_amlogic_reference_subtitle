@@ -57,7 +57,7 @@ public:
 
     /**
      *   helper function to check is h264 or mpeg codec.
-     *   CC decoder process deferently in these 2 codecs
+     *   CC decoder process differently  in these 2 codecs
     */
     virtual int getVideoFormat() {
         int retry = 100; // check 200ms for parser ready

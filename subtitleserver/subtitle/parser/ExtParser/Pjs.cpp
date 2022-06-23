@@ -14,7 +14,7 @@ Pjs::~Pjs() {
 
 /*
  * PJS subtitles reader.
- * That's the "Phoenix Japanimation Society" format.
+ * That's the "Phoenix japanimation Society" format.
  * I found some of them in http://www.scriptsclub.org/ (used for anime).
  * The time is in tenths of second.
  * almost useless now!

@@ -43,9 +43,9 @@
 //teletext graphics support load animation
 //#define SUPPORT_LOAD_ANIMATION
 
-#define TELETEX_WARN_PAGE_1 0x548080
-#define TELETEX_WARN_PAGE_2 0x548000
-#define TELETEX_WARN_PAGE_3 0xb18081
+#define TELETEXT_WARN_PAGE_1 0x548080
+#define TELETEXT_WARN_PAGE_2 0x548000
+#define TELETEXT_WARN_PAGE_3 0xb18081
 
 #define C4_ERASE_PAG        0x000080
 #define C5_NEWSFLASH        0x004000
@@ -196,7 +196,7 @@ private:
     int mLastTsid;
     bool mKeepUsingVbi;
 
-    // if use async handler thread, maybe easy to implement this machanism
+    // if use async handler thread, maybe easy to implement this mechanism
     std::chrono::time_point<std::chrono::system_clock> mSearchStart;
     bool mNeedCheckTimeout;
 };
@@ -701,7 +701,7 @@ void selectSortSubtitlePage(int array[],int n){
 }
 
 
-// This is callback function registed to vbi.
+// This is callback function registered to vbi.
 // vbi callback from: teletextDecodeFrame, so should not add lock in this
 static void handler(vbi_event *ev, void *userData) {
     LOGI("[handler]\n");
@@ -827,7 +827,7 @@ static void handler(vbi_event *ev, void *userData) {
         return;
     }
     //now has 0x8000, 0x4000, 0x4000 may not subtitle ,so need 0x8000.
-    if ((pageType == TELETEX_WARN_PAGE_1) || (pageType == TELETEX_WARN_PAGE_2) || ((pageType == TELETEX_WARN_PAGE_3))) {
+    if ((pageType == TELETEXT_WARN_PAGE_1) || (pageType == TELETEXT_WARN_PAGE_2) || ((pageType == TELETEXT_WARN_PAGE_3))) {
         LOGE("%s, return, warn page \n",__FUNCTION__);
         free(page);
         return;
@@ -1210,7 +1210,7 @@ int TeletextParser::saveTeletextGraphicsRect2Spu(std::shared_ptr<AML_SPUVAR> spu
         return -1;
     }
     if (spu->spu_data != nullptr) {
-        ALOGE("Error, resued spu data, we designed not resuable!!\n\n\n\n\n!!");
+        ALOGE("Error, resued spu data, we designed not reusable!!\n\n\n\n\n!!");
         free(spu->spu_data);
     }
     spu->buffer_size = resx * resy * sizeof(uint32_t);
@@ -1262,7 +1262,7 @@ int TeletextParser::saveDisplayRect2Spu(std::shared_ptr<AML_SPUVAR> spu, AVSubti
 
     spu->buffer_size = resx * resy * sizeof(uint32_t);
     if (spu->spu_data != nullptr) {
-        ALOGE("Error, resued spu data, we designed not resuable!!\n\n\n\n\n!!");
+        ALOGE("Error, resued spu data, we designed not reusable!!\n\n\n\n\n!!");
         free(spu->spu_data);
     }
     spu->spu_data = (unsigned char *)malloc(spu->buffer_size);
@@ -1279,7 +1279,7 @@ int TeletextParser::saveDisplayRect2Spu(std::shared_ptr<AML_SPUVAR> spu, AVSubti
             //if satisfy this check: the data is valid.And then the data if invalid and be filtered.
             //when the error is 2, it indicate that the data is valid but just background. need to free.
             //when the error is 0, it indicate that the data is valid.
-            //when the function reburn -1, it indicate the data is invalid but don't need to free.
+            //when the function return -1, it indicate the data is invalid but don't need to free.
             if ((error != 0) && ((pbuf[(y*resx) + x] != 0) && (pbuf[(y*resx) + x] != 0xff000000))) {
                 error = 0;
             }
@@ -1346,7 +1346,7 @@ int TeletextParser::fetchVbiPageLocked(int pageNum, int subPageNum) {
     int subArray[36];
     int len = 36;
     bool ret = vbi_get_sub_info(mContext->vbi, vbi_dec2bcd(pageNum), subArray, &len);
-    //this only show graphics, and smoe graphics have subtitle.
+    //this only show graphics, and some graphics have subtitle.
    mContext->isSubtitle = (pageType & C6_SUBTITLE || pageType & C5_NEWSFLASH);
    mContext->pageType = pageType;
 #ifndef SUPPORT_LOAD_ANIMATION
@@ -2658,7 +2658,7 @@ int TeletextParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                         }
                         #ifdef SUPPORT_LOAD_ANIMATION
                         //wait video first frame ready.
-                        if (!mDataSource->isFileAvailble()) {
+                        if (!mDataSource->isFileAvailable()) {
                             LOGI("video first frame not ready, need wait ready!!\n");
                             if (buf) free(buf);
                             return -1;
@@ -2682,7 +2682,7 @@ int TeletextParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                         if (buf) free(buf);
                         return 0;
                     } else {
-                        LOGI("dump-pts-hwdmx!error pts(%lld) frame was abondon ret=%d bufsize=%d\n", spu->pts, ret, spu->buffer_size);
+                        LOGI("dump-pts-hwdmx!error pts(%lld) frame was abandon ret=%d bufsize=%d\n", spu->pts, ret, spu->buffer_size);
                         if (buf) free(buf);
                         return -1;
                     }
@@ -2751,7 +2751,7 @@ int TeletextParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             spu->isKeepShowing = true;
             addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
         } else {
-            if (mDumpSub) LOGI("dump-pts-swdmx!error this pts(%lld) frame was abondon\n", spu->pts);
+            if (mDumpSub) LOGI("dump-pts-swdmx!error this pts(%lld) frame was abandon\n", spu->pts);
         }
 
         if (data) {
@@ -2802,7 +2802,7 @@ int TeletextParser::atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                 spu->isKeepShowing = true;
                 addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
             } else {
-                if (mDumpSub) LOGI("[%s::%d]dump-pts-atvHwDmx!error this pts(%lld) frame was abondon\n", __FUNCTION__,__LINE__, spu->pts);
+                if (mDumpSub) LOGI("[%s::%d]dump-pts-atvHwDmx!error this pts(%lld) frame was abandon\n", __FUNCTION__,__LINE__, spu->pts);
             }
 
             if (data) {
@@ -2814,7 +2814,7 @@ int TeletextParser::atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 }
 
 bool TeletextParser::getVbiNextValidPage(vbi_decoder *vbi, int dir, vbi_pgno *pgno, vbi_pgno *subno) {
-    int retryCount = 103;//ff-9a + 1, for sepcail sepcaily case, mostly will break in several times.
+    int retryCount = 103;//ff-9a + 1, for special case, mostly will break in several times.
     int tmpPage = *pgno, tmpSubPage = *subno;
     bool found = false;
 
@@ -2872,7 +2872,7 @@ int TeletextParser::parse() {
 void TeletextParser::dump(int fd, const char *prefix) {
     //TODO: dump run in binder thread, may need add lock!
 
-    dprintf(fd, "%s Tele Text Parser\n", prefix);
+    dprintf(fd, "%s Teletext Parser\n", prefix);
     dumpCommon(fd, prefix);
 
     if (mContext != nullptr) {

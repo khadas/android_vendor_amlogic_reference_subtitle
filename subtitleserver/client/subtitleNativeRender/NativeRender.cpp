@@ -58,7 +58,7 @@ bool NativeRender::render(const char *data,
         case SUB_DATA_TYPE_BITMAP:
             BitmapDrawer::GetInstance().draw(surfaceCanvas, data, x, y, width, height);
             break;
-        case SUB_DATA_TYPE_POSITON_BITMAP:
+        case SUB_DATA_TYPE_POSITION_BITMAP:
             BitmapDrawer::GetInstance().drawScaled(surfaceCanvas, data, x, y, width, height, videoWidth, videoHeight);
             break;
     }

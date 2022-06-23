@@ -82,7 +82,7 @@ void Subtitle::attachDataSource(std::shared_ptr<DataSource> source, std::shared_
 }
 
 void Subtitle::dettachDataSource(std::shared_ptr<InfoChangeListener>listener) {
-    mDataSource->unregisterInfoListener(listener);
+    mDataSource->unregisteredInfoListener(listener);
 }
 
 
@@ -232,7 +232,7 @@ void Subtitle::run() {
                     createAndStart = true;
                     mParser = ParserFactory::create(mSubPrams, mDataSource);
                 }
-                ALOGD("run ACTION_SUBTITLE_SET_PARAM %d %d", mSubPrams->subType, TYPE_SUBTITLE_CLOSED_CATPTION);
+                ALOGD("run ACTION_SUBTITLE_SET_PARAM %d %d", mSubPrams->subType, TYPE_SUBTITLE_CLOSED_CAPTION);
                 if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_DVB) {
                     mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_DVB, &mSubPrams->dtvkitDvbParam);
                 } else if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_TELETEXT
@@ -240,8 +240,8 @@ void Subtitle::run() {
                     mParser->updateParameter(TYPE_SUBTITLE_DVB_TELETEXT, &mSubPrams->ttParam);
                 } else if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_SCTE27) {
                     mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_SCTE27, &mSubPrams->scteParam);
-                } else if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CATPTION) {
-                    mParser->updateParameter(TYPE_SUBTITLE_CLOSED_CATPTION, &mSubPrams->ccParam);
+                } else if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CAPTION) {
+                    mParser->updateParameter(TYPE_SUBTITLE_CLOSED_CAPTION, &mSubPrams->ccParam);
                 }
 
                 if (createAndStart) {
@@ -252,7 +252,7 @@ void Subtitle::run() {
             break;
             case ACTION_SUBTITLE_RECEIVED_SUBTYPE: {
                 ALOGD("ACTION_SUBTITLE_RECEIVED_SUBTYPE, type:%d", mSubPrams->subType);
-                if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CATPTION || mSubPrams->subType == TYPE_SUBTITLE_INVALID) {
+                if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CAPTION || mSubPrams->subType == TYPE_SUBTITLE_INVALID) {
                     ALOGD("CC type or invalid type, break, do nothings!");
                     break;
                 }

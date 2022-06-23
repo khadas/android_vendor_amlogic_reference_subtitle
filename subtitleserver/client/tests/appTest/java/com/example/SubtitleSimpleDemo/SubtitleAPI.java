@@ -7,7 +7,7 @@ public class SubtitleAPI {
     public static final int E_SUBTITLE_FMQ   = 0;   /* for soft support subtitle data, use hidl FastMessageQueue */
     public static final int E_SUBTITLE_DEV   = 1;      /* use /dev/amstream_sub_read as the IO source */
     public static final int E_SUBTITLE_FILE  = 2;      /* for external subtitle file */
-    public static final int E_SUBTITLE_SOCK  = 3;      /* deprecated, android not permmit to use anymore */
+    public static final int E_SUBTITLE_SOCK  = 3;      /* deprecated, android not permit to use anymore */
     public static final int E_SUBTITLE_DEMUX = 4;     /* use aml hwdemux as the data source */
 
     private static final String TAG = "SubtitleAPI";
@@ -29,9 +29,9 @@ public class SubtitleAPI {
     }
 
     // DVB subtitles, can for dvb, teletext, scte27
-    public boolean subtitleDvbSubs(int ioType, int SubType, int pid, int ancId, int cmpositionId) {
+    public boolean subtitleDvbSubs(int ioType, int SubType, int pid, int ancId, int compositionId) {
         Log.d(TAG, "subtitleDvbSubs:" + Long.toHexString(mHandle));
-        return nativeSubtitleOpen(mHandle, ioType, SubType, pid, 0, 0, ancId, cmpositionId);
+        return nativeSubtitleOpen(mHandle, ioType, SubType, pid, 0, 0, ancId, compositionId);
     }
 
     // for CC subtitle
@@ -65,8 +65,8 @@ public class SubtitleAPI {
         return nativeSubtitleClose(mHandle);
     }
 
-    public boolean teletextGotoPage(int maganize, int page) {
-        return nativeTTgotoPage(mHandle, maganize, page);
+    public boolean teletextGotoPage(int magazine, int page) {
+        return nativeTTgotoPage(mHandle, magazine, page);
     }
 
     public boolean teletextGoHome() {
@@ -84,7 +84,7 @@ public class SubtitleAPI {
     private native long nativeSubtitleCreate();
     private native boolean nativeSubtitleDestroy(long handle);
     private native boolean nativeSubtitleOpen(long handle, int ioType, int SubType,
-           int pid, int videoFmt, int channelId, int ancId, int cmpositionId);
+           int pid, int videoFmt, int channelId, int ancId, int compositionId);
     private native boolean nativeSubtitleClose(long handle);
     private native boolean nativeShow(long handle);
     private native boolean nativeHide(long handle);
@@ -93,6 +93,6 @@ public class SubtitleAPI {
     private native boolean nativeTTgoHome(long handle);
     private native boolean nativeTTnextPage(long handle, boolean dir);
     private native boolean nativeTTnextSubPage(long handle, boolean dir);
-    private native boolean nativeTTgotoPage(long handle, int maganize, int page);
+    private native boolean nativeTTgotoPage(long handle, int magazine, int page);
 
 }

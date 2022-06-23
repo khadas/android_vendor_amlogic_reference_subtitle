@@ -58,7 +58,7 @@ static std::shared_ptr<AML_SPUVAR> getShowingSpuFromList(
 
     std::shared_ptr<AML_SPUVAR> spu = list.front();
 
-    // only show the last picture, not conbine!
+    // only show the last picture, not combine!
     if (!spu->isSimpleText) {
         return list.back();
     }
@@ -68,7 +68,7 @@ static std::shared_ptr<AML_SPUVAR> getShowingSpuFromList(
         int totalSize = 0;
         std::for_each(list.begin(), list.end(), [&](std::shared_ptr<AML_SPUVAR> &s) {
             //w.dump(prefix);
-            totalSize += spu->buffer_size +1; // addinital newline.
+            totalSize += spu->buffer_size + 1; // add initial newline.
         });
 
         std::shared_ptr<AML_SPUVAR> newCue =  std::shared_ptr<AML_SPUVAR>(new AML_SPUVAR());
@@ -139,7 +139,7 @@ bool Presentation::notifyStartTimeStamp(int64_t startTime) {
     return true;
 }
 
-// amumediaplayer may report 33bit invalid pts, we must filter this value!
+// amnumediaplayer may report 33bit invalid pts, we must filter this value!
 #define INVALID_PTS 0x1ffffffff
 bool Presentation::syncCurrentPresentTime(int64_t pts) {
     if (mSubtitlePts32Bit) {
@@ -197,7 +197,7 @@ bool Presentation::stopPresent() {
 
 
 //ssa text subtitle may have two continuous packet while have same pts
-bool Presentation::combinSamePtsSubtitle(std::shared_ptr<AML_SPUVAR> spu1, std::shared_ptr<AML_SPUVAR> spu2) {
+bool Presentation::combineSamePtsSubtitle(std::shared_ptr<AML_SPUVAR> spu1, std::shared_ptr<AML_SPUVAR> spu2) {
     if (spu1 != nullptr && spu2 != nullptr) {
         if (spu1->isExtSub || spu1->isImmediatePresent || !spu1->isSimpleText) {
             return false;
@@ -459,7 +459,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                 } else {
                     mSubtitlePts32Bit = true;
                 }
-                // The subtitle pts ahead more than 100S of video...maybe aheam more 20s
+                // The subtitle pts ahead more than 100S of video...maybe ahead more 20s
                 if ((ptsDiff >= 200*1000*1000*1000LL) && !(spu->isExtSub)) {
                     ALOGD("Got  SPU: spu is ptsDiff >= 200s pts:%lld spu->pts:%lld",pts, spu->pts);
                     // we cannot check it's valid or not, so delay 1s(common case) and show
@@ -538,7 +538,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
 
                     uint64_t tolerance = 33*1000*1000LL; // 33ms tolerance
                     /*uint64_t ptsDiff = (pts>timestamp) ? (pts-timestamp) : (timestamp-pts);
-                    // The subtitle pts ahead more than 100S of video...maybe aheam more 20s
+                    // The subtitle pts ahead more than 100S of video...maybe ahead more 20s
                     if ((ptsDiff >= 200*1000*1000*1000LL) && !(spu->isExtSub)) {
                         // we cannot check it's valid or not, so delay 1s(common case) and show
                         spu->pts = convertNs2DvbTime(timestamp+1*1000*1000*1000LL);
@@ -553,8 +553,8 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                     if (spu->isImmediatePresent || (pts <= (timestamp+tolerance))) {
                         mPresent->mEmittedShowingSpu.pop_front();
                         if (mPresent->mEmittedShowingSpu.size() > 0) {
-                            std::shared_ptr<AML_SPUVAR> sencondSpu = mPresent->mEmittedShowingSpu.front();
-                            if (mPresent->combinSamePtsSubtitle(spu, sencondSpu)) {
+                            std::shared_ptr<AML_SPUVAR> secondSpu = mPresent->mEmittedShowingSpu.front();
+                            if (mPresent->combineSamePtsSubtitle(spu, secondSpu)) {
                                 mPresent->mEmittedShowingSpu.pop_front();
                             }
                         }
@@ -623,7 +623,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                         } else {
                             mPresent->mRender->removeSubtitleItem(spu);
                         }
-                   } else if  ((timestamp != 0) && ((delayed - timestamp) > ahead_delay_tor)) { //when the video gets to begin,to get rid of the sutitle data to avoid the memory leak
+                   } else if  ((timestamp != 0) && ((delayed - timestamp) > ahead_delay_tor)) { //when the video gets to begin,to get rid of the subtitle data to avoid the memory leak
                         //because when pull out the cable , the video pts became zero. And the timestamp became zero.
                         //And then it would clear the subtitle data queue which may be used by the dtvkit.It may cause crash as the "bad file description".
                         //so add the "(timestamp != 0)"  condition check.
@@ -678,7 +678,7 @@ void Presentation::MessageProcess::looperLoop() {
         int32_t ret = mLooper->pollAll(2000);
         switch (ret) {
             case -1:
-                ALOGD("ALOOPER_POLL_WAKE\n");
+                ALOGD("A_LOOPER_POLL_WAKE\n");
                 break;
             case -3: // timeout
                 break;

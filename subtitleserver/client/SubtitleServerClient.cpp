@@ -5,13 +5,13 @@
 
 using android::Mutex;
 namespace amlogic {
-#define EVENT_ONSUBTITLEDATA_CALLBACK       0xA00000
-#define EVENT_ONSUBTITLEAVAILABLE_CALLBACK  0xA00001
-#define EVENT_ONVIDEOAFDCHANGE_CALLBACK     0xA00002
-#define EVENT_ONMIXVIDEOEVENT_CALLBACK      0xA00003
-#define EVENT_ONSUBTITLE_DIMESION_CALLBACK  0xA00004
-#define EVENT_ONSUBTITLE_LANGUAGE_CALLBACK  0xA00005
-#define EVENT_ONSUBTITLE_INFO_CALLBACK      0xA00006
+#define EVENT_ON_SUBTITLEDATA_CALLBACK       0xA00000
+#define EVENT_ON_SUBTITLEAVAILABLE_CALLBACK  0xA00001
+#define EVENT_ON_VIDEOAFDCHANGE_CALLBACK     0xA00002
+#define EVENT_ON_MIXVIDEOEVENT_CALLBACK      0xA00003
+#define EVENT_ON_SUBTITLE_DIMENSION_CALLBACK  0xA00004
+#define EVENT_ON_SUBTITLE_LANGUAGE_CALLBACK  0xA00005
+#define EVENT_ON_SUBTITLE_INFO_CALLBACK      0xA00006
 
 
 void SubtitleServerClient::SubtitleDeathRecipient::serviceDied(
@@ -37,8 +37,8 @@ Return<void> SubtitleServerClient::SubtitleCallback::notifyDataCallback(const Su
     int height =  parcel.bodyInt[1];
     int size = parcel.bodyInt[2];
     int cmd = parcel.bodyInt[3];
-    int cordinateX = parcel.bodyInt[4];
-    int cordinateY = parcel.bodyInt[5];
+    int coordinateX = parcel.bodyInt[4];
+    int coordinateY = parcel.bodyInt[5];
     int videoWidth = parcel.bodyInt[6];
     int videoHeight = parcel.bodyInt[7];
     ALOGD("processSubtitleData! %d %d", type, parcel.msgType);
@@ -49,7 +49,7 @@ Return<void> SubtitleServerClient::SubtitleCallback::notifyDataCallback(const Su
     char* data = static_cast<char *>(static_cast<void*>(memory->getPointer()));
 
     if (mListener != nullptr) {
-        mListener->onSubtitleEvent(data, size, type, cordinateX, cordinateY, width, height, videoWidth, videoHeight, cmd);
+        mListener->onSubtitleEvent(data, size, type, coordinateX, coordinateY, width, height, videoWidth, videoHeight, cmd);
     } else {
         ALOGD("error, no handle for this event!");
     }
@@ -58,7 +58,7 @@ Return<void> SubtitleServerClient::SubtitleCallback::notifyDataCallback(const Su
 
 Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleHidlParcel& parcel) {
     switch (parcel.msgType) {
-        case EVENT_ONSUBTITLEDATA_CALLBACK: {
+        case EVENT_ON_SUBTITLEDATA_CALLBACK: {
             int event = parcel.bodyInt[0];
             int id =  parcel.bodyInt[1];
             ALOGI("onSubtitleDataEvent cc event:%d, channel id:%d", event, id);
@@ -70,7 +70,7 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
         }
         break;
 
-        case EVENT_ONSUBTITLEAVAILABLE_CALLBACK: {
+        case EVENT_ON_SUBTITLEAVAILABLE_CALLBACK: {
             int avail = parcel.bodyInt[0];
             ALOGI("onSubtitleAvail avail:%d", avail);
 
@@ -82,7 +82,7 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
         }
         break;
 
-        case EVENT_ONVIDEOAFDCHANGE_CALLBACK: {
+        case EVENT_ON_VIDEOAFDCHANGE_CALLBACK: {
             int afdEvent = parcel.bodyInt[0];
             int playerid = parcel.bodyInt[1];
             ALOGI("onSubtitleAfdEvent bbc event:%d, playerid:%d", afdEvent, playerid);
@@ -95,7 +95,7 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
         }
         break;
 
-        case EVENT_ONMIXVIDEOEVENT_CALLBACK:{
+        case EVENT_ON_MIXVIDEOEVENT_CALLBACK:{
             int val = parcel.bodyInt[0];
             ALOGI("processSubtitle mix video event:%d", val);
 
@@ -107,7 +107,7 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
         }
         break;
 
-        case EVENT_ONSUBTITLE_DIMESION_CALLBACK: {
+        case EVENT_ON_SUBTITLE_DIMENSION_CALLBACK: {
             int width = parcel.bodyInt[0];
             int height = parcel.bodyInt[1];
             ALOGI("onSubtitleDimension width:%d height:%d", width, height);
@@ -119,7 +119,7 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
             }
         }
         break;
-        case EVENT_ONSUBTITLE_LANGUAGE_CALLBACK: {
+        case EVENT_ON_SUBTITLE_LANGUAGE_CALLBACK: {
             std::string lang = parcel.bodyString[0];
 
             if (mListener != nullptr) {
@@ -131,7 +131,7 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
         }
 
         break;
-        case EVENT_ONSUBTITLE_INFO_CALLBACK: {
+        case EVENT_ON_SUBTITLE_INFO_CALLBACK: {
             int what = parcel.bodyInt[0];
             int extra =  parcel.bodyInt[1];
             ALOGI("onSubtitleInfoEvent what:%d, extra:%d", what, extra);
@@ -330,7 +330,7 @@ bool SubtitleServerClient::open(const char *path, int ioType) {
 bool SubtitleServerClient::close() {
     LOG(INFO) << "close session: " << mSessionId;
     if (this == nullptr) {
-        LOG(ERROR) << "maybe not exsit!";
+        LOG(ERROR) << "maybe not exist!";
         return false;
     }
     Mutex::Autolock _l(mLock);
@@ -564,7 +564,7 @@ bool SubtitleServerClient::userDataOpen() {
 
 bool SubtitleServerClient::userDataClose() {
     if (this == nullptr) {
-        LOG(ERROR) << "maybe not exsit!";
+        LOG(ERROR) << "maybe not exist!";
         return false;
     }
     Mutex::Autolock _l(mLock);
@@ -577,10 +577,9 @@ bool SubtitleServerClient::userDataClose() {
     return r.isOk();
 }
 
-
 // ui related.
 // Below api only used for control standalone UI.
-// Thes UI is not recomendated, only for some native app/middleware
+// The UI is not recommended, only for some native app/middleware
 // that cannot Android (Java) UI hierarchy.
 bool SubtitleServerClient::uiShow() {
     Mutex::Autolock _l(mLock);

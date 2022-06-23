@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *  @author   wanglu
+ *  @author   amlogic
  *  @version  1.0
  *  @date     2019/08/15
  *  @par function description:
@@ -22,10 +22,10 @@
 #ifndef _ANDROID_SUBTITLE_SERVER_HIDL_CLIENT_H_
 #define _ANDROID_SUBTITLE_SERVER_HIDL_CLIENT_H_
 #define RETRY_MAX 3
-#define EVENT_ONSUBTITLEDATA_CALLBACK       0xA00000
-#define EVENT_ONSUBTITLEAVAILABLE_CALLBACK  0xA00001
-#define EVENT_ONVIDEOAFDCHANGE_CALLBACK     0xA00002
-#define EVENT_ONMIXVIDEOEVENT_CALLBACK      0xA00003
+#define EVENT_ON_SUBTITLEDATA_CALLBACK       0xA00000
+#define EVENT_ON_SUBTITLEAVAILABLE_CALLBACK  0xA00001
+#define EVENT_ON_VIDEOAFDCHANGE_CALLBACK     0xA00002
+#define EVENT_ON_MIXVIDEOEVENT_CALLBACK      0xA00003
 
 
 #include <utils/Timers.h>
@@ -93,7 +93,7 @@ typedef enum
     ~SubtitleServerHidlClient();
 
     void subtitleCreat();
-    void subtitleDestory();
+    void subtitleDestroy();
     void subtitleShow();
     void subtitleOpen(const std::string& path, getPtsCb cb, SUB_Para_t *para);
     void subtitleOpenIdx(int32_t idx);
@@ -105,7 +105,7 @@ typedef enum
     void subtitleOption();
     int subtitleGetType();
     std::string subtitleGetTypeStr();
-    int subtitleGetTypeDetial();
+    int subtitleGetTypeDetail();
     void subtitleSetTextColor(int32_t color);
     void subtitleSetTextSize(int32_t size);
     void subtitleSetGravity(int32_t gravity);
@@ -132,7 +132,7 @@ typedef enum
     int ttNextPage(int32_t dir);
     int ttNextSubPage(int32_t dir);
     int ttGotoPage(int32_t pageNo, int32_t subPageNo);
-    //void unregisterListener(const sp<SubtitleMiddleListener> &listener);
+    //void unregisteredListener(const sp<SubtitleMiddleListener> &listener);
 private:
     class SubtitleServerHidlCallback : public ISubtitleCallback {
     public:

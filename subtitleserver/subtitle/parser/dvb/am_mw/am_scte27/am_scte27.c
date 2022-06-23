@@ -106,7 +106,7 @@ typedef struct scte_simple_bitmap_s
 	} style_para;
 	uint32_t   bitmap_length;
 	uint32_t   reveal_pts;
-	uint32_t   disapear_pts;
+	uint32_t   disappear_pts;
 	void*      sub_bmp;
 	struct list_head list;
 }scte_simple_bitmap_t;
@@ -508,13 +508,13 @@ static void decode_bitmap(AM_SCTE27_Parser_t *parser, scte_subtitle_t *sub_info,
 	simple_bitmap->immediate = sub_info->immediate;
 	simple_bitmap->show_status = DISPLAY_STATUS_INIT;
 	simple_bitmap->reveal_pts = sub_info->pts;
-	simple_bitmap->disapear_pts = sub_info->pts + frame_dur * sub_info->duration;
+	simple_bitmap->disappear_pts = sub_info->pts + frame_dur * sub_info->duration;
 	video_pts = am_scte_get_video_pts(parser->media_sync_handler);
-	if (pts_bigger_than(video_pts, simple_bitmap->disapear_pts))
+	if (pts_bigger_than(video_pts, simple_bitmap->disappear_pts))
 	{
 		if (parser->para.report)
 			parser->para.report(parser, AM_SCTE27_Decoder_Error_TimeError);
-		scte_log("video pts larger than current data, vpts %x disappear_pts %x", video_pts, simple_bitmap->disapear_pts);
+		scte_log("video pts larger than current data, vpts %x disappear_pts %x", video_pts, simple_bitmap->disappear_pts);
 	}
 #if 0
 	scte_log("display_std %d frame_rate %d dur %d rev_pts %x hide_pts %x",
@@ -522,7 +522,7 @@ static void decode_bitmap(AM_SCTE27_Parser_t *parser, scte_subtitle_t *sub_info,
 		frame_rate,
 		sub_info->duration,
 		simple_bitmap->reveal_pts,
-		simple_bitmap->disapear_pts);
+		simple_bitmap->disappear_pts);
 #endif
 	simple_bitmap->bg_style = buffer[0] & (1<<2);
 	simple_bitmap->outline_style = buffer[0] & 0x3;
@@ -645,11 +645,11 @@ static void node_check(AM_SCTE27_Parser_t *parser)
 
 	video_pts = am_scte_get_video_pts(parser->media_sync_handler);
 
-	/* Checkj if some bitmap should be displayed.*/
+	/* Check if some bitmap should be displayed.*/
 	list_for_each_entry_safe(simple_bitmap, tmp, &parser->simple_bitmap_head, list, scte_simple_bitmap_t)
 	{
 		if (pts_bigger_than(video_pts, simple_bitmap->reveal_pts)
-				&& pts_bigger_than(simple_bitmap->disapear_pts, video_pts)) {
+				&& pts_bigger_than(simple_bitmap->disappear_pts, video_pts)) {
 			has_sub = 1;
 			if (simple_bitmap->show_status == DISPLAY_STATUS_INIT)
 				need_redraw = 1;
@@ -672,7 +672,7 @@ static void node_check(AM_SCTE27_Parser_t *parser)
 	/*Clear the old bitmap only when has somethings to be displayed*/
 	list_for_each_entry_safe(simple_bitmap, tmp, &parser->simple_bitmap_head, list, scte_simple_bitmap_t)
 	{
-		int diff = simple_bitmap->disapear_pts - video_pts;
+		int diff = simple_bitmap->disappear_pts - video_pts;
 		int del  = 0;
 
 		if (diff < 0) {
@@ -685,7 +685,7 @@ static void node_check(AM_SCTE27_Parser_t *parser)
 		if (del)
 		{
 			need_redraw = 1;
-			scte_log("remove pts %x - %x", simple_bitmap->reveal_pts, simple_bitmap->disapear_pts);
+			scte_log("remove pts %x - %x", simple_bitmap->reveal_pts, simple_bitmap->disappear_pts);
 			list_del(&simple_bitmap->list);
 			if (simple_bitmap->sub_bmp)
 				free(simple_bitmap->sub_bmp);
@@ -709,7 +709,7 @@ static void node_check(AM_SCTE27_Parser_t *parser)
 			if (simple_bitmap == pre_clear_bmp)
 				break;
 
-			scte_log("remove imm pts %x - %x", simple_bitmap->reveal_pts, simple_bitmap->disapear_pts);
+			scte_log("remove imm pts %x - %x", simple_bitmap->reveal_pts, simple_bitmap->disappear_pts);
 			need_redraw = 1;
 			list_del(&simple_bitmap->list);
 			if (simple_bitmap->sub_bmp)
@@ -728,7 +728,7 @@ static void node_check(AM_SCTE27_Parser_t *parser)
 
 		list_for_each_entry_safe(simple_bitmap, tmp, &parser->simple_bitmap_head, list, scte_simple_bitmap_t)
 		{
-			scte_log(" node_check vpts %llx bmp_pts %llx outdata_pts %llx",video_pts,simple_bitmap->reveal_pts,simple_bitmap->disapear_pts);
+			scte_log(" node_check vpts %llx bmp_pts %llx outdata_pts %llx",video_pts,simple_bitmap->reveal_pts,simple_bitmap->disappear_pts);
 			//Draw node
 			if (pts_bigger_than(video_pts, simple_bitmap->reveal_pts) ||
 				simple_bitmap->immediate || need_freerun)
@@ -737,10 +737,10 @@ static void node_check(AM_SCTE27_Parser_t *parser)
 				if (simple_bitmap->show_status == DISPLAY_STATUS_INIT)
 				{
 					//scte_log("node render imm: %d", simple_bitmap->immediate);
-					if (parser->para.report_available && !parser->para.hasReportAvai) {
+					if (parser->para.report_available && !parser->para.hasReportAvailable) {
 						scte_log("scte:report_available");
 						parser->para.report_available(parser);
-						parser->para.hasReportAvai = AM_TRUE;
+						parser->para.hasReportAvailable = AM_TRUE;
 					}
 					simple_bitmap->show_status = DISPLAY_STATUS_SHOW;
 				}

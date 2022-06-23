@@ -48,13 +48,13 @@ SocketSource::~SocketSource() {
     ALOGD("%s", __func__);
 
     // TODO: no ring ref?
-    SubSocketServer::unregistClient(this);
+    SubSocketServer::unregisterClient(this);
 }
 
 bool SocketSource::notifyInfoChange_l(int type) {
     for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-        auto wk_lstner = (*it);
-        if (auto lstn = wk_lstner.lock()) {
+        auto wk_listener = (*it);
+        if (auto lstn = wk_listener.lock()) {
             if (lstn == nullptr) return false;
 
             switch (type) {
@@ -118,7 +118,7 @@ int SocketSource::onData(const char *buffer, int len) {
         case eTypeSubtitleLangString:
         case eTypeSubtitleResetServ:
         case eTypeSubtitleExitServ:
-            ALOGD("not handled messag: %s", buffer+4);
+            ALOGD("not handled message: %s", buffer+4);
             break;
 
         default: {
@@ -138,17 +138,17 @@ bool SocketSource::start() {
 }
 
 bool SocketSource::stop() {
-    mState = E_SOURCE_STOPED;
+    mState = E_SOURCE_STOPPED;
     mSegment->notifyExit();
     return true;
 }
 
 
 size_t SocketSource::read(void *buffer, size_t size) {
-    int readed = 0;
+    int read = 0;
 
     // Current design of Parser Read, do not need add lock protection.
-    // because all the read, is in Parser's parser thread.
+    // because all the read, is in parser thread.
     // We only need add lock here, is for protect access the mCurrentItem's
     // member function multi-thread.
     // Current Impl do not need lock, if required, then redesign the SegmentBuffer.
@@ -157,11 +157,11 @@ size_t SocketSource::read(void *buffer, size_t size) {
     //in case of applied size more than 1024*2, such as dvb subtitle,
     //and data process error for two reads.
     //so add until read applied data then exit.
-    while (readed != size && mState == E_SOURCE_STARTED) {
+    while (read != size && mState == E_SOURCE_STARTED) {
         if (mCurrentItem != nullptr && !mCurrentItem->isEmpty()) {
-            readed += mCurrentItem->read_l(((char *)buffer+readed), size-readed);
-            //ALOGD("readed:%d,size:%d", readed, size);
-            if (readed == size) break;
+            read += mCurrentItem->read_l(((char *)buffer+read), size-read);
+            //ALOGD("read:%d,size:%d", read, size);
+            if (read == size) break;
         } else {
             ALOGD("mCurrentItem null, pop next buffer item");
             mCurrentItem = mSegment->pop();
@@ -179,7 +179,7 @@ size_t SocketSource::read(void *buffer, size_t size) {
         }
     }
 
-    return readed;
+    return read;
 }
 
 
@@ -188,9 +188,9 @@ void SocketSource::dump(int fd, const char *prefix) {
     {
         std::unique_lock<std::mutex> autolock(mLock);
         for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-            auto wk_lstner = (*it);
-            if (auto lstn = wk_lstner.lock())
-                dprintf(fd, "%s   InforListener: %p\n", prefix, lstn.get());
+            auto wk_listener = (*it);
+            if (auto lstn = wk_listener.lock())
+                dprintf(fd, "%s   InfoListener: %p\n", prefix, lstn.get());
         }
     }
     dprintf(fd, "%s   state:%d\n\n", prefix, mState);

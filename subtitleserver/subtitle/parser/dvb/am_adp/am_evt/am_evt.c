@@ -224,7 +224,7 @@ AM_ErrorCode_t AM_EVT_Init()
 }
 /*
 */
-AM_ErrorCode_t AM_EVT_Destory()
+AM_ErrorCode_t AM_EVT_Destroy()
 {
     AM_Event_t *evt;
     int i;

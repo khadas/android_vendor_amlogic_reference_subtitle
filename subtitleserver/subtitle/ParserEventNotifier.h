@@ -46,7 +46,7 @@ public:
 
     virtual void onSubtitleLanguage(char* lang) = 0;
 
-    //what: info type, extra: value, for info extention
+    //what: info type, extra: value, for info extension
     virtual void onSubtitleInfo(int what, int extra) = 0;
 };
 

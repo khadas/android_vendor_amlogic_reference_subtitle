@@ -3,13 +3,13 @@
 #include <thread>
 #include "AndroidCallbackMessageQueue.h"
 
-#define EVENT_ONSUBTITLEDATA_CALLBACK       0xA00000
-#define EVENT_ONSUBTITLEAVAILABLE_CALLBACK  0xA00001
-#define EVENT_ONVIDEOAFDCHANGE_CALLBACK     0xA00002
-#define EVENT_ONMIXVIDEOEVENT_CALLBACK      0xA00003
-#define EVENT_ONSUBTITLE_DIMESION_CALLBACK  0xA00004
-#define EVENT_ONSUBTITLE_LANGUAGE_CALLBACK  0xA00005
-#define EVENT_ONSUBTITLE_INFO_CALLBACK      0xA00006
+#define EVENT_ON_SUBTITLEDATA_CALLBACK       0xA00000
+#define EVENT_ON_SUBTITLEAVAILABLE_CALLBACK  0xA00001
+#define EVENT_ON_VIDEOAFDCHANGE_CALLBACK     0xA00002
+#define EVENT_ON_MIXVIDEOEVENT_CALLBACK      0xA00003
+#define EVENT_ON_SUBTITLE_DIMENSION_CALLBACK  0xA00004
+#define EVENT_ON_SUBTITLE_LANGUAGE_CALLBACK  0xA00005
+#define EVENT_ON_SUBTITLE_INFO_CALLBACK      0xA00006
 
 
 namespace amlogic {
@@ -78,42 +78,42 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
         parcel.msgType = data->type;
 
         switch (parcel.msgType) {
-            case EVENT_ONSUBTITLEDATA_CALLBACK:
+            case EVENT_ON_SUBTITLEDATA_CALLBACK:
             {
                 parcel.bodyInt.resize(2);
                 parcel.bodyInt[0] = data->x;
                 parcel.bodyInt[1] = data->y;
-                ALOGD("onSubtitleDataEvent EVENT_ONSUBTITLEDATA_CALLBACK: event:%d, id:%d", data->x, data->y);
+                ALOGD("onSubtitleDataEvent EVENT_ON_SUBTITLEDATA_CALLBACK: event:%d, id:%d", data->x, data->y);
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
-            case EVENT_ONSUBTITLEAVAILABLE_CALLBACK:
+            case EVENT_ON_SUBTITLEAVAILABLE_CALLBACK:
             {
                 parcel.bodyInt.resize(1);
                 parcel.bodyInt[0] = data->x;
-                ALOGD("onSubtitleDataEvent EVENT_ONSUBTITLEAVAILABLE_CALLBACK: avaiable:%d", data->x);
+                ALOGD("onSubtitleDataEvent EVENT_ON_SUBTITLEAVAILABLE_CALLBACK: available:%d", data->x);
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
-            case EVENT_ONVIDEOAFDCHANGE_CALLBACK:
+            case EVENT_ON_VIDEOAFDCHANGE_CALLBACK:
             {
                 parcel.bodyInt.resize(2);
                 parcel.bodyInt[0] = data->x;
                 parcel.bodyInt[1] = data->y;
-                ALOGD("onSubtitleDataEvent EVENT_ONVIDEOAFDCHANGE_CALLBACK:afd:%d, playerid = %d", data->x, data->y);
+                ALOGD("onSubtitleDataEvent EVENT_ON_VIDEOAFDCHANGE_CALLBACK:afd:%d, playerid = %d", data->x, data->y);
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
-            case EVENT_ONSUBTITLE_DIMESION_CALLBACK:
+            case EVENT_ON_SUBTITLE_DIMENSION_CALLBACK:
             {
                 parcel.bodyInt.resize(2);
                 parcel.bodyInt[0] = data->x;
                 parcel.bodyInt[1] = data->y;
-                ALOGD("onSubtitleDataEvent EVENT_ONSUBTITLE_DIMESION_CALLBACK: width:%d, height:%d", data->x, data->y);
+                ALOGD("onSubtitleDataEvent EVENT_ON_SUBTITLE_DIMENSION_CALLBACK: width:%d, height:%d", data->x, data->y);
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
-            case EVENT_ONMIXVIDEOEVENT_CALLBACK:
+            case EVENT_ON_MIXVIDEOEVENT_CALLBACK:
             {
                 parcel.bodyInt.resize(1);
                 parcel.bodyInt[0] = data->x;
@@ -121,7 +121,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
-            case EVENT_ONSUBTITLE_LANGUAGE_CALLBACK:
+            case EVENT_ON_SUBTITLE_LANGUAGE_CALLBACK:
             {
                 std::string lang;
                 lang = data->lang;
@@ -131,7 +131,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
-            case EVENT_ONSUBTITLE_INFO_CALLBACK:
+            case EVENT_ON_SUBTITLE_INFO_CALLBACK:
             {
                 parcel.bodyInt.resize(2);
                 parcel.bodyInt[0] = data->x;
@@ -157,14 +157,14 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
                 mProxyHandler->onSubtitleDisplayNotify(parcel);
 
                 // some customer do not want the whole subtitle data
-                // but want to know the subtitle dimesion. here report it to make they happy!
+                // but want to know the subtitle dimension. here report it to make they happy!
                 /*{
                     SubtitleHidlParcel parcel;
-                    parcel.msgType = EVENT_ONSUBTITLE_DIMESION_CALLBACK;
+                    parcel.msgType = EVENT_ON_SUBTITLE_DIMENSION_CALLBACK;
                     parcel.bodyInt.resize(2);
                     parcel.bodyInt[0] = data->width;
                     parcel.bodyInt[1] = data->height;
-                    ALOGD("onSubtitleDataEvent EVENT_ONSUBTITLE_DIMESION_CALLBACK:");
+                    ALOGD("onSubtitleDataEvent EVENT_ON_SUBTITLE_DIMENSION_CALLBACK:");
                     mProxyHandler->onSubtitleEventNotify(parcel) ;
                 }*/
 
@@ -174,19 +174,19 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
     }
 }
 
-void AndroidCallbackMessageQueue::onSubtitleDataEvent(int event, int chnnlId) {
+void AndroidCallbackMessageQueue::onSubtitleDataEvent(int event, int channelId) {
     android::AutoMutex _l(mLock);
     std::unique_ptr<SubtitleData> subtitleData = std::make_unique<SubtitleData>();
-    subtitleData->type = EVENT_ONSUBTITLEDATA_CALLBACK;
+    subtitleData->type = EVENT_ON_SUBTITLEDATA_CALLBACK;
     subtitleData->x = event;
-    subtitleData->y = chnnlId;
+    subtitleData->y = channelId;
     mSubtitleData.push_back(std::move(subtitleData));
     mLooper->sendMessage(this, Message(MSG_CHECK_SUBDATA));
 }
 void AndroidCallbackMessageQueue::onSubtitleDimension(int width, int height) {
     android::AutoMutex _l(mLock);
     std::unique_ptr<SubtitleData> subtitleData = std::make_unique<SubtitleData>();
-    subtitleData->type = EVENT_ONSUBTITLE_DIMESION_CALLBACK;
+    subtitleData->type = EVENT_ON_SUBTITLE_DIMENSION_CALLBACK;
     subtitleData->x = width;
     subtitleData->y = height;
     mSubtitleData.push_back(std::move(subtitleData));
@@ -196,7 +196,7 @@ void AndroidCallbackMessageQueue::onSubtitleDimension(int width, int height) {
 void AndroidCallbackMessageQueue::onSubtitleAvailable(int available) {
     android::AutoMutex _l(mLock);
     std::unique_ptr<SubtitleData> subtitleData = std::make_unique<SubtitleData>();
-    subtitleData->type = EVENT_ONSUBTITLEAVAILABLE_CALLBACK;
+    subtitleData->type = EVENT_ON_SUBTITLEAVAILABLE_CALLBACK;
     subtitleData->x = available;
     mSubtitleData.push_back(std::move(subtitleData));
     mLooper->sendMessage(this, Message(MSG_CHECK_SUBDATA));
@@ -205,7 +205,7 @@ void AndroidCallbackMessageQueue::onSubtitleAvailable(int available) {
 void AndroidCallbackMessageQueue::onVideoAfdChange(int afd, int playerid) {
     android::AutoMutex _l(mLock);
     std::unique_ptr<SubtitleData> subtitleData = std::make_unique<SubtitleData>();
-    subtitleData->type = EVENT_ONVIDEOAFDCHANGE_CALLBACK;
+    subtitleData->type = EVENT_ON_VIDEOAFDCHANGE_CALLBACK;
     subtitleData->x = afd;
     subtitleData->y = playerid;
     mSubtitleData.push_back(std::move(subtitleData));
@@ -215,7 +215,7 @@ void AndroidCallbackMessageQueue::onVideoAfdChange(int afd, int playerid) {
 void AndroidCallbackMessageQueue::onMixVideoEvent(int val) {
     android::AutoMutex _l(mLock);
     std::unique_ptr<SubtitleData> subtitleData = std::make_unique<SubtitleData>();
-    subtitleData->type = EVENT_ONMIXVIDEOEVENT_CALLBACK;
+    subtitleData->type = EVENT_ON_MIXVIDEOEVENT_CALLBACK;
     subtitleData->x = val;
     mSubtitleData.push_back(std::move(subtitleData));
     mLooper->sendMessage(this, Message(MSG_CHECK_SUBDATA));
@@ -224,7 +224,7 @@ void AndroidCallbackMessageQueue::onMixVideoEvent(int val) {
 void AndroidCallbackMessageQueue::onSubtitleLanguage(char *lang) {
     android::AutoMutex _l(mLock);
     std::unique_ptr<SubtitleData> subtitleData = std::make_unique<SubtitleData>();
-    subtitleData->type = EVENT_ONSUBTITLE_LANGUAGE_CALLBACK;
+    subtitleData->type = EVENT_ON_SUBTITLE_LANGUAGE_CALLBACK;
     subtitleData->lang = lang;
     mSubtitleData.push_back(std::move(subtitleData));
     mLooper->sendMessage(this, Message(MSG_CHECK_SUBDATA));
@@ -233,7 +233,7 @@ void AndroidCallbackMessageQueue::onSubtitleLanguage(char *lang) {
 void AndroidCallbackMessageQueue::onSubtitleInfo(int what, int extra) {
     android::AutoMutex _l(mLock);
     std::unique_ptr<SubtitleData> subtitleData = std::make_unique<SubtitleData>();
-    subtitleData->type = EVENT_ONSUBTITLE_INFO_CALLBACK;
+    subtitleData->type = EVENT_ON_SUBTITLE_INFO_CALLBACK;
     subtitleData->x = what;
     subtitleData->y = extra;
     mSubtitleData.push_back(std::move(subtitleData));

@@ -80,7 +80,7 @@ void CaptionScreen::updateScreen(int w, int h) {
     ALOGD("=============updateScreen: mMaxFontSize:%f mMaxFontHeight:%f, mSafeTitleHeight:%f, mCcRowCount:%d",
         mMaxFontSize, mMaxFontHeight, mSafeTitleHeight, mCcRowCount);
 
-    //This is used for postioning character in 608 mode.
+    //This is used for positioning character in 608 mode.
     mFixedCharWidth = mSafeTitleWidth / (mCcColCount + 1);
 
     mAnchorHorizon = ((mVideohvRateOrigin & 1) == 0)?210:160; //16:9 or 4:3
@@ -356,7 +356,7 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
         mStrRight = mStrLeft + mStringLengthOnPaint;
         row.mPriorStrPositionForDraw = mStrRight;
     } else {
-        /* default using left justfication */
+        /* default using left justification */
         if (row.mPriorStrPositionForDraw == -1) {
             row.mPriorStrPositionForDraw = win.mWindowStartX + mStrStartX;
         }
@@ -382,7 +382,7 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
         paint.setColor(mBgColor);
         paint.setAlpha(mBgOpacityInt);
         canvas.drawRect(SkRect::MakeLTRB(mStrLeft, mStrTop, mStrRight, mStrBottom), paint);
-        ALOGD("Row String draw rect [%f %f %f %f] mFillColor:%x, mFileeOpcityInt:%x",
+        ALOGD("Row String draw rect [%f %f %f %f] mFillColor:%x, mFileOpcityInt:%x",
             mStrLeft, mStrTop, mStrRight, mStrBottom, mBgColor, mBgOpacityInt);
     }
 
@@ -589,9 +589,9 @@ Window::Window(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Valu
     mRowCount = root["row_count"].asInt();
     mColCount = root["column_count"].asInt();
     mRowLock = root["row_lock"].asBool();
-    mColoumnLock = root["column_lock"].asBool();
+    mColumnLock = root["column_lock"].asBool();
     ALOGD_IF(gDebug, "Window: Row==> row:%d (lock?%d)  column:%d (lock?%d)",
-        mRowCount, mRowLock, mColCount, mColoumnLock);
+        mRowCount, mRowLock, mColCount, mColumnLock);
 
 
     mJustify = root["justify"].asString();
@@ -646,7 +646,7 @@ Window::Window(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Valu
     ALOGD_IF(gDebug, "Window: fill==> mFillOpacity:%s mFillColor:%x mBorderType:%s mBorderColor:%x mFillOpcityInt:%x ",
         mFillOpacity.c_str(), mFillColor,  mBorderType.c_str(), mBorderColor, mFillOpcityInt);
 
-    // initialze window
+    // initialize window
     mWindowWidth = 0;
     mWindowLeftMost = 10000;
     mWindowMaxFontSize = 0;
@@ -696,32 +696,32 @@ bool Window::draw(SkCanvas &canvas) {
         mWindowLeft = 0;
         mWindowTop = 0;
         mWindowRight = info.width();
-        mWindowButtom =   mConfig->getScreen()->mMaxFontHeight * mRowCount;
+        mWindowBottom =   mConfig->getScreen()->mMaxFontHeight * mRowCount;
 
         paint.setBlendMode(SkBlendMode::kSrc);
         /* Draw border */
         /* Draw border color */
         drawBorder(canvas, paint, fadePaint, mBorderType,
-                SkRect::MakeLTRB(mWindowLeft, mWindowTop, mWindowRight, mWindowButtom),
+                SkRect::MakeLTRB(mWindowLeft, mWindowTop, mWindowRight, mWindowBottom),
                 mBorderColor);
 
         /* Draw window */
     } else {
         // TODO: we may get same safe region...
-        // TODO: calculate boundray.
+        // TODO: calculate boundary.
         mWindowLeft = 0;
         mWindowRight = info.width();
         mWindowTop = 0;
-        mWindowButtom = info.height();
+        mWindowBottom = info.height();
     }
 
     // already clear, no need do agin.
     if (mFillOpcityInt != 0x0) {
         paint.setColor(mFillColor);
         paint.setAlpha(mFillOpcityInt);
-        ALOGD("Draw window rect [%f %f %f %f] mFillColor:%x, mFileeOpcityInt:%x",
-            mWindowLeft, mWindowRight, mWindowTop, mWindowButtom, mFillColor, mFillOpcityInt);
-        canvas.drawRect(SkRect::MakeLTRB(mWindowLeft, mWindowTop, mWindowRight, mWindowButtom), paint);
+        ALOGD("Draw window rect [%f %f %f %f] mFillColor:%x, mFileOpcityInt:%x",
+            mWindowLeft, mWindowRight, mWindowTop, mWindowBottom, mFillColor, mFillOpcityInt);
+        canvas.drawRect(SkRect::MakeLTRB(mWindowLeft, mWindowTop, mWindowRight, mWindowBottom), paint);
     }
 
     Window &win = *this;
@@ -737,7 +737,7 @@ bool Window::draw(SkCanvas &canvas) {
             fadePaint.setAlpha(mEffectPercent*255/100);
             fadePaint.setBlendMode(SkBlendMode::kScreen);
             canvas.drawRect(
-                SkRect::MakeLTRB(mWindowLeft-border, mWindowTop-border, mWindowRight+border, mWindowButtom+border),
+                SkRect::MakeLTRB(mWindowLeft-border, mWindowTop-border, mWindowRight+border, mWindowBottom+border),
                 fadePaint);
 
         } else if (ignoreCaseCompare(mDisplayEffect, "wipe")) {
@@ -745,22 +745,22 @@ bool Window::draw(SkCanvas &canvas) {
                 rectLeft = mWindowStartX - border;
                 rectRight = mWindowStartX + mWindowWidth * mEffectPercent /100 + border;
                 rectTop = mWindowTop - border;
-                rectBottom = mWindowButtom + border;
+                rectBottom = mWindowBottom + border;
             } else if (ignoreCaseCompare(mEffectDirection, "right_left")) {
                 rectLeft = mWindowStartX + mWindowWidth * (100 - mEffectPercent)/100 - border;
                 rectRight = mWindowStartX + mWindowWidth + border;
                 rectTop = mWindowTop - border;
-                rectBottom = mWindowButtom + border;
+                rectBottom = mWindowBottom + border;
             } else if (ignoreCaseCompare(mEffectDirection, "top_bottom")) {
                 rectLeft = mWindowStartX - border;
                 rectRight = mWindowStartX + mWindowWidth + border;
                 rectTop = mWindowTop - border;
-                rectBottom = mWindowTop + (mWindowButtom - mWindowTop) * mEffectPercent/100 + border;
+                rectBottom = mWindowTop + (mWindowBottom - mWindowTop) * mEffectPercent/100 + border;
             } else if (ignoreCaseCompare(mEffectDirection, "bottom_top")) {
                 rectLeft = mWindowStartX - border;
                 rectRight = mWindowStartX + mWindowWidth + border;
-                rectTop = mWindowTop + (mWindowButtom - mWindowTop) * (100 - mEffectPercent)/100 - border;
-                rectBottom = mWindowButtom + border;
+                rectTop = mWindowTop + (mWindowBottom - mWindowTop) * (100 - mEffectPercent)/100 - border;
+                rectBottom = mWindowBottom + border;
             } else {
                 rectLeft = 0;
                 rectBottom = 0;
@@ -852,7 +852,7 @@ void Window::drawBorder(SkCanvas &canvas, SkPaint borderPaint, SkPaint shadowPai
 }
 
 void Window::dump(std :: string prefix) {
-    ALOGD("%s row:%d column:%d rowLock:%d colLock:%d", prefix.c_str(), mRowCount, mColCount, mRowLock, mColoumnLock);
+    ALOGD("%s row:%d column:%d rowLock:%d colLock:%d", prefix.c_str(), mRowCount, mColCount, mRowLock, mColumnLock);
     ALOGD("%s anchorPoint:%d AnchorVH[%d %d] AnchorRelative:%d",
         prefix.c_str(), mAnchorPointer, mAnchorV, mAnchorH, mAnchorRelative);
     ALOGD("%s Justify:%s direction:%s scroll_direction:%s mWordwrap:%d",

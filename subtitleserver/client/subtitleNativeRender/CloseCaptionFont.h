@@ -16,7 +16,7 @@ namespace CloseCaption {
 class FontManager {
 public:
     FontManager();
-    sk_sp<SkTypeface> typeFaceFromName(std::string typeName, bool isIitalic, bool isMutlByte = false);
+    sk_sp<SkTypeface> typeFaceFromName(std::string typeName, bool isItalic, bool isMultiByte = false);
     bool isMonoFont(std::string font);
     static FontManager& Instance();
 
@@ -24,7 +24,7 @@ private:
     static FontManager _instance;
     bool uncryptFontTo(const char*srcPath, const char*destPath);
     bool initFontResource();
-    sk_sp<SkTypeface> getFallbackFonts(std::string typeName, bool isIitalic);
+    sk_sp<SkTypeface> getFallbackFonts(std::string typeName, bool isItalic);
 
     sk_sp<SkTypeface> mMonoSerifTf;
     sk_sp<SkTypeface> mMonoSerifItTf;

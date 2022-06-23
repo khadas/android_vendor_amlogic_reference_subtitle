@@ -36,20 +36,20 @@ static inline std::string stringConvert2Stream(std::string s1, std::string s2) {
 
 /* param s the string below have double language text.
  *     Dialogue: ,0:01:25.16,0:01:26.72,*456,1,0000,0000,0000,,Hey! Come here!
- *     Dialogue: ,0:01:25.16,0:01:26.72,*123,1,0000,0000,0000,,?¨¬1y¨¤¡ä
+ *     Dialogue: ,0:01:25.16,0:01:26.72,*123,1,0000,0000,0000,,?Â¨Â¬1yÂ¨Â¤Â¡Ã¤
  * return string for second line language text
  *
 */
 static inline std::string getSecondTextForDoubleLanguage(std::string source) {
-    std::size_t indexOflineBreak;
+    std::size_t indexOfLineBreak;
     std::stringstream secondStream;
-    indexOflineBreak = source.find("\n");
-    if (indexOflineBreak == std::string::npos) {
+    indexOfLineBreak = source.find("\n");
+    if (indexOfLineBreak == std::string::npos) {
         ALOGE("NO double language, return");
         return "";
     }
     std::string secondStr;
-    secondStr = source.substr(indexOflineBreak + 1, source.length());
+    secondStr = source.substr(indexOfLineBreak + 1, source.length());
 
     const int ASS_EVENT_SECTIONS = 9;
     const int BUILTIN_ASS_EVENT_SECTIONS = 8;
@@ -177,7 +177,7 @@ static inline int __getAssSpu(uint8_t*spuBuf, uint32_t length, std::shared_ptr<A
             break;
         }
     }
-    // replacer "\n"
+    // replace "\n"
     while ((start = str.find("\\n")) != std::string::npos
             || (start = str.find("\\N")) != std::string::npos) {
         std::string newline = "\n";
@@ -371,7 +371,7 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
 int AssParser::getInterSpu() {
     std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
 
-    //TODO: commom place
+    //TODO: common place
     spu->sync_bytes = AML_PARSER_SYNC_WORD;//0x414d4c55;
     // simply, use new instead of malloc, can automatically initialize the buffer
     spu->useMalloc = false;

@@ -29,7 +29,7 @@ AndroidDisplay::AndroidDisplay() {
 
 void AndroidDisplay::binderDied(const android::wp<android::IBinder>&)
 {
-    // woah, surfaceflinger died!
+    // wow, surfaceflinger died!
     ALOGD("SurfaceFlinger died, we also dying...");
     // calling requestExit() is not enough here because the Surface code
     // might be blocked on a condition variable that will never be updated.

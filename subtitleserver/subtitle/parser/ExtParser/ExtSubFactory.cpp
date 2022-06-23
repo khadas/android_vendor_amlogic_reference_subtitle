@@ -243,7 +243,7 @@ std::shared_ptr<TextSubtitle> ExtSubFactory::create(std::shared_ptr<DataSource> 
         return std::shared_ptr<TextSubtitle>(new VobSubIndex(source));
 
         default:
-            ALOGD("ext subtitle format is invaild! format = %d", format);
+            ALOGD("ext subtitle format is invalid! format = %d", format);
             return NULL;
     }
     return NULL;

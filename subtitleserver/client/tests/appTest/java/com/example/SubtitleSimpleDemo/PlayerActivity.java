@@ -83,7 +83,7 @@ public class PlayerActivity extends Activity implements
         mHeightET = (EditText) findViewById(R.id.height);
         mSetRegionBtn.setOnClickListener(mBtnOnClickListener);
 
-        //TeleText
+        //Teletext
         mTTPageIdET = (EditText) findViewById(R.id.teletext_page);
         mTTGoPageBtn = (Button) findViewById(R.id.goto_page);
         mTTNextPageBtn = (Button) findViewById(R.id.next_page);
@@ -147,7 +147,7 @@ public class PlayerActivity extends Activity implements
         // Middleware hardware demux no such limitation.
         mApiWrapper.subtitleDvbSubs(
                 SubtitleAPI.E_SUBTITLE_FMQ, // softdemux ust fast message queue. middleware typically use E_SUBTITLE_DEMUX
-                9, // 5 means DVB subtitle. middlware must provide, FMQ ignore this, no need, any value is ok.
+                9, // 5 means DVB subtitle. middleware must provide, FMQ ignore this, no need, any value is ok.
                 0, // only hwdemux need subtitle pid from ts stream
                 0, // only hwdemux need anc id from ts stream
                 0 // only hwdemux need comp id from ts stream

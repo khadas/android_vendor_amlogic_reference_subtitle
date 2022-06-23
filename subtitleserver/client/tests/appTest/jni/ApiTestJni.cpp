@@ -32,7 +32,7 @@ static void _subtitleAvailableCallback(int event) {
     ALOGD("%s %d", __func__, event);
 }
 
-static void _subtitleDimesionCallback(int width, int height) {
+static void _subtitleDimensionCallback(int width, int height) {
     ALOGD("%s width=%d height=%d", __func__, width, height);
 }
 
@@ -45,7 +45,7 @@ static jlong native_SubtitleCreate(JNIEnv* env, jobject object) {
     amlsub_RegistAfdEventCB((AmlSubtitleHnd)session, _subtitleAfdCallback);
     amlsub_RegistOnChannelUpdateCb((AmlSubtitleHnd)session, _subtitleChannelUpdateCallback);
     amlsub_RegistOnSubtitleAvailCb((AmlSubtitleHnd)session, _subtitleAvailableCallback);
-    amlsub_RegistGetDimesionCb((AmlSubtitleHnd)session, _subtitleDimesionCallback);
+    amlsub_RegistGetDimensionCb((AmlSubtitleHnd)session, _subtitleDimensionCallback);
 
     return session;
 }
@@ -57,19 +57,19 @@ jboolean native_SubtitleDestroy(JNIEnv* env, jobject object, jlong handle) {
 }
 
 jboolean native_SubtitleOpen(JNIEnv* env, jobject object, jlong handle, int ioType,
-        int subType, int pid, int videoFmt, int channelId, int ancId, int cmpositionId) {
+        int subType, int pid, int videoFmt, int channelId, int ancId, int compositionId) {
     AmlSubtitleParam param;
     memset(&param, 0, sizeof(AmlSubtitleParam));
     param.extSubPath = nullptr; // We do not play external file (e.g, .sub, .idx), keep this null.
 
-    // Not all the parameter is need in a percific subtype, no need type just keep 0.
+    // Not all the parameter is need in a specific subtype, no need type just keep 0.
     param.ioSource = (AmlSubtitleIOType)ioType;
     param.subtitleType = subType;
     param.pid = pid;
     param.videoFormat = videoFmt;
     param.channelId = channelId;
     param.ancillaryPageId = ancId;
-    param.compositionPageId = cmpositionId;
+    param.compositionPageId = compositionId;
     AmlSubtitleStatus r = amlsub_Open((AmlSubtitleHnd)handle, &param);
     ALOGD("%s, handle=%llx result is: %d\n", __func__, handle, r);
     return r == AmlSubtitleStatus::SUB_STAT_OK;

@@ -64,7 +64,7 @@ typedef struct {
 
 typedef struct {
     int Teletext_PID;
-    int Magzine_No;
+    int Magazine_No;
     int Page_No;
     int SubPage_No;
 } TELETEXT_Param;

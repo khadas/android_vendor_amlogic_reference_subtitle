@@ -674,7 +674,7 @@ static int dvbsub_read_8bit_string(uint8_t *destbuf, int dbufLen,
     return pixelsReads;
 }
 
-int DvbParser::parsePixelDatablock(DVBSubObjectDisplay *display,
+int DvbParser::parsePixelDataBlock(DVBSubObjectDisplay *display,
         const uint8_t *buf, int bufSize, int top_bottom, int nonMod) {
     DVBSubRegion *region = getRegion(mContext, display->regionId);
     const uint8_t *bufEnd = buf + bufSize;
@@ -979,7 +979,7 @@ int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize, int cntObject
             int ret = 0;
             block = buf;
 
-            ret = parsePixelDatablock(display, block, topFieldLen, (totalObject >=SINGLE_OBJECT_DATA && (cntObject % SINGLE_OBJECT_DATA != SINGLE_FIRST_OBJECT_DATA)) ? BOTTOM_FIELD: TOP_FIELD , nonModifyingColor);
+            ret = parsePixelDataBlock(display, block, topFieldLen, (totalObject >=SINGLE_OBJECT_DATA && (cntObject % SINGLE_OBJECT_DATA != SINGLE_FIRST_OBJECT_DATA)) ? BOTTOM_FIELD: TOP_FIELD , nonModifyingColor);
             if (ret == -1)
                 return ret;
 
@@ -988,7 +988,7 @@ int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize, int cntObject
             } else {
                 bottomFieldLen = topFieldLen;
             }
-            ret = parsePixelDatablock(display, block, bottomFieldLen,  (totalObject >=SINGLE_OBJECT_DATA && (cntObject % SINGLE_OBJECT_DATA != SINGLE_FIRST_OBJECT_DATA)) ? TOP_FIELD : BOTTOM_FIELD, nonModifyingColor);
+            ret = parsePixelDataBlock(display, block, bottomFieldLen,  (totalObject >=SINGLE_OBJECT_DATA && (cntObject % SINGLE_OBJECT_DATA != SINGLE_FIRST_OBJECT_DATA)) ? TOP_FIELD : BOTTOM_FIELD, nonModifyingColor);
             if (ret == -1)
                 return ret;
         }
@@ -1728,7 +1728,7 @@ int DvbParser::hwDemuxParse() {
                             mCv.notify_all();
                         }
                     } else {
-                        LOGI("dump-pts-hwdmx!error pts(%lld) frame was abondon\n", spu->pts);
+                        LOGI("dump-pts-hwdmx!error pts(%lld) frame was abandon\n", spu->pts);
                         free(buf);
 
                         return -1;
@@ -1802,7 +1802,7 @@ int DvbParser::softDemuxParse() {
             }
 
         } else {
-            LOGI("dump-pts-swdmx!error this pts(%lld) frame was abondon\n", spu->pts);
+            LOGI("dump-pts-swdmx!error this pts(%lld) frame was abandon\n", spu->pts);
         }
 
         if (data) free(data);

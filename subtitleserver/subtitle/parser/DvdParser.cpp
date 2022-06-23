@@ -466,7 +466,7 @@ void DvdParser::fillResize(std::shared_ptr<AML_SPUVAR> spu) {
 
     spu->spu_width = spu->resize_width;
     spu->spu_height = spu->resize_height;
-    spu->buffer_size = spu->resize_size * 4; // actuall buffer size.
+    spu->buffer_size = spu->resize_size * 4; // actually buffer size.
 
     fillResizedData(spu->spu_data, internalSubData, spu);
     free(internalSubData);

@@ -27,7 +27,7 @@ SubSourceStatus SubSource_ReportTotalTracks(SubSourceHandle handle, int trackNum
 SubSourceStatus SubSource_ReportType(SubSourceHandle handle, int type);
 
 SubSourceStatus SubSource_ReportSubTypeString(SubSourceHandle handle, const char *type);
-SubSourceStatus SubSource_ReportLauguageString(SubSourceHandle handle, const char *lang);
+SubSourceStatus SubSource_ReportLanguageString(SubSourceHandle handle, const char *lang);
 
 
 SubSourceStatus SubSource_SendData(SubSourceHandle handle, const char *data, int size);

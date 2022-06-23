@@ -10,7 +10,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../..  \
                     $(JNI_H_INCLUDE)
 
 #LOCAL_C_INCLUDES :=     \
-#      vendor/amlogic/common/frameworks/services/subtiltleserver/client \
+#      vendor/amlogic/common/frameworks/services/subtitleserver/client \
 #      $(JNI_H_INCLUDE)
 
 LOCAL_SHARED_LIBRARIES :=       \

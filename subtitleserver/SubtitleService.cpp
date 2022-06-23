@@ -28,7 +28,7 @@ SubtitleService::~SubtitleService() {
     ALOGD("%s", __func__);
     //android::CallStack here(LOG_TAG);
     if (mFmqReceiver != nullptr) {
-        mFmqReceiver->unregistClient(mDataSource);
+        mFmqReceiver->unregisterClient(mDataSource);
         mFmqReceiver = nullptr;
     }
 }
@@ -56,7 +56,7 @@ bool SubtitleService::startFmqReceiver(std::unique_ptr<FmqReader> reader) {
 bool SubtitleService::stopFmqReceiver() {
     if (mFmqReceiver != nullptr && mDataSource != nullptr) {
         ALOGD("release :%p", mFmqReceiver.get());
-        mFmqReceiver->unregistClient(mDataSource);
+        mFmqReceiver->unregisterClient(mDataSource);
         mFmqReceiver = nullptr;
         return true;
     }
@@ -411,7 +411,7 @@ bool SubtitleService::stopSubtitle() {
     }
 
     if (mFmqReceiver != nullptr && mDataSource != nullptr) {
-        mFmqReceiver->unregistClient(mDataSource);
+        mFmqReceiver->unregisterClient(mDataSource);
         //mFmqReceiver = nullptr;
     }
 

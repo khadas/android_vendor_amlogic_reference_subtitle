@@ -80,13 +80,13 @@ typedef enum
 /**\brief Demux device open parameters*/
 typedef struct
 {
-	AM_Bool_t use_sw_filter;           /**< M_TURE to use DVR software filters.*/
+	AM_Bool_t use_sw_filter;           /**< M_TRUE to use DVR software filters.*/
 	int       dvr_fifo_no;             /**< Async fifo number if use software filters.*/
 	int       dvr_buf_size;            /**< Async fifo buffer size if use software filters.*/
 } AM_DMX_OpenPara_t;
 
 /**\brief Filter received data callback function
- * \a fandle is the filter's handle.
+ * \a fhandle is the filter's handle.
  * \a data is the received data buffer pointer.
  * \a len is the data length.
  * If \a data == null, means timeout.
@@ -192,7 +192,7 @@ extern AM_ErrorCode_t AM_DMX_GetCallback(int dev_no, int fhandle, AM_DMX_DataCb 
  */
 extern AM_ErrorCode_t AM_DMX_SetCallback(int dev_no, int fhandle, AM_DMX_DataCb cb, void *data);
 
-/**\brief Set the demux's input source
+/**\brief Set the demux input source
  * \param dev_no Demux device number
  * \param src Input source
  * \retval AM_SUCCESS On success
@@ -212,7 +212,7 @@ extern AM_ErrorCode_t AM_DMX_Sync(int dev_no);
 /**
  * Get the scramble status of the AV channels in the demux
  * \param dev_no Demux device number
- * \param[out] dev_status Return the AV channels's scramble status.
+ * \param[out] dev_status Return the AV channel scramble status.
  * dev_status[0] is the video status, dev_status[1] is the audio status.
  * AM_TRUE means the channel is scrambled, AM_FALSE means the channel is not scrambled.
  * \retval AM_SUCCESS On success

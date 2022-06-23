@@ -109,7 +109,7 @@ private:
 
     char *mBuffer;
     int mBufferSize;
-    unsigned mFileReaded;
+    unsigned mFileRead;
     std::shared_ptr<DataSource> mDataSource;
     int mEncoding;
     size_t mStreamSize;

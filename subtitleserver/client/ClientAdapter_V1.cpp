@@ -56,7 +56,7 @@ void *thrSubtitleShow(void *pthis)
 		if (firstvpts == 0) {
 			pos = 0;
 		} else {
-			if (subtitleGetTypeDetial() == 6) {//dvb sub  return pts_video
+			if (subtitleGetTypeDetail() == 6) {//dvb sub  return pts_video
 				pos = (ctc_mp->GetCurrentPlayTime()/90);
 			} else {
 				pos = ((ctc_mp->GetCurrentPlayTime() - firstvpts)/90);
@@ -67,7 +67,7 @@ void *thrSubtitleShow(void *pthis)
         if (firstvpts == 0) {
             pos = 0;
          } else {
-             if (subtitleGetTypeDetial() == 6) {//dvb sub  return pts_video
+             if (subtitleGetTypeDetail() == 6) {//dvb sub  return pts_video
                   pos = (ctc_mp->GetCurrentPlayTime()/90);
              } else {
                  pos = ((ctc_mp->GetCurrentPlayTime() - firstvpts)/90);
@@ -230,12 +230,12 @@ char* subtitleGetTypeStr()
     return ret;
 }
 
-int subtitleGetTypeDetial()
+int subtitleGetTypeDetail()
 {
     int ret = 0;
     const sp<ISubTitleService>& subser = getSubtitleService();
     if (subser != 0) {
-        ret = subser->getTypeDetial();
+        ret = subser->getTypeDetail();
     }
     return ret;
 }

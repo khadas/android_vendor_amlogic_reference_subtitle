@@ -14,7 +14,7 @@ TextSubtitle::TextSubtitle(std::shared_ptr<DataSource> source) {
 bool TextSubtitle::decodeSubtitles(int idxSubTrackId) {
 
     mSource->lseek(0, SEEK_SET);
-    //mPtsRate = 15;       //24;//dafault value
+    //mPtsRate = 15;       //24;//default value
 
     mIdxSubTrackId = idxSubTrackId;
 

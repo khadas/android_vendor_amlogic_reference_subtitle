@@ -27,7 +27,7 @@ extern "C"
  * Data definitions
  ***************************************************************************/
 
-/**\brief ADP全局锁*/
+/**\brief ADP global lock*/
 extern pthread_mutex_t am_gAdpLock;
 extern pthread_mutex_t am_gHwDmxLock;
 

@@ -255,7 +255,7 @@ public:
     int mColCount;
 
     bool mRowLock;
-    bool mColoumnLock;
+    bool mColumnLock;
     std::string mJustify;
     std::string mPrintDirection;
     std::string mScrollDirection;
@@ -282,7 +282,7 @@ public:
 
     SkScalar mWindowLeft;
     SkScalar mWindowTop;
-    SkScalar mWindowButtom;
+    SkScalar mWindowBottom;
     SkScalar mWindowRight;
     SkScalar mRowLength;
     int mHeartBeat;

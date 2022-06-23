@@ -23,7 +23,7 @@ public:
     bool stop();
     SubtitleIOType type();
 
-    bool isFileAvailble();
+    bool isFileAvailable();
     virtual size_t availableDataSize();
     virtual size_t read(void *buffer, size_t size);
     virtual void dump(int fd, const char *prefix);

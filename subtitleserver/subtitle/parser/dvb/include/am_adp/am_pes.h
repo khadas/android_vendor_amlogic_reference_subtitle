@@ -43,38 +43,38 @@ enum AM_PES_ErrorCode
 typedef void* AM_PES_Handle_t;
 
 /**\brief PES packet callback function
- * \a handle The PES parser's handle.
+ * \a handle The PES parser handle.
  * \a buf The PES packet.
  * \a size The packet size in bytes.
  */
 typedef void (*AM_PES_PacketCb_t)(AM_PES_Handle_t handle, uint8_t *buf, int size);
 
-/**\brief PES parser's parameters*/
+/**\brief PES parser parameters*/
 typedef struct
 {
 	AM_PES_PacketCb_t packet;       /**< PES packet callback function*/
 	AM_Bool_t         payload_only; /**< Only read PES payload*/
-	void             *user_data;    /**< User dafined data*/
+	void             *user_data;    /**< User defined data*/
 	int				  afmt;			/**< audio fmt*/
 }AM_PES_Para_t;
 
 /**\brief Create a new PES parser
- * \param[out] handle Return the new PES parser's handle
- * \param[in] para PES parser's parameters
+ * \param[out] handle Return the new PES parser handle
+ * \param[in] para PES parser parameters
  * \retval AM_SUCCESS On success
  * \return Error code
  */
 AM_ErrorCode_t AM_PES_Create(AM_PES_Handle_t *handle, AM_PES_Para_t *para);
 
 /**\brief Release an unused PES parser
- * \param handle The PES parser's handle
+ * \param handle The PES parser handle
  * \retval AM_SUCCESS On success
  * \return Error code
  */
 AM_ErrorCode_t AM_PES_Destroy(AM_PES_Handle_t handle);
 
 /**\brief Parse the PES data
- * \param handle PES parser's handle
+ * \param handle PES parser handle
  * \param[in] buf PES data's buffer
  * \param size Data in the buffer
  * \retval AM_SUCCESS On success
@@ -83,7 +83,7 @@ AM_ErrorCode_t AM_PES_Destroy(AM_PES_Handle_t handle);
 AM_ErrorCode_t AM_PES_Decode(AM_PES_Handle_t handle, uint8_t *buf, int size);
 
 /**\brief Get the user defined data of the PES parser
- * \param handle PES parser's handle
+ * \param handle PES parser handle
  * \return The user defined data
  */
 void*          AM_PES_GetUserData(AM_PES_Handle_t handle);

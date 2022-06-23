@@ -40,7 +40,7 @@ public:
         return true;
     }
 
-    static bool unregistClient(DataListener *client) {
+    static bool unregisterClient(DataListener *client) {
         // obviously, BUG here! impl later, support multi-client.
         // TODO: revise the whole mClient, if we want to support multi subtitle
 
@@ -56,13 +56,13 @@ public:
             }
 
             //GetInstance()->mClients.pop_back();
-            ALOGD("unregistClient: %p size=%d", client, GetInstance()->mClients.size());
+            ALOGD("unregisterClient: %p size=%d", client, GetInstance()->mClients.size());
         }
         return true;
     }
 
 private:
-    // mimiced from android, free to rewrite if you don't like it
+    // mimicked from android, free to rewrite if you don't like it
     bool threadLoop();
     void __threadLoop();
     void dispatch();
@@ -72,7 +72,7 @@ private:
     int clientConnected(int sockfd);
     //int handleClientConnected(int sockfd);
 
-    // todo: impl client, not just a segment Reciver
+    // todo: impl client, not just a segment Receiver
     // todo: use key-value pair
     std::vector<DataListener *> mClients; //TODO: for clients
 

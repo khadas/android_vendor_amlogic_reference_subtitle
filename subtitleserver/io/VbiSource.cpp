@@ -1,6 +1,6 @@
 /*
  *
- *for teletext atv data sourcee
+ *for teletext atv data source
  */
 #define LOG_TAG "VbiSource"
 
@@ -111,11 +111,11 @@ void VbiSource::updateParameter(int type, void *data) {
 bool VbiSource::notifyInfoChange() {
     std::unique_lock<std::mutex> autolock(mLock);
     for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-        auto wk_lstner = (*it);
+        auto wk_listener = (*it);
         int value = -1;
 
 
-        if (auto lstn = wk_lstner.lock()) {
+        if (auto lstn = wk_listener.lock()) {
             value = DTV_SUB_DTVKIT_TELETEXT;
             if (value > 0) {  //0:no sub
                 lstn->onTypeChanged(value);
@@ -136,9 +136,9 @@ void VbiSource::loopRenderTime() {
     while (!mExitRequested) {
         mLock.lock();
         for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-            auto wk_lstner = (*it);
+            auto wk_listener = (*it);
 
-            if (wk_lstner.expired()) {
+            if (wk_listener.expired()) {
                 ALOGV("[threadLoop] lstn null.\n");
                 continue;
             }
@@ -150,7 +150,7 @@ void VbiSource::loopRenderTime() {
                 ALOGD("read pts: %ld %lu", value, value);
             }
             if (!mExitRequested) {
-                if (auto lstn = wk_lstner.lock()) {
+                if (auto lstn = wk_listener.lock()) {
                     lstn->onRenderTimeChanged(value);
                 }
             }
@@ -182,7 +182,7 @@ void VbiSource::loopDriverData() {
 
                     int size = ATV_TELETEXT_SUB_HEADER_LEN + 42;
                     char *rdBuffer = new char[size]();
-                    //int readed = readDriverData(rdBuffer,  size);
+                    //int read = readDriverData(rdBuffer,  size);
                     memcpy(rdBuffer, sub_header, ATV_TELETEXT_SUB_HEADER_LEN);
                     memcpy(rdBuffer + ATV_TELETEXT_SUB_HEADER_LEN, (char *)pd->b, 42);
                     std::shared_ptr<char> spBuf = std::shared_ptr<char>(rdBuffer, [](char *buf) { delete [] buf; });
@@ -228,7 +228,7 @@ bool VbiSource::start() {
 
 
 bool VbiSource::stop() {
-    mState = E_SOURCE_STOPED;
+    mState = E_SOURCE_STOPPED;
     ::ioctl(mRdFd, VBI_IOC_STOP);
 
     // If parser has problem, it read more data than provided
@@ -242,7 +242,7 @@ SubtitleIOType VbiSource::type() {
     return E_SUBTITLE_VBI;
 }
 
-bool VbiSource::isFileAvailble() {
+bool VbiSource::isFileAvailable() {
     return false;
 }
 
@@ -272,7 +272,7 @@ size_t VbiSource::readDriverData(void *buffer, size_t size) {
 }
 
 size_t VbiSource::read(void *buffer, size_t size) {
-    int readed = 0;
+    int read = 0;
 
     //Current design of Parser Read, do not need add lock protection.
     // because all the read, is in Parser's parser thread.
@@ -283,18 +283,18 @@ size_t VbiSource::read(void *buffer, size_t size) {
     //in case of applied size more than 1024*2, such as dvb subtitle,
     //and data process error for two reads.
     //so add until read applied data then exit.
-    while (readed != size && mState == E_SOURCE_STARTED) {
+    while (read != size && mState == E_SOURCE_STARTED) {
         if (mCurrentItem != nullptr && !mCurrentItem->isEmpty()) {
-            readed += mCurrentItem->read_l(((char *)buffer+readed), size-readed);
-            //ALOGD("readed:%d,size:%d", readed, size);
-            if (readed == size) return readed;
+            read += mCurrentItem->read_l(((char *)buffer+read), size-read);
+            //ALOGD("read:%d,size:%d", read, size);
+            if (read == size) return read;
         } else {
             //ALOGD("mCurrentItem null, pop next buffer item");
             mCurrentItem = mSegment->pop();
         }
     }
-    //readed += mCurrentItem->read(((char *)buffer+readed), size-readed);
-    return readed;
+    //read += mCurrentItem->read(((char *)buffer+read), size-read);
+    return read;
 
 }
 
@@ -304,9 +304,9 @@ void VbiSource::dump(int fd, const char *prefix) {
     {
         std::unique_lock<std::mutex> autolock(mLock);
         for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
-            auto wk_lstner = (*it);
-            if (auto lstn = wk_lstner.lock())
-                dprintf(fd, "%s   InforListener: %p\n", prefix, lstn.get());
+            auto wk_listener = (*it);
+            if (auto lstn = wk_listener.lock())
+                dprintf(fd, "%s   InfoListener: %p\n", prefix, lstn.get());
         }
     }
     dprintf(fd, "%s   state:%d\n\n", prefix, mState);

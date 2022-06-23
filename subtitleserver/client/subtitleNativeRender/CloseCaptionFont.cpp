@@ -174,12 +174,12 @@ bool FontManager::uncryptFontTo(const char*srcPath, const char*destPath) {
     return result;
 }
 
-sk_sp<SkTypeface> FontManager::getFallbackFonts(std::string typeName, bool isIitalic) {
+sk_sp<SkTypeface> FontManager::getFallbackFonts(std::string typeName, bool isItalic) {
     ALOGE("getFallback font:%s", typeName.c_str());
     return nullptr;
 }
 
-sk_sp<SkTypeface> FontManager::typeFaceFromName(std::string typeName, bool isIitalic, bool isMultiByte) {
+sk_sp<SkTypeface> FontManager::typeFaceFromName(std::string typeName, bool isItalic, bool isMultiByte) {
     ALOGE("typeFaceFromName font:%s isMultiByte=%d", typeName.c_str(), isMultiByte);
 
     if (isMultiByte) {
@@ -187,21 +187,21 @@ sk_sp<SkTypeface> FontManager::typeFaceFromName(std::string typeName, bool isIit
     }
 
     if (ignoreCaseCompare(typeName, "default")) {
-        return isIitalic ? mMonoSerifItTf : mMonoSerifTf;
+        return isItalic ? mMonoSerifItTf : mMonoSerifTf;
     } else if (ignoreCaseCompare(typeName, "mono_serif")) {
-        return isIitalic ? mMonoSerifItTf : mMonoSerifTf;
+        return isItalic ? mMonoSerifItTf : mMonoSerifTf;
     } else if (ignoreCaseCompare(typeName, "prop_serif")) {
-        return isIitalic ? mPropSansItTf : mPropSansTf;
+        return isItalic ? mPropSansItTf : mPropSansTf;
     } else if (ignoreCaseCompare(typeName, "mono_sans")) {
-        return isIitalic ? mMonoSerifItTf : mMonoSerifTf;
+        return isItalic ? mMonoSerifItTf : mMonoSerifTf;
     } else if (ignoreCaseCompare(typeName, "prop_sans")) {
-        return isIitalic ? mPropSansItTf : mPropSansTf;
+        return isItalic ? mPropSansItTf : mPropSansTf;
     } else if (ignoreCaseCompare(typeName, "casual")) {
-        return isIitalic ? mCasualItTf : mCasualTf;
+        return isItalic ? mCasualItTf : mCasualTf;
     } else if (ignoreCaseCompare(typeName, "cursive")) {
-        return isIitalic ? mCursiveItTf : mCursiveTf;
+        return isItalic ? mCursiveItTf : mCursiveTf;
     } else if (ignoreCaseCompare(typeName, "small_caps")) {
-        return isIitalic ? mSmallCapitalItTf : mSmallCapitalTf;
+        return isItalic ? mSmallCapitalItTf : mSmallCapitalTf;
     }
     /* For caption manager convert */
     else if (ignoreCaseCompare(typeName, "sans-serif")) {
@@ -224,7 +224,7 @@ sk_sp<SkTypeface> FontManager::typeFaceFromName(std::string typeName, bool isIit
     }
 
     ALOGE("font match exception, no match font for %s! ", typeName.c_str());
-    return isIitalic ? mMonoSerifItTf : mMonoSerifTf;
+    return isItalic ? mMonoSerifItTf : mMonoSerifTf;
 }
 
 

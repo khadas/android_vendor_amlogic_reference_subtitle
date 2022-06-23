@@ -168,13 +168,13 @@ int upzipBuffer2File(const char*inBuf, size_t size, const char*destPath) {
     }
 
     int remained = size;
-    int readed = 0;
+    int read = 0;
     while (remained > 0) {
 
         int compSize = remained > 1024? 1024: remained;
         remained -= compSize;
-        rv = EVP_DecryptUpdate(&ctx, out, &outl, inBuf+readed, compSize);
-        readed += compSize;
+        rv = EVP_DecryptUpdate(&ctx, out, &outl, inBuf+read, compSize);
+        read += compSize;
         if (rv != 1) {
             fclose(fpOut);
             EVP_CIPHER_CTX_cleanup(&ctx);

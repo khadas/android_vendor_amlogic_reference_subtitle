@@ -9,7 +9,7 @@ public:
     /**
      * When from Data source, get total subtitle number, notify
      * to subtitle module for later processing.
-     * If no subtitle retreived, no need start subtitle.
+     * If no subtitle retrieved, no need start subtitle.
      */
     virtual void onSubtitleChanged(int newTotal) = 0;
 

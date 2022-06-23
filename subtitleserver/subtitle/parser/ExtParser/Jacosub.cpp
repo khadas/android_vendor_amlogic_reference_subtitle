@@ -94,7 +94,7 @@ void Jacosub::parseHeaderInfo() {
 //
 //  Japanese Animation Club of Orlando
 // official size: http://unicorn.us.com/jacosub/
-// deprecated, spec canot access now
+// deprecated, spec cannot access now
 //
 std::shared_ptr<ExtSubItem> Jacosub::decodedItem() {
     char *p, *q;
@@ -136,7 +136,7 @@ std::shared_ptr<ExtSubItem> Jacosub::decodedItem() {
 
         char *p = triml(line2, "\t ");
 
-        // parse directivies.
+        // parse directives.
         if (isalpha(*p) || *p == '[') {
             int cont, jLength;
             if (sscanf(p, "%s %[^\n\r]", directive, line1) < 2) {

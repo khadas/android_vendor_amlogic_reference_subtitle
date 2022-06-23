@@ -191,8 +191,8 @@ const char*  WebTask::GetResultString() {
     }
 }
 
-void WebTask::SetConnectTimeout(int timeo) {
+void WebTask::SetConnectTimeout(int timeout) {
     /* connect time out set */
-    curl_easy_setopt(mCURL, CURLOPT_CONNECTTIMEOUT, timeo);
+    curl_easy_setopt(mCURL, CURLOPT_CONNECTTIMEOUT, timeout);
 }
 

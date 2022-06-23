@@ -101,7 +101,7 @@ typedef struct
 	uint8_t r; /**< 红*/
 	uint8_t g; /**< 绿*/
 	uint8_t b; /**< 蓝*/
-	uint8_t a; /**< alpah*/
+	uint8_t a; /**< alpha*/
 } AM_OSD_Color_t;
 
 /**\brief 调色板*/

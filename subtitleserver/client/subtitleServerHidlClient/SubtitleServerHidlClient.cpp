@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *  @author   wanglu
+ *  @author   Amlogic
  *  @version  1.0
  *  @date     2019/08/15
  *  @par function description:
@@ -84,13 +84,13 @@ SubtitleServerHidlClient::~SubtitleServerHidlClient()
     ALOGD("%s", __func__);
 }
 
-int SubtitleServerHidlClient::subtitleGetTypeDetial()
+int SubtitleServerHidlClient::subtitleGetTypeDetail()
 {
     if (mDisabled) return 0;
     int ret = 0;
     //const sp<ISubtitleServer>& subser = getSubtitleService();
     //if (subser != 0) {
-        //ret = subser->getTypeDetial();
+        //ret = subser->getTypeDetail();
     //}
     CallStack stk(LOG_TAG);
     ALOGE("Error, should not use!");
@@ -395,16 +395,16 @@ std::string SubtitleServerHidlClient::subtitleGetLanguage(int idx)
 {
     ALOGE("[subtitleGetLanguage]");
     const sp<ISubtitleServer>& subser = getSubtitleService();
-    std::string langugge;
+    std::string language;
     if (subser != 0) {
         subser->getLanguage(mSessionId, [&](const Result &ret, const hidl_string& subLanguage){
             if (ret == Result::OK) {
-                langugge = subLanguage;
+                language = subLanguage;
             }
         });
     }
-    //ALOGE("[subtitleGetLanguage]langugge:%s", langugge.c_str());
-    return langugge;
+    //ALOGE("[subtitleGetLanguage]language:%s", language.c_str());
+    return language;
 }
 
 void SubtitleServerHidlClient::subtitleLoad(const std::string& path)
@@ -460,12 +460,12 @@ void SubtitleServerHidlClient::subtitleSetSubType(int type)
     return;
 }
 
-void SubtitleServerHidlClient::subtitleDestory()
+void SubtitleServerHidlClient::subtitleDestroy()
 {
-    ALOGE("subtitleDestory: need impl according to subtiteCreate");
+    ALOGE("subtitleDestroy: need impl according to subtitleCreate");
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
-        //subser->destory();
+        //subser->destroy();
     }
     return;
 }
@@ -538,9 +538,9 @@ void SubtitleServerHidlClient::setListener(const sp<SubtitleMiddleListener> &lis
 Return<void> SubtitleServerHidlClient::SubtitleServerHidlCallback::eventNotify(const SubtitleHidlParcel &hidlParcel) {
     ALOGI("notifyCallback event type:%d", hidlParcel.msgType);
 
-    if (hidlParcel.msgType == EVENT_ONSUBTITLEDATA_CALLBACK) {
+    if (hidlParcel.msgType == EVENT_ON_SUBTITLEDATA_CALLBACK) {
          ALOGD("notifyCallback notify parcel.msgType = %d, event:%d, id:%d", hidlParcel.msgType,hidlParcel.bodyInt[0], hidlParcel.bodyInt[1]);
-    } else if (hidlParcel.msgType == EVENT_ONSUBTITLEAVAILABLE_CALLBACK) {
+    } else if (hidlParcel.msgType == EVENT_ON_SUBTITLEAVAILABLE_CALLBACK) {
          ALOGD("notifyCallback notify parcel.msgType = %d, available:%d", hidlParcel.msgType, hidlParcel.bodyInt[0]);
     } else {
          return Void();

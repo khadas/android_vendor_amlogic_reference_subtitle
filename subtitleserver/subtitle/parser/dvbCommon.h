@@ -421,7 +421,7 @@ struct AVSubtitleRect {
 
     /**
      * 0 terminated ASS/SSA compatible event line.
-     * The pressentation of this is unaffected by the other values in this
+     * The presentation of this is unaffected by the other values in this
      * struct.
      */
     char *ass;

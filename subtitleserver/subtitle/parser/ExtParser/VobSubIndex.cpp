@@ -561,7 +561,7 @@ std::shared_ptr<ExtSubItem> VobSubIndex::decodedItem() {
             sscanf(line,"org: %d, %d", &mOriginX, &mOriginY);
         } else if (strncmp("timestamp:", line, 10) == 0) {
             //res = vobsub_parse_timestamp(vob, line + 10);
-            // timestamp: HH:MM:SS.mmm, filepos: 0nnnnnnnnn
+            // timestamp: HH:MM:SS.mmm, filepos: 0
             int hour=0, min=0, sec=0, ms=0;
             long long pos=0;
             if (sscanf(line, "timestamp: %d:%d:%d:%d, filepos:%llx",
@@ -1087,10 +1087,10 @@ void VobSubIndex::convert2bto32b(const unsigned char *source, long length, int b
 
     aAlpha[0] = 1; // background need transparent
 
-    RGBA_Pal[0] = ((aAlpha[0] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[0]-1];//backgroud color
+    RGBA_Pal[0] = ((aAlpha[0] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[0]-1];//background color
     RGBA_Pal[1] = 0xffffffff;//((aAlpha[1] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[1]-1];//fill color during outline
     RGBA_Pal[2] = ((aAlpha[2] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[2]-1];//color of outline
-    RGBA_Pal[3] = ((aAlpha[3] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[3]-1];//backgroud color
+    RGBA_Pal[3] = ((aAlpha[3] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[3]-1];//background color
     //ALOGD("RAGB:%0x,%0x,%0x,%0x",RGBA_Pal[0],RGBA_Pal[1],RGBA_Pal[2],RGBA_Pal[3]);
 
     static int k = 0;

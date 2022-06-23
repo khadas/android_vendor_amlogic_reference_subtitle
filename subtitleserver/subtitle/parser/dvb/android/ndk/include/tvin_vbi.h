@@ -197,7 +197,7 @@ enum vbi_slicer_e {
 };
 
 #define VBI_DEFAULT_BUFFER_SIZE 8192 /*set default buffer size--8KByte*/
-#define VBI_DEFAULT_BUFFER_PACKEGE_NUM 100 /* default buffer size */
+#define VBI_DEFAULT_BUFFER_PACKAGE_NUM 100 /* default buffer size */
 
 /* ********************
 ********************* */

@@ -118,8 +118,8 @@ int bpni_prepare(BPNI_PLAYER_HANDLE_ID handleId);
  * <br> this API can be called multiple times without calling stop()
  * <br> i.e.) playStream() -> stop() -> playStream()
  * <br> ex 1) playStream(8006, 8005) -> playStream(8007, 8005)  : change audio language or change audio track
- * <br> ex 2) playStream(8006, 8005) -> playSteram(0, 8005) : normal AV play -> play video ONLY
- * <br> ex 3) playStream(0, 8005) -> playSteram(8006, 8005) : play video ONLY -> player both A/V
+ * <br> ex 2) playStream(8006, 8005) -> playStream(0, 8005) : normal AV play -> play video ONLY
+ * <br> ex 3) playStream(0, 8005) -> playStream(8006, 8005) : play video ONLY -> player both A/V
  * <br> ex 4) playStream(8006, 8005) -> playStream(0, 0) : same as stop(), no A/V playing
  *
  * @param[in] handleId handle ID.
@@ -132,7 +132,7 @@ int bpni_playStream(BPNI_PLAYER_HANDLE_ID handleId, int audiPID, int videoPID);
 
 /**
  * Stop A/V.
- * Stop selective Audio or Video. (choiceable)
+ * Stop selective Audio or Video. (choice able)
  *
  * @param[in] handleId handle ID.
  * @param[in] isAudioStop if true,  audio stop

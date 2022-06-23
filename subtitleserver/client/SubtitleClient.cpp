@@ -30,12 +30,12 @@ using namespace subtitle;
 SubtitleClient::SubtitleClient()
 : mImpl(new SubtitleClientPrivate())
 {
-    ALOGD("ctor SubtitleClient");
+    ALOGD("construct SubtitleClient");
 }
 
 SubtitleClient::~SubtitleClient()
 {
-    ALOGD("dtor SubtitleClient");
+    ALOGD("destroy SubtitleClient");
 }
 
 status_t SubtitleClient::connect(bool attachMode)

@@ -17,7 +17,7 @@ public:
 
     static inline char sJsonStr[CC_JSON_BUFFER_SIZE];
     static inline ClosedCaptionParser *getCurrentInstance();
-    void notifyChannelState(int stat, int chnnlId);
+    void notifyChannelState(int stat, int channelId);
     void notifyAvailable(int err);
 
 private:

@@ -68,7 +68,7 @@ status_t SubtitleClientPrivate::connect(bool attachMode)
 void SubtitleClientPrivate::disconnect()
 {
     if (!mAttachMode) {
-        subtitleDestory();
+        subtitleDestroy();
     }
 }
 
@@ -189,9 +189,9 @@ void SubtitleClientPrivate::subtitle_available_callback(SUBTITLE_STATE state, in
     ALOGD("[%s:%d] available=%d val=%d", __FUNCTION__, __LINE__, state, val);
 
     RETURN_VOID_IF(mCallbackParam.eventCb == NULL);
-    if (state == SUBTITLE_UNAVAIABLE) {
+    if (state == SUBTITLE_UNAVAILABLE) {
         mCallbackParam.eventCb(SubtitleClient::Event::Subtitle_Unavailable, val, 0);
-    } else if (state == SUBTITLE_AVAIABLE) {
+    } else if (state == SUBTITLE_AVAILABLE) {
         mCallbackParam.eventCb(SubtitleClient::Event::Subtitle_Available, val, 0);
     }
 }

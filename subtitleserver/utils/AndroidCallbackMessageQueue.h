@@ -62,7 +62,7 @@ public:
 
     virtual void onSubtitleLanguage(char* lang) override;
 
-    //what: info type, extra: value, for info extention
+    //what: info type, extra: value, for info extension
     virtual void onSubtitleInfo(int what, int extra) override;
 
 

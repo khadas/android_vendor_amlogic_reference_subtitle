@@ -32,7 +32,7 @@ AmlSetSubtitleSmiUrlFn AmlSetSubtitleSmiUrl = nullptr;
 AmlRegisterQtoneDataCbFn AmlRegisterQtoneDataCb = nullptr;
 
 
-// ================= Navtive Window API Wrapper Start =====================
+// ================= Native Window API Wrapper Start =====================
 static int32_t lock(SubNativeRenderHnd hnd, SubNativeRenderBuffer *buf) {
     ANativeWindow_Buffer abuf;
     if (buf == nullptr) {
@@ -79,7 +79,7 @@ static int64_t test_getPts(int sessionId) {
 
     return systemTime(1) - orig;
 }
-// ================= Navtive Window API Wrapper END =====================
+// ================= Native Window API Wrapper END =====================
 
 
 ///QTone CallBack Demo
@@ -88,15 +88,12 @@ void QToneDataReceived(int session, const char*buf, int size) {
     ALOGD("QToneDataReceived: %d %p %d", session, buf, size);
 }
 
-
-
-
 /**
  *  We can built libraries in system_ext to access some system APIs. however
  *  system libraries cannot access native_window api due to build check.
- *  initialze the system implemens APIs here through dynamic loader
+ *  initialize the system implement APIs here through dynamic loader
  */
-extern "C" void bpni_initialze() {
+extern "C" void bpni_initialize() {
     void *handle = dlopen("libsubtitlenativerender.so", RTLD_NOW);
     if (handle == nullptr) {
         ALOGE("error load: libsubtitlenativerender.so");
@@ -151,7 +148,7 @@ void bpni_setSubtitleSurfaceNativeWindow(BPNI_PLAYER_HANDLE_ID handleId, ANative
     );
 
     if (AmlAttachSurfaceWindow == nullptr) {
-        ALOGE("Error! native render not initialzed properly! exit!");
+        ALOGE("Error! native render not initialized properly! exit!");
         return;
     }
 
@@ -167,7 +164,7 @@ void bpni_setSubtitleSurfaceNativeWindow(BPNI_PLAYER_HANDLE_ID handleId, ANative
  */
 void bpni_setSubtitleEnabled(BPNI_PLAYER_HANDLE_ID handleId, bool enabled) {
     if (AmlSetSubtitleEnable == nullptr) {
-        ALOGE("Error! native render not initialzed properly! exit!");
+        ALOGE("Error! native render not initialized properly! exit!");
         return;
     }
 
@@ -188,7 +185,7 @@ void bpni_setSubtitleEnabled(BPNI_PLAYER_HANDLE_ID handleId, bool enabled) {
  */
 bool bpni_getSubtitleEnabled(BPNI_PLAYER_HANDLE_ID handleId) {
     if (AmlGetSubtitleEnable == nullptr) {
-        ALOGE("Error! native render not initialzed properly! exit!");
+        ALOGE("Error! native render not initialized properly! exit!");
         return false;
     }
 
@@ -203,7 +200,7 @@ bool bpni_getSubtitleEnabled(BPNI_PLAYER_HANDLE_ID handleId) {
  */
 void bpni_setSubtitleSmiUrl(BPNI_PLAYER_HANDLE_ID handleId, char* url) {
     if (AmlSetSubtitleSmiUrl == nullptr) {
-        ALOGE("Error! native render not initialzed properly! exit!");
+        ALOGE("Error! native render not initialized properly! exit!");
         return;
     }
 

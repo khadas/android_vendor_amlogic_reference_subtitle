@@ -13,7 +13,7 @@ typedef enum {
     E_SUBTITLE_FMQ = 0,   /* for soft support subtitle data, use hidl FastMessageQueue */
     E_SUBTITLE_DEV,       /* use /dev/amstream_sub_read as the IO source */
     E_SUBTITLE_FILE,      /* for external subtitle file */
-    E_SUBTITLE_SOCK,      /* deprecated, android not permmit to use anymore */
+    E_SUBTITLE_SOCK,      /* deprecated, android not permit to use anymore */
     E_SUBTITLE_DEMUX,     /* use aml hwdemux as the data source */
     E_SUBTITLE_VBI,       /* use /dev/vbi as the IO source */
 } AmlSubtitleIOType;
@@ -27,7 +27,7 @@ typedef enum {
     SUB_DATA_TYPE_STRING = 0,
     SUB_DATA_TYPE_CC_JSON = 1,
     SUB_DATA_TYPE_BITMAP = 2,
-    SUB_DATA_TYPE_POSITON_BITMAP = 4,
+    SUB_DATA_TYPE_POSITION_BITMAP = 4,
 
     SUB_DATA_TYPE_QTONE = 0xAAAA,
 } AmlSubDataType;
@@ -43,7 +43,7 @@ typedef enum {
     TYPE_SUBTITLE_TMD_TXT   = 7,
     TYPE_SUBTITLE_IDX_SUB,  //now discard
     TYPE_SUBTITLE_DVB_TELETEXT,
-    TYPE_SUBTITLE_CLOSED_CATPTION,
+    TYPE_SUBTITLE_CLOSED_CAPTION,
     TYPE_SUBTITLE_SCTE27,
     TYPE_SUBTITLE_DTVKIT_DVB, //12
     TYPE_SUBTITLE_DTVKIT_TELETEXT,
@@ -218,7 +218,7 @@ AmlSubtitleStatus amlsub_RegistOnDataCB(AmlSubtitleHnd handle, AmlSubtitleDataCb
 AmlSubtitleStatus amlsub_RegistAfdEventCB(AmlSubtitleHnd handle, AmlAfdEventCb listener);
 AmlSubtitleStatus amlsub_RegistOnChannelUpdateCb(AmlSubtitleHnd handle, AmlChannelUpdateCb listener);
 AmlSubtitleStatus amlsub_RegistOnSubtitleAvailCb(AmlSubtitleHnd handle, AmlSubtitleAvailCb listener);
-AmlSubtitleStatus amlsub_RegistGetDimesionCb(AmlSubtitleHnd handle, AmlSubtitleDimensionCb listener);
+AmlSubtitleStatus amlsub_RegistGetDimensionCb(AmlSubtitleHnd handle, AmlSubtitleDimensionCb listener);
 AmlSubtitleStatus amlsub_RegistOnSubtitleLanguageCb(AmlSubtitleHnd handle, AmlSubtitleLanguageCb listener);
 AmlSubtitleStatus amlsub_RegistOnSubtitleInfoCB(AmlSubtitleHnd handle, AmlSubtitleInfoCb listener);
 

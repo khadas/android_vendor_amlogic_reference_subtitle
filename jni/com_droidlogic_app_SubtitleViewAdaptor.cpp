@@ -34,7 +34,7 @@ void startNativeRender(JNIEnv* env, jobject object, jobject surface) {
 
 }
 
-static JNINativeMethod SubtitlRender_Methods[] = {
+static JNINativeMethod SubtitleRender_Methods[] = {
     {"nStartNativeRender", "(Landroid/view/Surface;)V", (void *)startNativeRender},
 
 };
@@ -50,7 +50,7 @@ int register_com_droidlogic_app_SubtitleViewAdaptor(JNIEnv *env) {
         return -1;
     }
 
-    rc = (env->RegisterNatives(clazz, SubtitlRender_Methods, NELEM(SubtitlRender_Methods)));
+    rc = (env->RegisterNatives(clazz, SubtitleRender_Methods, NELEM(SubtitleRender_Methods)));
     if (rc < 0) {
         env->DeleteLocalRef(clazz);
         ALOGE("RegisterNatives failed for '%s' %d\n", kClassPathName, rc);

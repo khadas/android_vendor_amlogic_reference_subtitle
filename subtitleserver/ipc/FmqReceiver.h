@@ -28,7 +28,7 @@ public:
         return true;
     }
 
-    bool unregistClient(std::shared_ptr<DataListener> client) {
+    bool unregisterClient(std::shared_ptr<DataListener> client) {
         // obviously, BUG here! impl later, support multi-client.
         // TODO: revise the whole mClient, if we want to support multi subtitle
         std::lock_guard<std::mutex> guard(mLock);
@@ -43,7 +43,7 @@ public:
             }
 
             //GetInstance()->mClients.pop_back();
-            ALOGD("unregistClient: %p size=%d", client.get(), mClients.size());
+            ALOGD("unregisterClient: %p size=%d", client.get(), mClients.size());
         }
         return true;
     }

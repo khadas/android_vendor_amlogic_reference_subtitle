@@ -21,7 +21,7 @@ public:
     bool start();
     bool stop();
     size_t lseek(int offSet, int whence);
-    bool isFileAvailble();
+    bool isFileAvailable();
     virtual size_t availableDataSize();
     virtual size_t read(void *buffer, size_t size);
 

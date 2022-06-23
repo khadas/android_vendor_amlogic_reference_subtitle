@@ -9,7 +9,7 @@
  */
 /**\file
  * \brief aml config
- * \author hualing.chen <hualing.chen@amlogic.com>
+ * \author amlogic
  * \date 2017-04-25: create the document
  ***************************************************************************/
 

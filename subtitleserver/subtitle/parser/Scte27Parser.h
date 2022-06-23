@@ -7,8 +7,8 @@
 
 #define BUFFER_W 720
 #define BUFFER_H 480
-#define VIEDEO_W BUFFER_W
-#define VIEDEO_H BUFFER_H
+#define VIDEO_W BUFFER_W
+#define VIDEO_H BUFFER_H
 
 #define DEMUX_ID 2
 #define BITMAP_PITCH BUFFER_W*4

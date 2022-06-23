@@ -121,7 +121,7 @@ public:
 
     // ui related.
     // Below api only used for control standalone UI.
-    // Thes UI is not recomendated, only for some native app/middleware
+    // The UI is not recommended, only for some native app/middleware
     // that cannot Android (Java) UI hierarchy.
     bool uiShow();
     bool uiHide();

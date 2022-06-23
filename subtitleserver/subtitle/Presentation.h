@@ -29,7 +29,7 @@ public:
     bool startPresent(std::shared_ptr<Parser> parser);
     bool stopPresent();
     bool resetForSeek();
-    bool combinSamePtsSubtitle(std::shared_ptr<AML_SPUVAR> spu1, std::shared_ptr<AML_SPUVAR> spu2);
+    bool combineSamePtsSubtitle(std::shared_ptr<AML_SPUVAR> spu1, std::shared_ptr<AML_SPUVAR> spu2);
     bool compareBitAndSyncPts(std::shared_ptr<AML_SPUVAR> spu, int64_t pts);
 
 
@@ -44,7 +44,7 @@ private:
         static const int MSG_PTS_TIME_CHECK_SPU   = 0xBB10101;
         static const int MSG_RESET_MESSAGE_QUEUE  = 0xCB10100;
 
-        MessageProcess(Presentation *pesent, bool isExtSub);
+        MessageProcess(Presentation *present, bool isExtSub);
         virtual ~MessageProcess();
         void looperLoop();
         void join();
@@ -80,7 +80,7 @@ private:
     MessageProcess *mMsgProcess;
 
     // since mMsgProcess is a pointer here
-    // we need a mutext to protect it
+    // we need a mutex to protect it
     std::mutex mMutex;
 
 
