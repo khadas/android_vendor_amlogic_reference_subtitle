@@ -1973,7 +1973,7 @@ bool TeletextParser::updateParameter(int type, void *data) {
     LOGD(" %s start, ttParam->event:%d magazine:%d subPageNo:0x%x\n", __FUNCTION__,ttParam->event, ttParam->magazine, ttParam->subPageNo);
 #ifdef NEED_CACHE_ZVBI_STATUS
     // teletext not started. this is the first time we check. when not started, vbi is null.
-    if ((mContext->vbi == nullptr || mUpdateParamCount == 0) && ttParam->event != TT_EVENT_SET_REGION_ID ) {
+    if ((mContext->vbi == nullptr || mUpdateParamCount == 0) && ttParam->event != TT_EVENT_SET_REGION_ID && (ttParam->event != TT_EVENT_GO_TO_SUBTITLE || (ttParam->event == TT_EVENT_GO_TO_SUBTITLE && mContext->subtitleMode == TT2_GRAPHICS_MODE))) {
         ALOGD("This is the first? pid:%d onid:%d tsid:%d  %d", ttParam->pid, ttParam->onid, ttParam->tsid, ttParam->event);
         // tricky for check need keep using vbi or not
         gVBIStatus.updateProgramInfo(ttParam->pid, ttParam->onid, ttParam->tsid);
@@ -2105,6 +2105,7 @@ bool TeletextParser::handleControl() {
             mContext->opacity = mContext->transparentBackground ? 0 : 255;
             mContext->resetShowSubtitlePageNumberTimeFlag = true;
             LOGI("gVBIStatus.subtitlePageId:%d mContext->atvTeletext:%d mContext->dtvTeletext:%d", gVBIStatus.subtitlePageId, mContext->atvTeletext, mContext->dtvTeletext);
+            #ifdef NEED_CACHE_ZVBI_STATUS
             if (mContext->atvTeletext && ttParam->magazine == -1 && ttParam->subPageNo == -1) {
                 mContext->subtitleMode = TT2_GRAPHICS_MODE;
                 if (gVBIStatus.atvSubtitlePage[gVBIStatus.subtitlePageId] == 0 && gVBIStatus.subtitlePageId == 0) {
@@ -2141,6 +2142,7 @@ bool TeletextParser::handleControl() {
                     }
                 }
             }
+            #endif
             if (ttParam->regionId > 0) mContext->regionId = ttParam->regionId;
             mContext->subtitleMode = TT2_SUBTITLE_MODE;
             page = convertPageDecimal2Hex(ttParam->magazine, ttParam->subPageNo);
