@@ -73,6 +73,10 @@ public:
                     ALOGI("H264_CC_TYPE");
                     close(fd);
                     return H264_CC_TYPE;
+                } else if (strstr((const char*)ubuf8, "amvdec_h265"/*"vdec.h265.00"*/)) {
+                    ALOGI("H265_CC_TYPE");
+                    close(fd);
+                    return H265_CC_TYPE;
                 } else if (strstr((const char*)ubuf8, "amvdec_mpeg12"/*"vdec.mpeg12.00"*/)) {
                     ALOGI("MPEG_CC_TYPE");
                     close(fd);

@@ -171,6 +171,9 @@ void SubtitleServerHidlClient::initSubtitle(SUB_Para_t *para)
        } else if (para->vfmt == CODEC_ID_CLOSEDCAPTION_H264) {
               subser->setClosedCaptionVfmt(mSessionId, CODEC_ID_CLOSEDCAPTION_H264);
               subser->setChannelId(mSessionId, para->channelId);
+       } else if (para->vfmt == CODEC_ID_CLOSEDCAPTION_H265) {
+              subser->setClosedCaptionVfmt(mSessionId, CODEC_ID_CLOSEDCAPTION_H265);
+              subser->setChannelId(mSessionId, para->channelId);
        }
      }
 }

@@ -131,7 +131,7 @@ static void cc_data_cb(AM_CC_Handle_t handle, int mask) {
 void json_update_cb(AM_CC_Handle_t handle) {
     (void)handle;
 
-    //LOGI("@@@@@@ cc json string: %s", ClosedCaptionParser::sJsonStr);
+    LOGI("@@@@@@ cc json string: %s", ClosedCaptionParser::sJsonStr);
     int mJsonLen = strlen(ClosedCaptionParser::sJsonStr);
     std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
     spu->spu_data = (unsigned char *)malloc(mJsonLen);

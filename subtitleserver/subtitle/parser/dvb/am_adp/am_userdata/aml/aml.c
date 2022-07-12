@@ -40,6 +40,7 @@
 #define MAX_CC_DATA_LEN  (1024*5 + 4)
 
 #define IS_H264(p)	((p[0] == 0xb5 && p[3] == 0x47 && p[4] == 0x41 && p[5] == 0x39 && p[6] == 0x34))
+#define IS_H265(p)	((p[0] == 0xb5 && p[3] == 0x47 && p[4] == 0x41 && p[5] == 0x39 && p[6] == 0x34))
 #define IS_DIRECTV(p) ((p[0] == 0xb5 && p[1] == 0x00 && p[2] == 0x2f))
 #define IS_AVS(p)	 ((p[0] == 0x47) && (p[1] == 0x41) && (p[2] == 0x39) && (p[3] == 0x34))
 #define IS_ATSC(p)	((p[0] == 0x47) && (p[1] == 0x41) && (p[2] == 0x39) && (p[3] == 0x34))
@@ -308,9 +309,9 @@ static userdata_type aml_check_userdata_format (uint8_t *buf, int vfmt, int len)
 
 	if (vfmt == 2)
 	{
-		if (IS_H264(buf))
+		if (IS_H264(buf) || IS_H265(buf))
 		{
-			AM_DEBUG(AM_DEBUG_LEVEL,"CC format is h264_cc_type");
+			AM_DEBUG(AM_DEBUG_LEVEL,"CC format is h264_or_h265_cc_type");
 			return H264_CC_TYPE;
 		}
 		else if (IS_DIRECTV(buf))
@@ -824,7 +825,7 @@ static int aml_process_h264_userdata(AM_USERDATA_Device_t *dev, uint8_t *data, i
 
 	while (left >= 8) {
 		if (MOD_ON_CC(ud->mode)
-			&& ((IS_H264(pd) || IS_DIRECTV(pd) || IS_AVS(pd)))) {
+			&& ((IS_H264(pd) || IS_H265(pd) || IS_DIRECTV(pd) || IS_AVS(pd)))) {
 			int hdr = (ud->format == H264_CC_TYPE) ? 3 : 0;
 			int pl;
 

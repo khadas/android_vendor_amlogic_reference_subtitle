@@ -88,7 +88,8 @@ typedef enum {
 enum VideoFormat {
     INVALID_CC_TYPE    = -1,
     MPEG_CC_TYPE       = 0,
-    H264_CC_TYPE       = 2
+    H264_CC_TYPE       = 2,
+    H265_CC_TYPE       = 2
 };
 
 
