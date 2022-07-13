@@ -1987,7 +1987,7 @@ bool TeletextParser::updateParameter(int type, void *data) {
                 int pageNum = 0;
                 if ( gVBIStatus.lastMagazine == ttParam->magazine && gVBIStatus.lastSubPageNo == ttParam->subPageNo) {
                     pageNum =vbi_dec2bcd(gVBIStatus.lastShowingPage);
-                    if ( pageNum < TELETEXT_MAX_PAGE_NUMBER && pageNum >= TELETEXT_PAGE_NUMBER_800) {
+                    if (gVBIStatus.lastShowingPage < TELETEXT_MAX_PAGE_NUMBER && gVBIStatus.lastShowingPage >= TELETEXT_PAGE_NUMBER_800) {
                         ttParam->magazine = TELETEXT_MIN_MAGAZINE_NUMBER;
                         gVBIStatus.lastMagazine = TELETEXT_MIN_MAGAZINE_NUMBER;
                     } else {
