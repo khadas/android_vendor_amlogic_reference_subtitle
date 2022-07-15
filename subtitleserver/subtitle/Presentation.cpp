@@ -18,6 +18,7 @@
 
 #define MAX_ALLOWED_EXT_SPU_NUM 1000
 #define MAX_ALLOWED_STREAM_SPU_NUM 10
+#define MAX_ALLOWED_QUEUED_MEM  (5*1920*1080*4)
 
 #define TSYNC_32_BIT_PTS 0xFFFFFFFF
 #define HIGH_32_BIT_PTS 0xFFFFFFFF
@@ -37,6 +38,17 @@ static inline int64_t convertDvbTime2Ns(int64_t dvbMillis) {
 
 static inline int64_t convertNs2DvbTime(int64_t ns) {
     return ns2ms(ns)*DVB_TIME_MULTI;
+}
+
+static size_t totoalQueuedMemSize(std::list<std::shared_ptr<AML_SPUVAR>> &list) {
+    size_t size = 0;
+    // Calculate the size of all subtitles in the cache
+    if (list.size() > 0) {
+        std::for_each(list.begin(), list.end(), [&](std::shared_ptr<AML_SPUVAR> &s) {
+            size += s->buffer_size;
+        });
+    }
+    return size;
 }
 
 static bool cmpSpu(std::shared_ptr<AML_SPUVAR> a, std::shared_ptr<AML_SPUVAR> b) {
@@ -477,8 +489,12 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                 mPresent->mEmittedShowingSpu.sort(cmpSpu);
 
                 // if emitt to much spu and not consumed, we delete the oldest, save memory
-                int maxAllowedItem = spu->isBitmapSpu() ? MAX_ALLOWED_STREAM_SPU_NUM : MAX_ALLOWED_STREAM_SPU_NUM*50;
+                /*int maxAllowedItem = spu->isBitmapSpu() ? MAX_ALLOWED_STREAM_SPU_NUM : MAX_ALLOWED_STREAM_SPU_NUM*50;
                 while (mPresent->mEmittedShowingSpu.size() > maxAllowedItem) {
+                    mPresent->mEmittedShowingSpu.pop_front();
+                }*/
+                if ((spu->buffer_size + totoalQueuedMemSize(mPresent->mEmittedShowingSpu)) >= MAX_ALLOWED_QUEUED_MEM) {
+                    ALOGD("Warning! The memory size occupied by the total queue has exceeded the maximum value.");
                     mPresent->mEmittedShowingSpu.pop_front();
                 }
             }
