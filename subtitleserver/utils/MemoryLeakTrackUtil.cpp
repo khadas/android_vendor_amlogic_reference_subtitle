@@ -108,7 +108,9 @@ public:
                     }
 
                     MmapInfo *info = new MmapInfo();
-                    info->fileName.setTo(trim(line+pathIndex));
+                    if (sizeof(line) > 0) {
+                        info->fileName.setTo(trim(line+pathIndex));
+                    }
                     info->startAddr = lastStartAddr;//startAddrValue;
                     info->endAddr = endAddrValue;
                     maptable.push_back(info);

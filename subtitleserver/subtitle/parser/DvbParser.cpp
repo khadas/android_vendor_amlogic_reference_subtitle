@@ -1313,6 +1313,7 @@ void DvbParser::saveResult2Spu(std::shared_ptr<AML_SPUVAR> spu) {
         LOGI("malloc pbuf=%p, size=%d \n", region->pbuf, width * height * 4);
         if (!pbuf) {
             LOGE("save_display_set malloc fail, width=%d, height=%d \n", width, height);
+            free(pbuf);
             return;
         }
         memset(pbuf, 0, width * height * 4);
@@ -1320,6 +1321,7 @@ void DvbParser::saveResult2Spu(std::shared_ptr<AML_SPUVAR> spu) {
         spu->spu_data = (unsigned char *)malloc(spu->buffer_size);
         if (!spu->spu_data) {
             LOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
+            free(pbuf);
             return ;
         }
         memset(spu->spu_data, 0, spu->buffer_size);

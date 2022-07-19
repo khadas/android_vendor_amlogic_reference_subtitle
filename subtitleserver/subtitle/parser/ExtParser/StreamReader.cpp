@@ -93,7 +93,7 @@ size_t ExtSubStreamReader::totalStreamSize() {
     Not Thread safe, TODO: fix it.
 */
 bool ExtSubStreamReader::rewindStream() {
-    if (mDataSource != nullptr && mDataSource->lseek(0, SEEK_SET) >= 0) {
+    if (mDataSource != nullptr && mDataSource->lseek(0, SEEK_SET) > 0) {
         mBufferSize = 0;
         mFileRead = 0;
         free(mBuffer);
@@ -233,10 +233,10 @@ char *ExtSubStreamReader::getLineFromString(char *source, char **dest) {
     while (!ExtSubtitleEol(*p) && *p != '|') {
         p++, len++;
     }
-    *dest = (char *)malloc(len + 1);
     if (!dest) {
         return (char *)ERR;
     }
+    *dest = (char *)malloc(len + 1);
     strncpy(*dest, source, len);
     (*dest)[len] = 0;
     while (*p == '\r' || *p == '\n' || *p == '|') {

@@ -193,7 +193,7 @@ void VbiSource::loopDriverData() {
                         sprintf(&slice_buffer[i*3], " %02x", slice_buffer[i]);
                     ALOGD("line data: %s", slice_buffer);
 #endif
-                    pd ++;
+                    ++pd;
                     ret -= sizeof(struct vbi_data_s);
                 }
             }

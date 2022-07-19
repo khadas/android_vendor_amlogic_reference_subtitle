@@ -159,7 +159,7 @@ private:
     mpeg_t *mpg;
     VOB_SPUVAR VobSPU;
     unsigned int duration; // TODO: move to spu list.
-    int mSelectedTrackId;
+    int mSelectedTrackId = -1;
 };
 
 

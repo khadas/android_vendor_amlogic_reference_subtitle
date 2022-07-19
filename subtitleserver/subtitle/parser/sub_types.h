@@ -89,6 +89,7 @@ typedef struct alm_spuvar
             m_delay(0), spu_data(nullptr), cmd_offset(0), length(0), disPlayBackground(0), isQtoneData(false)
     {
         dynGen = false;
+        pos = 0;
         spu_start_x = spu_start_y = spu_width = spu_height = 0;
         spu_origin_display_w = spu_origin_display_h = 0;
     }

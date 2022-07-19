@@ -48,7 +48,7 @@ static int rar_seek(rar_stream_t *stream, long offset, int whence) {
             //  errno = EINVAL;
             return -1;
     }
-    if (stream->fd >= 0)
+    if (stream->fd >= 0 && lseek(stream->fd, stream->pos, SEEK_SET) > 0)
         lseek(stream->fd, stream->pos, SEEK_SET);
     return 0;
 }
@@ -73,6 +73,7 @@ rar_read(void *ptr, size_t size, size_t nmemb, rar_stream_t *stream)
 {
     size_t res;
     int remain;
+    ssize_t retcode;
     //when play agin maybe it can: stream->fd=0;
     if (stream->fd >= 0)
     {
@@ -82,7 +83,7 @@ rar_read(void *ptr, size_t size, size_t nmemb, rar_stream_t *stream)
         remain = stream->size - stream->pos;
         if (res > remain)
             res = remain / size * size;
-        read(stream->fd, ptr, res);
+        retcode = read(stream->fd, ptr, res);
         stream->pos += res;
         res /= size;
         return res;
@@ -120,6 +121,7 @@ static mpeg_t *mpeg_open(int fd) {
         if (err)
             free(res);
     }
+    free(res);
     return err ? NULL : res;
 }
 
@@ -247,7 +249,9 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                 if (read_flag) {
                     //if (mpeg->packet_reserve < mpeg->packet_size) {
                     if (mpeg->packet) free(mpeg->packet);
-                    mpeg->packet = (unsigned char *)malloc(mpeg->packet_size);
+                    if (mpeg->packet_size >= 0) {
+                        mpeg->packet = (unsigned char *)malloc(mpeg->packet_size);
+                    }
                     //if (mpeg->packet)
                     //    mpeg->packet_reserve = mpeg->packet_size;
                     //}
@@ -263,8 +267,10 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                         return -1;
                     }
                 } else {
-                    rar_seek(mpeg->stream, mpeg->packet_size,
+                    if (rar_seek(mpeg->stream, mpeg->packet_size, SEEK_CUR)) {
+                        rar_seek(mpeg->stream, mpeg->packet_size,
                              SEEK_CUR);
+                    }
                 }
                 idx = len;
             }
@@ -513,6 +519,7 @@ VobSubIndex::VobSubIndex(std::shared_ptr<DataSource> source): TextSubtitle(sourc
 
 
 VobSubIndex::~VobSubIndex() {
+    free(mpg);
 
 }
 

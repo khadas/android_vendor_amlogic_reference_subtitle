@@ -1187,6 +1187,7 @@ AM_ErrorCode_t AM_CC_Create(AM_CC_CreatePara_t *para, AM_CC_Handle_t *handle)
 	tvcc_init(&cc->decoder, para->lang, 10, para->decoder_param);
 
 	if (cc->decoder.vbi == NULL)
+		free(cc);
 		return AM_CC_ERR_LIBZVBI;
 
 	vbi_event_handler_register(cc->decoder.vbi,

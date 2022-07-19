@@ -22,7 +22,7 @@ makeNewSpBuffer(const char *buffer, int size) {
 }
 
 SocketSource::SocketSource() : mTotalSubtitle(-1),
-                mSubtitleType(-1), mRenderTimeUs(0), mStartPts(0) {
+                mSubtitleType(-1), mRenderTimeUs(0), mStartPts(0), mState(E_SOURCE_INV){
     SocketSource("");
 }
 

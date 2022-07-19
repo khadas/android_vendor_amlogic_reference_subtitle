@@ -226,7 +226,7 @@ struct SubtitleParamType {
 
     int idxSubTrackId; // only for idxsub
     DtvKitDvbParam dtvkitDvbParam; //the pes pid for filter subtitle data from demux
-    SubtitleParamType() : playerId(0), mediaId(0) {
+    SubtitleParamType() : playerId(0), mediaId(0), idxSubTrackId(0) {
         subType = TYPE_SUBTITLE_INVALID;
         memset(&ccParam, 0, sizeof(ccParam));
     }

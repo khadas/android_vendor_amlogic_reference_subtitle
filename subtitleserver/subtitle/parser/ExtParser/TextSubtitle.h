@@ -67,5 +67,5 @@ protected:
     std::shared_ptr<DataSource> mSource;
     std::shared_ptr<ExtSubStreamReader> mReader;
 
-    int mIdxSubTrackId;
+    int mIdxSubTrackId = -1;
 };

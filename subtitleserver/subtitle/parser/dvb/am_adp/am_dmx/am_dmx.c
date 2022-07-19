@@ -371,7 +371,9 @@ AM_ErrorCode_t AM_DMX_Open(int dev_no, const AM_DMX_OpenPara_t *para)
 		pthread_mutex_init(&dev->lock, NULL);
 		pthread_cond_init(&dev->cond, NULL);
 		dev->enable_thread = AM_TRUE;
+		pthread_mutex_lock(&dev->lock);
 		dev->flags = 0;
+		pthread_mutex_unlock(&dev->lock);
 
 		if (pthread_create(&dev->thread, NULL, dmx_data_thread, dev))
 		{

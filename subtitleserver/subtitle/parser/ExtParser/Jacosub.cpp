@@ -111,6 +111,8 @@ std::shared_ptr<ExtSubItem> Jacosub::decodedItem() {
     char *directive = (char *)MALLOC(LINE_LEN);
     if (!directive) {
         ALOGE("[%s::%d] directive malloc error!\n", __FUNCTION__, __LINE__);
+        free(line1);
+        free(line2);
         return nullptr;
     }
     memset(line1, 0, LINE_LEN);

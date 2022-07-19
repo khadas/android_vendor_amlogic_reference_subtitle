@@ -29,6 +29,7 @@ std::shared_ptr<ExtSubItem> Pjs::decodedItem() {
     char *text = (char *)MALLOC(LINE_LEN+1);
     if (!text) {
         LOGE("[%s::%d] text malloc error!\n", __FUNCTION__, __LINE__);
+        free(line);
         return nullptr;
     }
     memset(line, 0, LINE_LEN+1);

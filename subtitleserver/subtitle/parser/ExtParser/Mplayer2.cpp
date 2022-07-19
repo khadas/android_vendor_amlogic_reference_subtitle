@@ -21,6 +21,7 @@ std::shared_ptr<ExtSubItem> Mplayer2::decodedItem() {
     char *line2 = (char *)MALLOC(LINE_LEN);
     if (!line2) {
         LOGE("[%s::%d] line2 malloc error!\n", __FUNCTION__, __LINE__);
+        free(line);
         return nullptr;
     }
     memset(line, 0, LINE_LEN+1);

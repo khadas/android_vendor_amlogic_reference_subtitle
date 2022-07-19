@@ -68,7 +68,7 @@ public:
                 uint8_t ubuf8[1025] = {0};
                 memset(ubuf8, 0, 1025);
                 bytes = read(fd, ubuf8, 1024);
-                ALOGI("getVideoFormat ubuf8:%s", ubuf8);
+                ALOGI("getVideoFormat ubuf8:%s\0", ubuf8);
                 if (strstr((const char*)ubuf8, "amvdec_h264"/*"vdec.h264.00"*/)) {
                     ALOGI("H264_CC_TYPE");
                     close(fd);

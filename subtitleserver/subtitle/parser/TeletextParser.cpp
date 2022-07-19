@@ -175,6 +175,7 @@ public:
     ZvbiGlobalStatus() : lastShowingPage(0),lastMagazine(-1),lastSubPageNo(-1),subtitlePageId(0), mVbi(nullptr),
         mLastPid(-1), mLastOnid(-1), mLastTsid(-1) {
         mKeepUsingVbi = false;
+        mNeedCheckTimeout = false;
         for (int j = 0; j < TELETEXT_SUBTITLE_MAX_NUMBER; j++) {
                 atvSubtitlePage[j] = 0;
                 dtvSubtitlePage[j] = 0;
@@ -683,7 +684,9 @@ static void tt2TimeUpdate(vbi_event *ev, void *user_data)
             ctx->acceptSubPage = parser->getSubPageInfoLocked();
             ctx->opacity = ctx->transparentBackground ? 0 : 255;
             ctx->flash = !ctx->flash;
-            parser->fetchVbiPageLocked(ctx->gotoPage, ctx->acceptSubPage);
+            if (parser->fetchVbiPageLocked(ctx->gotoPage, ctx->acceptSubPage) >= 0) {
+                parser->fetchVbiPageLocked(ctx->gotoPage, ctx->acceptSubPage);
+            }
         }
     }
 }
@@ -869,7 +872,9 @@ static void handler(vbi_event *ev, void *userData) {
             if (ctx->subtitlePageNumberShowTimeOutFlag && std::chrono::system_clock::now() - ctx->lasttime >= std::chrono::seconds(TELETEXT_SUBTITLE_PAGE_SHOW_TIME+1)) {
                 TeletextParser *parser = TeletextParser::getCurrentInstance();
                 LOGE("%s, return, page(%d), current page(%d), ctx->isSubtitle:%d, ctx->subtitlePageNumberShowTimeOutFlag:%d\n",__FUNCTION__, pgno, ctx->gotoPage, ctx->isSubtitle, ctx->subtitlePageNumberShowTimeOutFlag);
-                parser->fetchVbiPageLocked(ctx->gotoPage, ctx->subPageNum);
+                if (parser->fetchVbiPageLocked(ctx->gotoPage, ctx->subPageNum) >= 0) {
+                    parser->fetchVbiPageLocked(ctx->gotoPage, ctx->subPageNum);
+                }
             }
             #endif
             return;
@@ -1208,10 +1213,6 @@ static inline int generateSearchDisplay(AVSubtitleRect *subRect, unsigned char *
         return -1;
     }
     memset(&des[TELETEXT_HEAD_HEIGHT*width*4], 0x00, (TELETEXT_TEXT_HEIGHT+TELETEXT_BAR_HEIGHT)*width*4);
-
-    if (height < maxHeight) {
-        return 0;// enlarge mode, do not need bottom
-    }
 
     hasData = 0;
     for (int y = (TELETEXT_HEAD_HEIGHT + TELETEXT_TEXT_HEIGHT); y < height; y++) {
