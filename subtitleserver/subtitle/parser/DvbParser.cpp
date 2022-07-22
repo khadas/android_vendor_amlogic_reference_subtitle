@@ -227,6 +227,9 @@ struct DVBSubContext {
 #define DVB_TIME_OUT_LONG_DURATION  30
 #define DVB_TIME_OUT_ADJUST         5
 
+#define HIGH_32_BIT_PTS 0xFFFFFFFF
+#define TSYNC_32_BIT_PTS 0xFFFFFFFF
+
 
 /* crop table */
 static const int MAX_NEG_CROP = 1024;
@@ -672,6 +675,13 @@ static int dvbsub_read_8bit_string(uint8_t *destbuf, int dbufLen,
     if (*(*srcbuf)++)
         LOGI("[%s::%d] DVBSub error: line overflow\n", __FUNCTION__, __LINE__);
     return pixelsReads;
+}
+
+bool static inline isMore32Bit(int64_t pts) {
+    if (((pts >> 32) & HIGH_32_BIT_PTS) > 0) {
+        return true;
+    }
+    return false;
 }
 
 int DvbParser::parsePixelDataBlock(DVBSubObjectDisplay *display,
@@ -1694,10 +1704,14 @@ int DvbParser::hwDemuxParse() {
             spu->sync_bytes = AML_PARSER_SYNC_WORD;
             spu->subtitle_type = TYPE_SUBTITLE_DVB;
             spu->pts = pts;
+            if (isMore32Bit(spu->pts) && !isMore32Bit(mDataSource->getSyncTime())) {
+                ALOGD("SUB PTS is greater than 32 bits, before subpts: %lld, vpts:%lld", spu->pts, mDataSource->getSyncTime());
+                spu->pts &= TSYNC_32_BIT_PTS;
+            }
 
-            LOGE("[%s::%d]synctime:%lld\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime());
+            LOGE("[%s::%d]synctime:%lld subpts:%lld\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime(),spu->pts);
             //If gap time is large than 9 secs, think pts skip,notify info
-            if (abs(mDataSource->getSyncTime() - pts) > 9*90000) {
+            if (abs(mDataSource->getSyncTime() - spu->pts) > 9*90000) {
                 LOGE("[%s::%d]pts skip, notify time error!\n", __FUNCTION__, __LINE__);
                 notifySubtitleErrorInfo(ERROR_DECODER_TIMEERROR);
             }
