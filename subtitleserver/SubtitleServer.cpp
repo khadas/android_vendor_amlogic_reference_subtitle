@@ -568,7 +568,7 @@ Return<Result> SubtitleServer::hide(int32_t sId) {
 
 /*CMD_UI_SHOW = 0,
 CMD_UI_SET_IMGRATIO,
-CMD_UI_SET_SUBDIMENSION,
+CMD_UI_SET_SUBTITLE_DIMENSION,
 CMD_UI_SET_SURFACERECT*/
 
 Return<Result> SubtitleServer::setTextColor(int32_t sId, int32_t color) {

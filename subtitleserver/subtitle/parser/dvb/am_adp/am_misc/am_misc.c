@@ -341,7 +341,7 @@ AM_ErrorCode_t AM_FileRead(const char *name, char *buf, int len)
 
 /**\brief 向一个prop set字符串
  * \param[in] name 文件名
- * \param[in] cmd 向propset 的字符串
+ * \param[in] cmd 向prop set 的字符串
  * \return
  *   - AM_SUCCESS 成功
  *   - 其他值 错误代码

@@ -40,7 +40,7 @@ static inline int64_t convertNs2DvbTime(int64_t ns) {
     return ns2ms(ns)*DVB_TIME_MULTI;
 }
 
-static size_t totoalQueuedMemSize(std::list<std::shared_ptr<AML_SPUVAR>> &list) {
+static size_t totalQueuedMemSize(std::list<std::shared_ptr<AML_SPUVAR>> &list) {
     size_t size = 0;
     // Calculate the size of all subtitles in the cache
     if (list.size() > 0) {
@@ -493,7 +493,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                 while (mPresent->mEmittedShowingSpu.size() > maxAllowedItem) {
                     mPresent->mEmittedShowingSpu.pop_front();
                 }*/
-                if ((spu->buffer_size + totoalQueuedMemSize(mPresent->mEmittedShowingSpu)) >= MAX_ALLOWED_QUEUED_MEM) {
+                if ((spu->buffer_size + totalQueuedMemSize(mPresent->mEmittedShowingSpu)) >= MAX_ALLOWED_QUEUED_MEM) {
                     ALOGD("Warning! The memory size occupied by the total queue has exceeded the maximum value.");
                     mPresent->mEmittedShowingSpu.pop_front();
                 }
