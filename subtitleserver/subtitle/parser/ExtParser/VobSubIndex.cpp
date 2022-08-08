@@ -121,7 +121,6 @@ static mpeg_t *mpeg_open(int fd) {
         if (err)
             free(res);
     }
-    free(res);
     return err ? NULL : res;
 }
 
