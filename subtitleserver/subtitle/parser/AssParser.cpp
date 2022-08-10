@@ -297,6 +297,7 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
             case AV_CODEC_ID_SSA:   //mkv internel ssa
             case AV_CODEC_ID_SUBRIP:   //mkv internel SUBRIP
             case AV_CODEC_ID_ASS:   //mkv internel ass
+            case AV_CODEC_ID_WEBVTT:
                 durationPts = subPeekAsInt32(spuBufPiece + rdOffset);
                 rdOffset += 4;
                 spu->subtitle_type = TYPE_SUBTITLE_SSA;
