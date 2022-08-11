@@ -129,7 +129,7 @@ status_t SubtitleClientPrivate::init(const subtitle::Subtitle_Param& param)
         ALOGD("[%s:%d] TELETEXT Subtitle type, unsupport now", __FUNCTION__, __LINE__);
         break;
     default:
-        ALOGD("[%s:%d] unknow Subtitle type", __FUNCTION__, __LINE__);
+        ALOGD("[%s:%d] unknown Subtitle type", __FUNCTION__, __LINE__);
         break;
     }
 
@@ -163,7 +163,7 @@ status_t SubtitleClientPrivate::getSourceAttribute(subtitle::Subtitle_Param* par
         ALOGD("[%s:%d] TELETEXT Subtitle type, unsupport now", __FUNCTION__, __LINE__);
         break;
     default:
-        ALOGD("[%s:%d] unknow Subtitle type", __FUNCTION__, __LINE__);
+        ALOGD("[%s:%d] unknown Subtitle type", __FUNCTION__, __LINE__);
         break;
     }
 
@@ -279,7 +279,7 @@ status_t SubtitleClientPrivate::convertSubTypeToSubDecodeType(subtitle::Subtitle
         decodeSubType = -1;
         break;
     default:
-        ALOGD("[%s:%d] unknow Subtitle type=%d", __FUNCTION__, __LINE__, type);
+        ALOGD("[%s:%d] unknown Subtitle type=%d", __FUNCTION__, __LINE__, type);
         break;
     }
 
@@ -304,7 +304,7 @@ status_t SubtitleClientPrivate::convertSubTypeToFFmpegType(subtitle::SubtitleTyp
         ffmpegSubType = -1;
         break;
     default:
-        ALOGD("[%s:%d] unknow Subtitle type=%d", __FUNCTION__, __LINE__, type);
+        ALOGD("[%s:%d] unknown Subtitle type=%d", __FUNCTION__, __LINE__, type);
         break;
     }
 
