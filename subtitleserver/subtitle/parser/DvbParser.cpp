@@ -217,6 +217,7 @@ struct DVBSubContext {
 
 #define SINGLE_OBJECT_DATA        4
 #define SINGLE_FIRST_OBJECT_DATA  1
+#define REGION_SEGMENT_CNT        2
 
 
 #define TOP_FIELD           0
@@ -1563,7 +1564,7 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
                     break;
                 case DVBSUB_OBJECT_SEGMENT:
                     cnt_object++;
-                    if (totalObject >= SINGLE_OBJECT_DATA && total_RegionSegment == SINGLE_OBJECT_DATA) {
+                    if (totalObject >= SINGLE_OBJECT_DATA && total_RegionSegment != REGION_SEGMENT_CNT) {//only ==2, change top and bottom field
                         cnt_object = SINGLE_FIRST_OBJECT_DATA;
                     }
                     ret = parseObjectSegment(p, segmentLength, cnt_object, totalObject);

@@ -160,7 +160,7 @@ std::shared_ptr<ExtSubItem> Sami::decodedItem() {
                     state = 5;
                     ++s;
                     continue;
-                } else if (*s == '<') {
+                } else if (*s == '<' && *(s+1) == 'S') {
                     state = 4;
                 } else if (!strncasecmp(s, "&nbsp;", 6)) {
                     *p++ = ' ';
