@@ -484,16 +484,37 @@ static void nativeSubtitleTune(JNIEnv* env, jclass clazz, jint type, jint param1
 static void nativeUnCrypt(JNIEnv *env, jclass clazz, jstring src, jstring dest) {
     const char *FONT_VENDOR_LIB = "/vendor/lib/libvendorfont.so";
     const char *FONT_PRODUCT_LIB = "/product/lib/libvendorfont.so";
+    const char *FONT_VENDOR_LIB_64 = "/vendor/lib64/libvendorfont.so";
+    const char *FONT_PRODUCT_LIB_64 = "/product/lib64/libvendorfont.so";
+    void *handle = NULL;
+    char tempbuf[PROPERTY_VALUE_MAX];
+    memset(tempbuf, 0, PROPERTY_VALUE_MAX);
+    property_get("ro.product.cpu.abilist64",tempbuf, "");
 
     // TODO: maybe we need some smart method to get the lib.
-    void *handle = dlopen(FONT_PRODUCT_LIB, RTLD_NOW);
-    if (handle == nullptr) {
-        handle = dlopen(FONT_VENDOR_LIB, RTLD_NOW);
-    }
+    if (strlen(tempbuf) > 0) {//64bit
+        ALOGD("nativeUnCrypt,is 64bit system,tempbuf:%s", tempbuf);
+        handle = dlopen(FONT_PRODUCT_LIB_64, RTLD_NOW);
+        if (handle == nullptr) {
+            handle = dlopen(FONT_VENDOR_LIB_64, RTLD_NOW);
+        }
 
-    if (handle == nullptr) {
-        ALOGE(" nativeUnCrypt error! cannot open uncrypto lib");
-        return;
+        if (handle == nullptr) {
+            ALOGE(" nativeUnCrypt error! cannot open uncrypto lib");
+            return;
+        }
+    } else {//32bit
+
+        ALOGD("nativeUnCrypt,is 64bit system");
+        handle = dlopen(FONT_PRODUCT_LIB, RTLD_NOW);
+        if (handle == nullptr) {
+            handle = dlopen(FONT_VENDOR_LIB, RTLD_NOW);
+        }
+
+        if (handle == nullptr) {
+            ALOGE(" nativeUnCrypt error! cannot open uncrypto lib");
+            return;
+        }
     }
 
     typedef void (*fnFontRelease)(const char*, const char*);
