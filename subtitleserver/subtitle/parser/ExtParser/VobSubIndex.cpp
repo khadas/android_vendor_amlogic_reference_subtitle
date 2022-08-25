@@ -73,8 +73,8 @@ rar_read(void *ptr, size_t size, size_t nmemb, rar_stream_t *stream)
 {
     size_t res;
     int remain;
-    ssize_t retcode;
-    //when play agin maybe it can: stream->fd=0;
+    ssize_t return_code;
+    //when play again maybe it can: stream->fd=0;
     if (stream->fd >= 0)
     {
         if (rar_eof(stream))
@@ -83,7 +83,7 @@ rar_read(void *ptr, size_t size, size_t nmemb, rar_stream_t *stream)
         remain = stream->size - stream->pos;
         if (res > remain)
             res = remain / size * size;
-        retcode = read(stream->fd, ptr, res);
+        return_code = read(stream->fd, ptr, res);
         stream->pos += res;
         res /= size;
         return res;

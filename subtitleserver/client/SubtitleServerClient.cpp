@@ -663,16 +663,16 @@ bool SubtitleServerClient::uiSetImageRatio(float ratioW, float ratioH, int32_t m
     return r.isOk();
 }
 
-bool SubtitleServerClient::uiGetSubDemision(int *pWidth, int *pHeight) {
+bool SubtitleServerClient::uiGetSubDimension(int *pWidth, int *pHeight) {
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
-    auto r = mRemote->getSubDemision(mSessionId, [&] (const Result &ret, const int& width, const int&height) {
+    auto r = mRemote->getSubDimension(mSessionId, [&] (const Result &ret, const int& width, const int&height) {
             if (ret == Result::OK) {
                 *pWidth = width;
                 *pHeight = height;
-                LOG(INFO) << "Get getSubDemision:" << width << "x" <<height;
+                LOG(INFO) << "Get getSubDimension:" << width << "x" <<height;
             }
         });
     checkRemoteResultLocked(r);

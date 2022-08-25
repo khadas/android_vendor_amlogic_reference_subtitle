@@ -715,7 +715,7 @@ bool Window::draw(SkCanvas &canvas) {
         mWindowBottom = info.height();
     }
 
-    // already clear, no need do agin.
+    // already clear, no need do again.
     if (mFillOpcityInt != 0x0) {
         paint.setColor(mFillColor);
         paint.setAlpha(mFillOpcityInt);

@@ -95,8 +95,8 @@ public:
     Return<Result> setTextStyle(int32_t sId, int32_t style) override;
     Return<Result> setPosHeight(int32_t sId, int32_t height) override;
     Return<Result> setImgRatio(int32_t sId, float ratioW, float ratioH, int32_t maxW, int32_t maxH) override;
-    Return<void> getSubDemision(int32_t sId, getSubDemision_cb _hidl_cb) override;
-    Return<Result> setSubDemision(int32_t sId, int32_t width, int32_t height) override;
+    Return<void> getSubDimension(int32_t sId, getSubDimension_cb _hidl_cb) override;
+    Return<Result> setSubDimension(int32_t sId, int32_t width, int32_t height) override;
     Return<Result> setSurfaceViewRect(int32_t sId, int32_t x, int32_t y, int32_t w, int32_t h) override;
     Return<Result> setPipId(int32_t sId, int32_t mode, int32_t id) override;
 

@@ -634,12 +634,12 @@ Return<Result> SubtitleServer::setImgRatio(int32_t sId, float ratioW, float rati
     return Result {};
 }
 
-Return<void> SubtitleServer::getSubDemision(int32_t sId, getSubDemision_cb _hidl_cb) {
+Return<void> SubtitleServer::getSubDimension(int32_t sId, getSubDimension_cb _hidl_cb) {
     // TODO implement
     return Void();
 }
 
-Return<Result> SubtitleServer::setSubDemision(int32_t sId, int32_t width, int32_t height) {
+Return<Result> SubtitleServer::setSubDimension(int32_t sId, int32_t width, int32_t height) {
     // TODO implement
     return Result {};
 }

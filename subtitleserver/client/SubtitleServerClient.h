@@ -131,7 +131,7 @@ public:
     bool uiSetTextStyle(int style);
     bool uiSetYOffset(int yOffset);
     bool uiSetImageRatio(float ratioW, float ratioH, int32_t maxW, int32_t maxH);
-    bool uiGetSubDemision(int *pWidth, int *pHeight);
+    bool uiGetSubDimension(int *pWidth, int *pHeight);
     bool uiSetSurfaceViewRect(int x, int y, int width, int height);
 
 private:
