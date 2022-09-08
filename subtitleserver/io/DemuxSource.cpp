@@ -439,8 +439,8 @@ size_t DemuxSource::read(void *buffer, size_t size) {
                 //if size is 0xffff, it means to get all the data of the current item
                 size = mCurrentItem->getSize();
             }
-            read += mCurrentItem->read_check(((char *)buffer+read), size-read, &isReadItemEnd, mSubType);
-            ALOGD("read:%d,size:%d isReadItemEnd:%d mSubType:%d", read, size, isReadItemEnd, mSubType);
+            read += mCurrentItem->read_check(((char *)buffer+read), size-read, &isReadItemEnd, E_SUBTITLE_DEMUX);
+            ALOGD("read:%d,size:%d isReadItemEnd:%d SourceType:%d", read, size, isReadItemEnd, E_SUBTITLE_DEMUX);
             if (read == size || isReadItemEnd ==-1) return read;
         } else {
             //ALOGD("mCurrentItem null, pop next buffer item");
