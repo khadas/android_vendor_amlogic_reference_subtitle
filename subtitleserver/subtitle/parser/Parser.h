@@ -91,7 +91,7 @@ public:
         mDecodedSpu.clear();
     }
 
-    bool startParse(ParserEventNotifier *notify, ParserSubdataNotifier *dataNofity) {
+    bool startParser(ParserEventNotifier *notify, ParserSubdataNotifier *dataNofity) {
         mState = SUB_INIT;
         mNotifier = notify;
         mDataNotifier = dataNofity;
@@ -103,7 +103,7 @@ public:
         return mParseType;
     }
 
-    bool stopParse() {
+    bool stopParser() {
         { // narrow the lock scope
             std::unique_lock<std::mutex> autolock(mMutex);
             mDecodedSpu.clear();

@@ -68,7 +68,7 @@ Subtitle::~Subtitle() {
     }
 
     if (mParser != nullptr) {
-        mParser->stopParse();
+        mParser->stopParser();
         mPresentation->stopPresent();
         mParser = nullptr;
     }
@@ -218,7 +218,26 @@ void Subtitle::run() {
                 ALOGE("Parser creat failed, break!");
                 break;
             }
-            mParser->startParse(mParserNotifier, mPresentation.get());
+            mParser->startParser(mParserNotifier, mPresentation.get());
+            mPresentation->startPresent(mParser);
+            mPendingAction = -1; // No need handle
+        }else if(mIsExtSub && mParser->getParseType() == TYPE_SUBTITLE_CLOSED_CAPTION){
+            /*
+             * When ccparser is created by default,
+             * it can be changed to the correct parser type
+             * when specifying the parser type subsequently
+             */
+            mParser->stopParser();
+            mPresentation->stopPresent();
+            mParser = nullptr;
+            mSubPrams->subType = TYPE_SUBTITLE_EXTERNAL;// if mFd > 0 is Ext sub
+            mSubPrams->idxSubTrackId = mIdxSubTrack;
+            mParser = ParserFactory::create(mSubPrams, mDataSource);
+            if (mParser == nullptr) {
+                ALOGE("Parser creat failed, break!");
+                break;
+            }
+            mParser->startParser(mParserNotifier, mPresentation.get());
             mPresentation->startPresent(mParser);
             mPendingAction = -1; // No need handle
         }
@@ -229,6 +248,17 @@ void Subtitle::run() {
                 if (mParser == nullptr) {
                     // when the first time start subtitle, some parameter may affect the behavior
                     // such as cached teletext. we use tsid/onid/pid to check need use cached ttx or not
+                    createAndStart = true;
+                    mParser = ParserFactory::create(mSubPrams, mDataSource);
+                } else if(mParser->getParseType() == TYPE_SUBTITLE_CLOSED_CAPTION){
+                    /*
+                     * When ccparser is created by default,
+                     * it can be changed to the correct parser type
+                     * when specifying the parser type subsequently
+                     */
+                    mParser->stopParser();
+                    mPresentation->stopPresent();
+                    mParser = nullptr;
                     createAndStart = true;
                     mParser = ParserFactory::create(mSubPrams, mDataSource);
                 }
@@ -245,7 +275,7 @@ void Subtitle::run() {
                 }
 
                 if (createAndStart) {
-                    mParser->startParse(mParserNotifier, mPresentation.get());
+                    mParser->startParser(mParserNotifier, mPresentation.get());
                     mPresentation->startPresent(mParser);
                 }
             }
@@ -257,12 +287,12 @@ void Subtitle::run() {
                     break;
                 }
                 if (mParser != nullptr) {
-                    mParser->stopParse();
+                    mParser->stopParser();
                     mPresentation->stopPresent();
                     mParser = nullptr;
                 }
                 mParser = ParserFactory::create(mSubPrams, mDataSource);
-                mParser->startParse(mParserNotifier, mPresentation.get());
+                mParser->startParser(mParserNotifier, mPresentation.get());
                 mPresentation->startPresent(mParser);
                 if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_DVB) {
                     mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_DVB, &mSubPrams->dtvkitDvbParam);
@@ -300,7 +330,7 @@ void Subtitle::run() {
                 ALOGE("Parser creat failed, break!");
                 break;
             }
-            mParser->startParse(mParserNotifier, mPresentation.get());
+            mParser->startParser(mParserNotifier, mPresentation.get());
             mPresentation->startPresent(mParser);
         }
 

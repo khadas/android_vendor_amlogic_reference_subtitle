@@ -319,7 +319,7 @@ DvdParser::DvdParser(std::shared_ptr<DataSource> source) {
 
 DvdParser::~DvdParser() {
     LOGI("%s", __func__);
-    stopParse();
+    stopParser();
 }
 
 

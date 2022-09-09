@@ -192,7 +192,7 @@ ClosedCaptionParser::~ClosedCaptionParser() {
     }
     stopAmlCC();
     // call back may call parser, parser later destroy
-    stopParse();
+    stopParser();
     if (mLang) free(mLang);
     delete mCcContext;
 }
@@ -332,7 +332,7 @@ int ClosedCaptionParser::parse() {
         if (mState == SUB_INIT) {
             /*this have multi thread issue.
             startAmlCC have delay, if this mState after startAmlCC,
-            then resumeplay will cause stopParse first, mState will SUB_STOP to
+            then resumeplay will cause stopParser first, mState will SUB_STOP to
             SUB_PLAYING, which cause while circle, and cc thread will not release*/
             mState = SUB_PLAYING;
 

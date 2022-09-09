@@ -1097,7 +1097,7 @@ TeletextParser *TeletextParser::getCurrentInstance() {
 
 TeletextParser::~TeletextParser() {
     LOGI("%s", __func__);
-    stopParse();
+    stopParser();
     sInstance = nullptr;
 
     // mContext need protect. accessed by other api or the ttThread.

@@ -8,7 +8,7 @@ class AssParser: public Parser {
 public:
     AssParser(std::shared_ptr<DataSource> source);
     virtual ~AssParser() {
-        stopParse();
+        stopParser();
     }
     virtual int parse();
     virtual void dump(int fd, const char *prefix);

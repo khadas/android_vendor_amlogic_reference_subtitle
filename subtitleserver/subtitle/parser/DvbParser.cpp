@@ -911,8 +911,8 @@ DvbParser::DvbParser(std::shared_ptr<DataSource> source) {
 DvbParser::~DvbParser() {
     LOGI("%s", __func__);
     mState = SUB_STOP;
-    stopParse();
-    LOGI("stopParse end");
+    stopParser();
+    LOGI("stopParser end");
     if (mContext != NULL) {
         deleteRegions(mContext);
         deleteObjects(mContext);
