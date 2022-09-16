@@ -70,49 +70,51 @@ typedef struct {
 
 typedef struct {
 
-    unsigned int palette[16];
-    unsigned int cuspal[4];
-    int delay;
-    unsigned int custom;
-    unsigned int have_palette;
-    unsigned int orig_frame_width, orig_frame_height;
-    unsigned int origin_x, origin_y;
-    unsigned int forced_subs;
+    unsigned int palette[16] = {0};
+    unsigned int cuspal[4] = {0};
+    int delay = 0;
+    unsigned int custom = 0;
+    unsigned int have_palette = 0;
+    unsigned int orig_frame_width = 0;
+    unsigned int orig_frame_height = 0;
+    unsigned int origin_x = 0;
+    unsigned int origin_y = 0;
+    unsigned int forced_subs = 0;
 
     /* index */
 
-    packet_queue_t *spu_streams;
-    unsigned int spu_streams_size;
-    unsigned int spu_streams_current;
+    packet_queue_t *spu_streams = NULL;
+    unsigned int spu_streams_size = 0;
+    unsigned int spu_streams_current = 0;
 
 } vobsub_t;
 
 
 typedef struct _VOB_SPUVAR
 {
-    unsigned short spu_color;
-    unsigned short spu_alpha;
-    unsigned short spu_start_x;
-    unsigned short spu_start_y;
-    unsigned short spu_width;
-    unsigned short spu_height;
-    unsigned short top_pxd_addr;    // CHIP_T25
-    unsigned short bottom_pxd_addr; // CHIP_T25
+    unsigned short spu_color = 0;
+    unsigned short spu_alpha = 0;
+    unsigned short spu_start_x = 0;
+    unsigned short spu_start_y = 0;
+    unsigned short spu_width = 0;
+    unsigned short spu_height = 0;
+    unsigned short top_pxd_addr = 0;    // CHIP_T25
+    unsigned short bottom_pxd_addr = 0; // CHIP_T25
 
-    unsigned mem_start; // CHIP_T25
-    unsigned mem_end;   // CHIP_T25
-    unsigned mem_size;  // CHIP_T25
-    unsigned mem_rp;
-    unsigned mem_wp;
-    unsigned mem_rp2;
-    unsigned char spu_cache[8];
-    int spu_cache_pos;
-    int spu_decoding_start_pos; //0~OSD_HALF_SIZE*2-1, start index to vob_pixData1[0~OSD_HALF_SIZE*2]
+    unsigned mem_start = 0; // CHIP_T25
+    unsigned mem_end = 0;   // CHIP_T25
+    unsigned mem_size = 0;  // CHIP_T25
+    unsigned mem_rp = 0;
+    unsigned mem_wp = 0;
+    unsigned mem_rp2 = 0;
+    unsigned char spu_cache[8] = {0};
+    int spu_cache_pos = 0;
+    int spu_decoding_start_pos = 0; //0~OSD_HALF_SIZE*2-1, start index to vob_pixData1[0~OSD_HALF_SIZE*2]
 
-    unsigned disp_colcon_addr;  // CHIP_T25
-    unsigned char display_pending;
-    unsigned char displaying;
-    unsigned char reser[2];
+    unsigned disp_colcon_addr = 0;  // CHIP_T25
+    unsigned char display_pending = 0;
+    unsigned char displaying = 0;
+    unsigned char reser[2] = {0};
 } VOB_SPUVAR;
 
 
@@ -158,7 +160,7 @@ private:
 
     mpeg_t *mpg;
     VOB_SPUVAR VobSPU;
-    unsigned int duration; // TODO: move to spu list.
+    unsigned int duration = 0; // TODO: move to spu list.
     int mSelectedTrackId = -1;
 };
 

@@ -121,6 +121,7 @@ static mpeg_t *mpeg_open(int fd) {
         if (err)
             free(res);
     }
+    free(stream);
     return err ? NULL : res;
 }
 
@@ -248,7 +249,7 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                 if (read_flag) {
                     //if (mpeg->packet_reserve < mpeg->packet_size) {
                     if (mpeg->packet) free(mpeg->packet);
-                    if (mpeg->packet_size >= 0) {
+                    if (mpeg->packet_size > 0) {
                         mpeg->packet = (unsigned char *)malloc(mpeg->packet_size);
                     }
                     //if (mpeg->packet)
@@ -824,8 +825,10 @@ unsigned char *VobSubIndex::genSubBitmap(AML_SPUVAR *spu, size_t *size) {
         while (!mpeg_eof(mpg)) {
             if (mpeg_run(mpg, 1) < 0) {
                 if (!mpeg_eof(mpg))
+                {
                     ALOGE("VobSub: mpeg_run error\n");
                     break;
+                }
             }
 
             ALOGD("seek to %d %lld package_size:%d ", mpg->stream->fd, spu->pos, mpg->packet_size);

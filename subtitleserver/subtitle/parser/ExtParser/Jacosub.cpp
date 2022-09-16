@@ -105,6 +105,7 @@ std::shared_ptr<ExtSubItem> Jacosub::decodedItem() {
     }
     char *line2 = (char *)MALLOC(LINE_LEN);
     if (!line2) {
+        free(line1);
         ALOGE("[%s::%d]line2 malloc error!\n", __FUNCTION__, __LINE__);
         return nullptr;
     }

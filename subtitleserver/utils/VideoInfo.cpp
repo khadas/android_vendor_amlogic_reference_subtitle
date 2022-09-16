@@ -65,10 +65,10 @@ public:
             int fd = ::open(VIDEO_VDEC_CORE, O_RDONLY);
             int bytes = 0;
             if (fd >= 0) {
-                uint8_t ubuf8[1025] = {0};
+                uint8_t ubuf8[1025] = {0, [1024] = '\0'};
                 memset(ubuf8, 0, 1025);
                 bytes = read(fd, ubuf8, 1024);
-                ALOGI("getVideoFormat ubuf8:%s\0", ubuf8);
+                ALOGI("getVideoFormat ubuf8:%s", ubuf8);
                 if (strstr((const char*)ubuf8, "amvdec_h264"/*"vdec.h264.00"*/)) {
                     ALOGI("H264_CC_TYPE");
                     close(fd);

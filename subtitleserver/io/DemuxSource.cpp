@@ -406,6 +406,8 @@ bool DemuxSource::isFileAvailable() {
     //unsigned long vPts = sysfsReadInt(SYSFS_VIDEO_PTS.c_str(), 16);
     unsigned long firstFrameToggle = sysfsReadInt(SYSFS_VIDEO_FIRSTRRAME.c_str(), 10);
     mediasync_frameinfo tempInfo;
+    tempInfo.framePts = -1;
+
     ALOGD("[%s] mMediaSyncId:%d, mMediaSync:%p\n", __FUNCTION__, mMediaSyncId, mMediaSync);
     if ((mMediaSyncId != -1) && (mMediaSync != nullptr)) {
         MediaSync_getFirstVideoFrameInfo(mMediaSync, &tempInfo);

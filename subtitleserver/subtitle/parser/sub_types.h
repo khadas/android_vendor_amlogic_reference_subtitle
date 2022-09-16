@@ -15,41 +15,41 @@
 // support sort!!!
 typedef struct alm_spuvar
 {
-    unsigned int sync_bytes;
-    unsigned int buffer_size;
-    bool useMalloc;
-    bool isSimpleText;
-    unsigned int pid;
-    int64_t pts;
-    bool     isImmediatePresent;
-    bool     isExtSub;
-    bool     isKeepShowing; //no auto fading out, until close
-    bool     isTtxSubtitle;
+    unsigned int sync_bytes = 0;
+    unsigned int buffer_size = 0;
+    bool useMalloc = false;
+    bool isSimpleText = false;
+    unsigned int pid = 0;
+    int64_t pts = 0;
+    bool     isImmediatePresent = false;
+    bool     isExtSub = false;
+    bool     isKeepShowing = false; //no auto fading out, until close
+    bool     isTtxSubtitle = false;
 
-    int64_t m_delay;
-    unsigned char *spu_data;
-    unsigned short cmd_offset;
-    unsigned short length;
+    int64_t m_delay = 0;
+    unsigned char *spu_data = NULL;
+    unsigned short cmd_offset = 0;
+    unsigned short length = 0;
 
-    unsigned int r_pt;
-    unsigned int frame_rdy;
+    unsigned int r_pt = 0;
+    unsigned int frame_rdy = 0;
 
-    unsigned short spu_color;
-    unsigned short spu_alpha;
-    unsigned short spu_start_x;
-    unsigned short spu_start_y;
-    unsigned short spu_width;
-    unsigned short spu_height;
-    unsigned short top_pxd_addr;
-    unsigned short bottom_pxd_addr;
+    unsigned short spu_color = 0;
+    unsigned short spu_alpha = 0;
+    unsigned short spu_start_x = 0;
+    unsigned short spu_start_y = 0;
+    unsigned short spu_width = 0;
+    unsigned short spu_height = 0;
+    unsigned short top_pxd_addr = 0;
+    unsigned short bottom_pxd_addr = 0;
 
-    unsigned int spu_origin_display_w; //for bitmap subtitle
-    unsigned int spu_origin_display_h;
-    unsigned disp_colcon_addr;
-    unsigned char display_pending;
-    unsigned char displaying;
-    unsigned char subtitle_type;
-    unsigned char reser[2];
+    unsigned int spu_origin_display_w = 0; //for bitmap subtitle
+    unsigned int spu_origin_display_h = 0;
+    unsigned disp_colcon_addr = 0;
+    unsigned char display_pending = 0;
+    unsigned char displaying = 0;
+    unsigned char subtitle_type = 0;
+    unsigned char reser[2] = {0};
 
 /*
     unsigned rgba_enable;
@@ -60,18 +60,18 @@ typedef struct alm_spuvar
     */
 
     //for vob
-    int resize_height;
-    int resize_width;
-    int resize_xstart;
-    int resize_ystart;
-    int resize_size;
+    int resize_height = 0;
+    int resize_width = 0;
+    int resize_xstart = 0;
+    int resize_ystart = 0;
+    int resize_size = 0;
 
-    int disPlayBackground;
+    int disPlayBackground = 0;
     //for qtone data inserted in cc data.
-    bool isQtoneData;
+    bool isQtoneData = false;
 
-    bool dynGen; // generate bitmap data dynamically
-    int64_t pos;
+    bool dynGen = false; // generate bitmap data dynamically
+    int64_t pos = 0;
     std::function<unsigned char *(struct alm_spuvar *spu, size_t *size)> genMethod;
     void genSubtitle() {
         size_t size;
