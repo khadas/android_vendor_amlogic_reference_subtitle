@@ -86,6 +86,8 @@ void Jacosub::parseHeaderInfo() {
                 default:
                     break;
             }
+        }else {//this is need, or else will no subtitle show
+            break;
         }
     }
 
