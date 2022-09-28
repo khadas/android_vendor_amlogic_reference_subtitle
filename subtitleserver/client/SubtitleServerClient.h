@@ -43,6 +43,26 @@ typedef enum {
     DTV_SUB_DTVKIT_SCTE27   = 7,
 } DtvSubtitleType;
 
+typedef struct {
+    const char *extSubPath;
+    int ioSource;
+    int subtitleType = 0;
+    int mode = 0;
+    int pid = 0;
+    int subPid = 0;
+    int onid = 0;
+    int tsid = 0;
+    int videoFormat = 0;             //cc
+    int channelId = 0;               //cc
+    int ancillaryPageId = 0;         //dvb
+    int compositionPageId = 0;       //dvb
+    int dmxId;
+    int fd = 0;
+    int flag = 0;
+    const char *lang;
+} AmlSubtitleParam2;
+
+
 
 namespace amlogic {
 
@@ -176,6 +196,8 @@ private:
 
     // As hidl. check if from middleware or APP.
     OpenType mOpenType;
+    bool hasDied;
+    AmlSubtitleParam2 subtitleParamHistory;
 };
 
 }

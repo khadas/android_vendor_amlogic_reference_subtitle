@@ -22,6 +22,7 @@ void SubtitleServerClient::SubtitleDeathRecipient::serviceDied(
     sp<SubtitleServerClient> owner = mOwner.promote();
     if (owner != nullptr) {
         Mutex::Autolock _l(owner->mLock);
+        owner->hasDied = true;
         if (owner->mListener != nullptr) owner->mListener->onServerDied();
         owner->mRemote = nullptr;
         owner->initRemoteLocked();
@@ -169,6 +170,11 @@ SubtitleServerClient::SubtitleServerClient(bool isFallback, sp<SubtitleListener>
     mListener = listener;
     mOpenType = openType;
     mSessionId = -1;
+    hasDied = false;
+
+    memset(&subtitleParamHistory, 0, sizeof(AmlSubtitleParam2));
+    subtitleParamHistory.onid = -1;
+    subtitleParamHistory.tsid = -1;
     initRemoteLocked();
 }
 
@@ -217,6 +223,18 @@ void SubtitleServerClient::initRemoteLocked() {
         LOG(ERROR) << "Cannot open connections!";
         return;
     }
+    if (hasDied && subtitleParamHistory.ioSource == 4 && subtitleParamHistory.subtitleType == 5) {
+        ALOGD("has died, set some parameters");
+        mLock.unlock();
+        setSubType(subtitleParamHistory.subtitleType);
+        setSubPid(subtitleParamHistory.subPid, subtitleParamHistory.onid, subtitleParamHistory.tsid);
+        setSecureLevel(subtitleParamHistory.flag);
+        open(-1, subtitleParamHistory.ioSource);
+        setAncillaryPageId(subtitleParamHistory.ancillaryPageId);
+        setCompositionPageId(subtitleParamHistory.compositionPageId);
+        setPipId(subtitleParamHistory.mode, subtitleParamHistory.pid);
+        hasDied = false;
+    }
 
     LOG(INFO) << "Created open session: " << mSessionId;
 }
@@ -246,6 +264,7 @@ SubtitleServerClient::~SubtitleServerClient() {
     mListener = nullptr;
     mDeathRecipient = nullptr;
     mRemote = nullptr;
+    hasDied = false;
 }
 
 
@@ -284,6 +303,7 @@ bool SubtitleServerClient::open(int fd, int fdData, int trackId, int ioType) {
 }
 
 bool SubtitleServerClient::open(int fd, int ioType) {
+     LOG(INFO) << "open before lock";
     Mutex::Autolock _l(mLock);
     LOG(INFO) << "open session:" << mSessionId << " ioType="<<ioType;
     if (mRemote == nullptr) {
@@ -300,7 +320,8 @@ bool SubtitleServerClient::open(int fd, int ioType) {
     } else {
         nativeHandle = native_handle_create(0, 0);
     }
-
+    subtitleParamHistory.fd = fd;
+    subtitleParamHistory.ioSource = ioType;
 
     ::android::hardware::hidl_handle handle;
     handle.setTo(nativeHandle, false /* shouldOwn */);
@@ -339,6 +360,7 @@ bool SubtitleServerClient::close() {
     }
     auto r = mRemote->close(mSessionId);
     checkRemoteResultLocked(r);
+    memset(&subtitleParamHistory, 0, sizeof(AmlSubtitleParam2));
     return r.isOk();
 }
 
@@ -398,11 +420,13 @@ bool SubtitleServerClient::resetForSeek() {
 }
 
 bool SubtitleServerClient::setSubType(int type) {
+    LOG(INFO) <<"setSubType:" << type;
+
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
-
+    subtitleParamHistory.subtitleType = type;
     auto r = mRemote->setSubType(mSessionId, type);
     checkRemoteResultLocked(r);
     return r.isOk();
@@ -411,11 +435,14 @@ bool SubtitleServerClient::setSubType(int type) {
 //    mode: 1 for the player id setting;
 //             2 for the media id setting.
 bool SubtitleServerClient::setPipId(int mode, int id) {
+    LOG(INFO) << "setPipId:" << id <<",mode:" << mode;
+
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
-
+    subtitleParamHistory.pid = id;
+    subtitleParamHistory.mode = mode;
     auto r = mRemote->setPipId(mSessionId, mode, id);
     checkRemoteResultLocked(r);
     return r.isOk();
@@ -427,11 +454,15 @@ bool SubtitleServerClient::setSubPid(int pid) {
 }
 
 bool SubtitleServerClient::setSubPid(int pid, int onid, int tsid) {
+    LOG(INFO) << "setSubPid:" << pid << ",onid=" << onid << ",tsid:" << tsid;
+
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
-
+    subtitleParamHistory.subPid = pid;
+    subtitleParamHistory.onid = onid;
+    subtitleParamHistory.tsid = tsid;
     auto r = mRemote->setSubPid(mSessionId, pid, onid, tsid);
     checkRemoteResultLocked(r);
     return r.isOk();
@@ -443,6 +474,7 @@ bool SubtitleServerClient::setSecureLevel(int flag) {
         initRemoteLocked();
     }
     LOG(INFO) << "setSecureLevel select session:" << mSessionId << ",flag=" << flag;
+    subtitleParamHistory.flag = flag;
     auto r = mRemote->setSecureLevel(mSessionId, flag);
     checkRemoteResultLocked(r);
     return r.isOk();
@@ -518,22 +550,25 @@ bool SubtitleServerClient::setClosedCaptionVfmt(int fmt) {
 }
 
 bool SubtitleServerClient::setCompositionPageId(int pageId) {
+    LOG(INFO) << "setCompositionPageId:" << pageId;
+
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
-
+    subtitleParamHistory.compositionPageId = pageId;
     auto r = mRemote->setPageId(mSessionId, pageId);
     checkRemoteResultLocked(r);
     return r.isOk();
 }
 
 bool SubtitleServerClient::setAncillaryPageId(int ancPageId){
+    LOG(INFO) << "setAncillaryPageId:" << ancPageId;
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
-
+    subtitleParamHistory.ancillaryPageId = ancPageId;
     auto r = mRemote->setAncPageId(mSessionId, ancPageId);
     checkRemoteResultLocked(r);
     return r.isOk();
