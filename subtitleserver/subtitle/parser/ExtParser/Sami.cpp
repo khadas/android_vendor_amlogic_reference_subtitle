@@ -118,6 +118,10 @@ std::shared_ptr<ExtSubItem> Sami::decodedItem() {
                 if (*s != '<') {
                     state = 3;
                     p = text;
+/*
+ * memset() function to initialize,for Copies the character 0 to the first n characters of the string pointed to by the argument str.
+ */
+/* coverity[overrun-buffer-arg] */
                     memset(text, 0, LINE_LEN + 1);
                     continue;
                 }

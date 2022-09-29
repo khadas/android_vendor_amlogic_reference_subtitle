@@ -1689,7 +1689,7 @@ int DvbParser::hwDemuxParse() {
             needSkipData = true;
         }
 
-        if (needSkipData) {
+        if (needSkipData && packetLen > 0) {
             for (int iii = 0; iii < packetLen; iii++) {
                 char tmp;
                 if (mDataSource->read(&tmp, 1) == 0) {

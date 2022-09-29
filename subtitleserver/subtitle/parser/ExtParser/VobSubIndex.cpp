@@ -6,6 +6,7 @@
 #define MIN(a, b)    ((a)<(b)?(a):(b))
 #define MAX(a, b)    ((a)>(b)?(a):(b))
 #define UINT_MAX 0xFFFFFFFFFFFFFFFLL
+#define INT_MAX  0x7fffffff
 
 
 static int rar_eof(rar_stream_t *stream) {
@@ -249,7 +250,7 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                 if (read_flag) {
                     //if (mpeg->packet_reserve < mpeg->packet_size) {
                     if (mpeg->packet) free(mpeg->packet);
-                    if (mpeg->packet_size > 0) {
+                    if (mpeg->packet_size > 0 && mpeg->packet_size < INT_MAX) {
                         mpeg->packet = (unsigned char *)malloc(mpeg->packet_size);
                     }
                     //if (mpeg->packet)
@@ -843,7 +844,9 @@ unsigned char *VobSubIndex::genSubBitmap(AML_SPUVAR *spu, size_t *size) {
                     unsigned char *rawsubdata, *subdata_ptr;
                     int sublen, len;
                     sublen = (mpg-> packet[0] << 8) | (mpg->packet[1]);
-                    rawsubdata = (unsigned char *)malloc(sublen);
+                    if (sublen > 0 && sublen < INT_MAX) {
+                        rawsubdata = (unsigned char *)malloc(sublen);
+                    }
                     subdata_ptr =rawsubdata;
                     if (rawsubdata) {
                         len = mpg->packet_size;

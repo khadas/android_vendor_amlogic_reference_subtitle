@@ -169,33 +169,29 @@ void VbiSource::loopDriverData() {
             struct vbi_data_s *pd;
             int ret;
             ret = ::read(mRdFd, &vbi, sizeof(vbi));
-            pd	= &vbi;
+            pd = &vbi;
 
             if (ret >= (int)sizeof(struct vbi_data_s)) {
-                while (ret >= (int)sizeof(struct vbi_data_s)) {
-                    //ALOGD("loopDriverData=line:%d data:%s", pd->line_num, pd->b);
-                    unsigned char sub_header[ATV_TELETEXT_SUB_HEADER_LEN] = {0x41, 0x4d, 0x4c, 0x55, 0x41, 0};
-                    sub_header[5] = 0;//line_num 16 bit, for coverity
-                    sub_header[6] = 0;//line_num 16 bit, for coverity
-                    sub_header[7] = (pd->line_num >> 8) & 0xff;
-                    sub_header[8] = pd->line_num & 0xff;
+                //ALOGD("loopDriverData=line:%d data:%s", pd->line_num, pd->b);
+                unsigned char sub_header[ATV_TELETEXT_SUB_HEADER_LEN] = {0x41, 0x4d, 0x4c, 0x55, 0x41, 0};
+                sub_header[5] = 0;//line_num 16 bit, for coverity
+                sub_header[6] = 0;//line_num 16 bit, for coverity
+                sub_header[7] = (pd->line_num >> 8) & 0xff;
+                sub_header[8] = pd->line_num & 0xff;
 
-                    int size = ATV_TELETEXT_SUB_HEADER_LEN + 42;
-                    char *rdBuffer = new char[size]();
-                    //int read = readDriverData(rdBuffer,  size);
-                    memcpy(rdBuffer, sub_header, ATV_TELETEXT_SUB_HEADER_LEN);
-                    memcpy(rdBuffer + ATV_TELETEXT_SUB_HEADER_LEN, (char *)pd->b, 42);
-                    std::shared_ptr<char> spBuf = std::shared_ptr<char>(rdBuffer, [](char *buf) { delete [] buf; });
-                    mSegment->push(spBuf, size);
+                int size = ATV_TELETEXT_SUB_HEADER_LEN + 42;
+                char *rdBuffer = new char[size]();
+                //int read = readDriverData(rdBuffer,  size);
+                memcpy(rdBuffer, sub_header, ATV_TELETEXT_SUB_HEADER_LEN);
+                memcpy(rdBuffer + ATV_TELETEXT_SUB_HEADER_LEN, (char *)pd->b, 42);
+                std::shared_ptr<char> spBuf = std::shared_ptr<char>(rdBuffer, [](char *buf) { delete [] buf; });
+                mSegment->push(spBuf, size);
 #if 0
-                    static char slice_buffer[10*1024];
-                    for (int i=0; i < strlen((char*)pd->b); i++)
-                        sprintf(&slice_buffer[i*3], " %02x", slice_buffer[i]);
-                    ALOGD("line data: %s", slice_buffer);
+                static char slice_buffer[10*1024];
+                for (int i=0; i < strlen((char*)pd->b); i++)
+                    sprintf(&slice_buffer[i*3], " %02x", slice_buffer[i]);
+                ALOGD("line data: %s", slice_buffer);
 #endif
-                    ++pd;
-                    ret -= sizeof(struct vbi_data_s);
-                }
             }
         }
     }
