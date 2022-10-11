@@ -6,7 +6,6 @@
 #define MIN(a, b)    ((a)<(b)?(a):(b))
 #define MAX(a, b)    ((a)>(b)?(a):(b))
 #define UINT_MAX 0xFFFFFFFFFFFFFFFLL
-#define INT_MAX  0x7fffffff
 
 
 static int rar_eof(rar_stream_t *stream) {
@@ -250,9 +249,13 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                 if (read_flag) {
                     //if (mpeg->packet_reserve < mpeg->packet_size) {
                     if (mpeg->packet) free(mpeg->packet);
-                    if (mpeg->packet_size > 0 && mpeg->packet_size < INT_MAX) {
-                        mpeg->packet = (unsigned char *)malloc(mpeg->packet_size);
+                    //for coverity
+                    if (mpeg->packet_size < 0 || mpeg->packet_size > INT_MAX) {
+                        ALOGE("illegal mpeg->packet_size");
+                        mpeg->packet_size = 0;
+                        return -1;
                     }
+                    mpeg->packet = (unsigned char *)malloc(mpeg->packet_size);
                     //if (mpeg->packet)
                     //    mpeg->packet_reserve = mpeg->packet_size;
                     //}
@@ -262,10 +265,13 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                         mpeg->packet_size = 0;
                         return -1;
                     }
-                    if (rar_read(mpeg->packet, mpeg->packet_size, 1, mpeg->stream) != 1) {
-                        ALOGE("fread failure");
-                        mpeg->packet_size = 0;
-                        return -1;
+                    //for coverity
+                    if (mpeg->packet_size > 0 && mpeg->packet_size < INT_MAX) {
+                        if (rar_read(mpeg->packet, mpeg->packet_size, 1, mpeg->stream) != 1) {
+                            ALOGE("fread failure");
+                            mpeg->packet_size = 0;
+                            return -1;
+                        }
                     }
                 } else {
                     if (rar_seek(mpeg->stream, mpeg->packet_size, SEEK_CUR)) {
@@ -766,6 +772,10 @@ unsigned int VobSubIndex::getDuration(int64_t pos, int trackId) {
                 unsigned char *rawsubdata, *subdata_ptr;
                 int sublen, len;
                 sublen = (mpg-> packet[0] << 8) | (mpg->packet[1]);
+                if (sublen < 0 || sublen > INT_MAX) { //for coverity
+                    ALOGE("illegal sublen");
+                    break;
+                }
                 rawsubdata = (unsigned char *)malloc(sublen);
                 subdata_ptr =rawsubdata;
                 if (!rawsubdata) {
@@ -844,9 +854,11 @@ unsigned char *VobSubIndex::genSubBitmap(AML_SPUVAR *spu, size_t *size) {
                     unsigned char *rawsubdata, *subdata_ptr;
                     int sublen, len;
                     sublen = (mpg-> packet[0] << 8) | (mpg->packet[1]);
-                    if (sublen > 0 && sublen < INT_MAX) {
-                        rawsubdata = (unsigned char *)malloc(sublen);
+                    if (sublen < 0 || sublen > INT_MAX) {
+                        ALOGE("illegal sublen");
+                        break;
                     }
+                    rawsubdata = (unsigned char *)malloc(sublen);
                     subdata_ptr =rawsubdata;
                     if (rawsubdata) {
                         len = mpg->packet_size;
