@@ -67,11 +67,14 @@
 #define TELETEXT_ROW 26
 #define TELETEXT_COL 41
 
-#define TELETEXT_USE_SUBTITLESERVER 1
+#define TELETEXT_USE_SUBTITLESERVER  1
 #define CHANGE_CHARACTER_TABLE_TRUE  1
 #define CHANGE_CHARACTER_TABLE_FALSE 0
 #define BS_REGIONID                  88
 #define ARABIC_REGIONID              64
+
+#define MIX_VIDEO_MODE_TRUE          1
+#define MIX_VIDEO_MODE_FALSE         0
 
 #define TELETEXT_MAX_PAGE_NUMBER     900
 #define TELETEXT_MIN_PAGE_NUMBER     99
@@ -390,8 +393,8 @@ static void fixTransparency(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_p
                     [[fallthrough]];
                 case VBI_TRANSPARENT_FULL:
                     //when the data is graphics,the last two line data doesn't apply the transparent
-                    if (!(ctx->isSubtitle) && ((iy >= 240) && (iy <= 260)))
-                        break;
+                    // if (!(ctx->isSubtitle) && ((iy >= 240) && (iy <= 260)))
+                    //     break;
                     for (; pixel < pixelnext; pixel++) {
                         if (*pixel == vc->background) {
                             *pixel = VBI_TRANSPARENT_BLACK;
@@ -1731,21 +1734,25 @@ int TeletextParser::changeMixModeLocked() {
 
     switch (mContext->mixVideoState) {
         case TT2_MIX_BLACK:
+            vbi_set_subtitle_mix_video_flag(mContext->vbi, MIX_VIDEO_MODE_TRUE);
             mContext->mixVideoState = TT2_MIX_TRANSPARENT;
             mContext->transparentBackground = 1;
             notifyMixVideoState(TT2_MIX_TRANSPARENT);
             break;
         case TT2_MIX_TRANSPARENT:
+            vbi_set_subtitle_mix_video_flag(mContext->vbi, MIX_VIDEO_MODE_FALSE);
             mContext->mixVideoState = TT2_MIX_HALF_SCREEN;
             mContext->transparentBackground = 0;
             notifyMixVideoState(TT2_MIX_HALF_SCREEN);
             break;
         case TT2_MIX_HALF_SCREEN:
+            vbi_set_subtitle_mix_video_flag(mContext->vbi, MIX_VIDEO_MODE_FALSE);
             mContext->mixVideoState = TT2_MIX_BLACK;
             mContext->transparentBackground = 0;
             notifyMixVideoState(TT2_MIX_BLACK);
             break;
         default:
+            vbi_set_subtitle_mix_video_flag(mContext->vbi, MIX_VIDEO_MODE_FALSE);
             mContext->mixVideoState = TT2_MIX_BLACK;
             mContext->transparentBackground = 0;
             notifyMixVideoState(TT2_MIX_BLACK);
