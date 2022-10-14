@@ -81,6 +81,8 @@
 #define TELETEXT_MIN_SUBPAGE_NUMBER  0x0
 #define TELETEXT_MAX_SUBPAGE_NUMBER  0x99
 
+#define TELETEXT_MIN_INTERVAL_TIME   200 // milliseconds
+
 #define TELETEXT_PAGE_NUMBER_800     800
 #define TELETEXT_MAX_MAGAZINE_NUMBER 7
 #define TELETEXT_MIN_MAGAZINE_NUMBER 0
@@ -975,7 +977,7 @@ static void handler(vbi_event *ev, void *userData) {
        static auto start = std::chrono::system_clock::now();
        auto end =  std::chrono::system_clock::now();
        std::chrono::duration<double> diff = end - start;
-       if (diff < std::chrono::milliseconds(40) && ctx->gotoPage > 0 && pgno != ctx->gotoPage) {
+       if (diff < std::chrono::milliseconds(TELETEXT_MIN_INTERVAL_TIME) && ctx->gotoPage > 0 && pgno != ctx->gotoPage) {
             free(page);
             return;
        }
