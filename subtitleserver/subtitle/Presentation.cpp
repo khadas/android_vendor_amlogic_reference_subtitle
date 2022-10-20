@@ -23,6 +23,7 @@
 #define TSYNC_32_BIT_PTS 0xFFFFFFFF
 #define HIGH_32_BIT_PTS 0xFFFFFFFF
 
+#define DEFAULT_DELAY_TIME 2 //second
 
 static const int DVB_TIME_MULTI = 90;
 
@@ -30,7 +31,7 @@ static const int64_t FIVE_SECONDS_NS = 5*1000*1000*1000LL;
 static const int64_t ONE_SECONDS_NS = 1*1000*1000*1000LL;
 
 static const int64_t ADDJUST_VERY_SMALL_PTS_MS = 5*1000LL;
-static const int64_t ADDJUST_NO_PTS_MS = 20*1000LL;
+static const int64_t ADDJUST_NO_PTS_MS = 4*1000LL;
 static bool mSubtitlePts32Bit = false;
 static inline int64_t convertDvbTime2Ns(int64_t dvbMillis) {
     return ms2ns(dvbMillis)/DVB_TIME_MULTI; // dvbTime is multi 90.
@@ -476,7 +477,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                     ALOGD("Got  SPU: spu is ptsDiff >= 200s pts:%lld spu->pts:%lld",pts, spu->pts);
                     // we cannot check it's valid or not, so delay 1s(common case) and show
                     spu->pts = convertNs2DvbTime(timestamp+1*1000*1000*1000LL);
-                    spu->m_delay = spu->pts + 10*1000*DVB_TIME_MULTI;
+                    spu->m_delay = spu->pts + DEFAULT_DELAY_TIME*1000*DVB_TIME_MULTI;
                     pts = convertDvbTime2Ns(spu->pts);
                 }
                 ALOGD("Got  SPU: TimeStamp:%lld startAtPts=%lld ItemPts=%lld(%lld) duration:%lld(%lld) data:%p(%p)",
@@ -542,7 +543,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                     // show it ...
                     if ((spu->pts/DVB_TIME_MULTI) <= 0 && !spu->isImmediatePresent) {
                         spu->pts = convertNs2DvbTime(timestamp);
-                        spu->m_delay = spu->pts + 3*1000*DVB_TIME_MULTI; // 3S delay
+                        spu->m_delay = spu->pts + DEFAULT_DELAY_TIME*1000*DVB_TIME_MULTI; // 2S delay
                         pts = convertDvbTime2Ns(spu->pts);
                     }
 
@@ -558,7 +559,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                     if ((ptsDiff >= 200*1000*1000*1000LL) && !(spu->isExtSub)) {
                         // we cannot check it's valid or not, so delay 1s(common case) and show
                         spu->pts = convertNs2DvbTime(timestamp+1*1000*1000*1000LL);
-                        spu->m_delay = spu->pts + 10*1000*DVB_TIME_MULTI;
+                        spu->m_delay = spu->pts + DEFAULT_DELAY_TIME*1000*DVB_TIME_MULTI;
                         pts = convertDvbTime2Ns(spu->pts);
                     }*/
 
