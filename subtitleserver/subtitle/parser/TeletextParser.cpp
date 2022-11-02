@@ -42,6 +42,7 @@
 
 //teletext graphics support load animation
 //#define SUPPORT_LOAD_ANIMATION
+//#define SUPPORT_GRAPHICS_MODE_SUBTITLE_PAGE_FULL_SCREEN
 
 #define TELETEXT_WARN_PAGE_1 0x548080
 #define TELETEXT_WARN_PAGE_2 0x548000
@@ -1171,7 +1172,7 @@ static inline int generateNormalDisplay(AVSubtitleRect *subRect, unsigned char *
             des[(y*width*4) + x*4 + 1] = (src[(y*width) + x] >> 8) & 0xff;
             des[(y*width*4) + x*4 + 2] = (src[(y*width) + x] >> 16) & 0xff;
 
-#ifdef SUPPORT_LOAD_ANIMATION
+#ifdef SUPPORT_GRAPHICS_MODE_SUBTITLE_PAGE_FULL_SCREEN
             if (parser->mContext->isSubtitle && parser->mContext->subtitleMode == TT2_GRAPHICS_MODE) {
                 des[(y*width*4) + x*4 + 3] = 0xff;
             } else {
