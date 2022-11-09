@@ -46,6 +46,7 @@ std::shared_ptr<ExtSubItem> SubStationAlpha::decodedItem() {
     const int ASS_EVENT_SECTIONS = 9;
 
     char line[LINE_LEN + 1];
+    ExtSubItem *e = NULL; //for coverity
     while (mReader->getLine(line)) {
         std::stringstream ss;
         std::string str;
@@ -89,6 +90,7 @@ std::shared_ptr<ExtSubItem> SubStationAlpha::decodedItem() {
         uint32_t hour, min, sec, ms;
         // 1 is start time
         ExtSubItem *item = new ExtSubItem();
+        e = item;
         if ( sscanf(items[1].c_str(), "%d:%d:%d.%d", &hour, &min, &sec, &ms) != 4) continue;
         item->start = (hour * 60 * 60 + min * 60 + sec) * 100 + ms;
 
@@ -99,7 +101,7 @@ std::shared_ptr<ExtSubItem> SubStationAlpha::decodedItem() {
         item->lines.push_back(str);
         return std::shared_ptr<ExtSubItem>(item);
     }
-
+    delete (e);
     return nullptr;
 }
 

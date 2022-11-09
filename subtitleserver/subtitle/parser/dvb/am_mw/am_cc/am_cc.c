@@ -414,7 +414,8 @@ static AM_ErrorCode_t am_q_tone_data_event(AM_CC_Decoder_t *cc, uint8_t * data, 
 static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data)
 {
 	AM_CC_Decoder_t *cc = (AM_CC_Decoder_t*)user_data;
-	int pgno, subno, ret;
+	int pgno, subno;
+	int ret = -1;
 	char* json_buffer;
 	AM_CC_JsonChain_t* node, *json_chain_head;
 	static int count = 0;
@@ -1175,8 +1176,10 @@ AM_ErrorCode_t AM_CC_Create(AM_CC_CreatePara_t *para, AM_CC_Handle_t *handle)
 
 	memset(cc, 0, sizeof(AM_CC_Decoder_t));
 	cc->json_chain_head = (AM_CC_JsonChain_t*) calloc (sizeof(AM_CC_JsonChain_t), 1);
-	if (cc->json_chain_head == NULL)
+	if (cc->json_chain_head == NULL) {
+		free (cc);
 		return AM_CC_ERR_NO_MEM;
+	}
 
 	cc->json_chain_head->json_chain_next = cc->json_chain_head;
 	cc->json_chain_head->json_chain_prior = cc->json_chain_head;
