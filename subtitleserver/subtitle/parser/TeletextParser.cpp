@@ -43,6 +43,7 @@
 //teletext graphics support load animation
 //#define SUPPORT_LOAD_ANIMATION
 //#define SUPPORT_GRAPHICS_MODE_SUBTITLE_PAGE_FULL_SCREEN
+//#define UNREMOVED_MIX_VIDEO_MODE_FOUR_COLOR_KEY_BACKGROUND
 
 #define TELETEXT_WARN_PAGE_1 0x548080
 #define TELETEXT_WARN_PAGE_2 0x548000
@@ -400,6 +401,9 @@ static void fixTransparency(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_p
                     //     break;
                     for (; pixel < pixelnext; pixel++) {
                         if (*pixel == vc->background) {
+                            #ifdef UNREMOVED_MIX_VIDEO_MODE_FOUR_COLOR_KEY_BACKGROUND
+                            if (!(ctx->isSubtitle) && ((iy >= 240) && (iy <= 248)) && vc->background) break;
+                            #endif
                             *pixel = VBI_TRANSPARENT_BLACK;
                         }
                     }
