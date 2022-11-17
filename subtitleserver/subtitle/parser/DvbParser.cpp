@@ -215,10 +215,11 @@ struct DVBSubContext {
 #define DVBSUB_DT_48_MAP_TABLE_DATA                 0x22
 #define DVBSUB_DT_END_OF_OBJECT_LINE                0xf0
 
+/*
 #define SINGLE_OBJECT_DATA        4
 #define SINGLE_FIRST_OBJECT_DATA  1
 #define REGION_SEGMENT_CNT        2
-
+*/
 
 #define TOP_FIELD           0
 #define BOTTOM_FIELD        1
@@ -705,8 +706,14 @@ int DvbParser::parsePixelDataBlock(DVBSubObjectDisplay *display,
     pbuf = region->pbuf;
     xPos = display->xPos;
     yPos = display->yPos;
+    /*
     if ((yPos & 1) != top_bottom)
         yPos++;
+    */
+    //calculation y pos here
+    if (top_bottom == 1) {
+        yPos++;
+    }
     while (buf < bufEnd) {
         int bufcaps = region->bufSize - (yPos * region->width + xPos);
         int needReads = bufEnd - buf;
@@ -957,7 +964,7 @@ bool DvbParser::updateParameter(int type, void *data) {
     return true;
 }
 
-int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize, int cntObject, int totalObject) {
+int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize) {
     const uint8_t *bufEnd = buf + bufSize;
     const uint8_t *block;
     int objectId;
@@ -989,8 +996,11 @@ int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize, int cntObject
                 display = display->objectListNext) {
             int ret = 0;
             block = buf;
-
-            ret = parsePixelDataBlock(display, block, topFieldLen, (totalObject >=SINGLE_OBJECT_DATA && (cntObject % SINGLE_OBJECT_DATA != SINGLE_FIRST_OBJECT_DATA)) ? BOTTOM_FIELD: TOP_FIELD , nonModifyingColor);
+            /*
+            ret = parsePixelDataBlock(display, block, topFieldLen, (totalObject >=SINGLE_OBJECT_DATA && (cntObject % SINGLE_OBJECT_DATA != SINGLE_FIRST_OBJECT_DATA)) ? BOTTOM_FIELD : TOP_FIELD , nonModifyingColor);
+            */
+            //calculation y pos at last
+            ret = parsePixelDataBlock(display, block, topFieldLen, TOP_FIELD , nonModifyingColor);
             if (ret == -1)
                 return ret;
 
@@ -999,7 +1009,11 @@ int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize, int cntObject
             } else {
                 bottomFieldLen = topFieldLen;
             }
+            /*
             ret = parsePixelDataBlock(display, block, bottomFieldLen,  (totalObject >=SINGLE_OBJECT_DATA && (cntObject % SINGLE_OBJECT_DATA != SINGLE_FIRST_OBJECT_DATA)) ? TOP_FIELD : BOTTOM_FIELD, nonModifyingColor);
+            */
+            //calculation y pos at last
+            ret = parsePixelDataBlock(display, block, bottomFieldLen,  BOTTOM_FIELD, nonModifyingColor);
             if (ret == -1)
                 return ret;
         }
@@ -1469,7 +1483,7 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
     int segmentLength;
     int dataSize;
     //for special subtitle who has 4 or more object segments
-    int cnt_object = 0;
+    //int cnt_object = 0;
     int totalObject = 0;
     int total_RegionSegment = 0;
     spu->spu_width = 0;
@@ -1563,11 +1577,14 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
                     parseClutSegment(p, segmentLength);
                     break;
                 case DVBSUB_OBJECT_SEGMENT:
+                    /*
                     cnt_object++;
                     if (totalObject >= SINGLE_OBJECT_DATA && total_RegionSegment != REGION_SEGMENT_CNT) {//only ==2, change top and bottom field
                         cnt_object = SINGLE_FIRST_OBJECT_DATA;
                     }
-                    ret = parseObjectSegment(p, segmentLength, cnt_object, totalObject);
+                    */
+                    //calculation y pos at last
+                    ret = parseObjectSegment(p, segmentLength);
                     if (ret == -1) return -1;
                     break;
                 case DVBSUB_DISPLAYDEFINITION_SEGMENT:
