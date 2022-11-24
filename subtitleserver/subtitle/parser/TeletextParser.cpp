@@ -75,9 +75,6 @@
 #define BS_REGIONID                  88
 #define ARABIC_REGIONID              64
 
-#define MIX_VIDEO_MODE_TRUE          1
-#define MIX_VIDEO_MODE_FALSE         0
-
 #define TELETEXT_MAX_PAGE_NUMBER     900
 #define TELETEXT_MIN_PAGE_NUMBER     99
 #define TELETEXT_MIN_SUBPAGE_NUMBER  0x0
@@ -844,7 +841,9 @@ static void handler(vbi_event *ev, void *userData) {
             }
         }
         #ifdef NEED_CACHE_ZVBI_STATUS
-        if (ctx->atvTeletext);selectSortSubtitlePage(gVBIStatus.atvSubtitlePage,atvSubtitlePageInsertFlag);
+        if (ctx->atvTeletext) {
+            selectSortSubtitlePage(gVBIStatus.atvSubtitlePage,atvSubtitlePageInsertFlag);
+        }
         #endif
         //save dtv subtitle page for skip to subtitle faster
         if (ctx->dtvTeletext && pgno < TELETEXT_MAX_PAGE_NUMBER && pgno > TELETEXT_MIN_PAGE_NUMBER) {
@@ -874,7 +873,9 @@ static void handler(vbi_event *ev, void *userData) {
             }
         }
         #ifdef NEED_CACHE_ZVBI_STATUS
-        if (ctx->dtvTeletext);selectSortSubtitlePage(gVBIStatus.dtvSubtitlePage,dtvSubtitlePageInsertFlag);
+        if (ctx->dtvTeletext) {
+            selectSortSubtitlePage(gVBIStatus.dtvSubtitlePage,dtvSubtitlePageInsertFlag);
+        }
         #endif
     }
 
@@ -1741,25 +1742,25 @@ int TeletextParser::changeMixModeLocked() {
 
     switch (mContext->mixVideoState) {
         case TT2_MIX_BLACK:
-            vbi_set_subtitle_mix_video_flag(mContext->vbi, MIX_VIDEO_MODE_TRUE);
+            vbi_set_subtitle_mix_video_flag(mContext->vbi, TT2_MIX_TRANSPARENT);
             mContext->mixVideoState = TT2_MIX_TRANSPARENT;
             mContext->transparentBackground = 1;
             notifyMixVideoState(TT2_MIX_TRANSPARENT);
             break;
         case TT2_MIX_TRANSPARENT:
-            vbi_set_subtitle_mix_video_flag(mContext->vbi, MIX_VIDEO_MODE_FALSE);
+            vbi_set_subtitle_mix_video_flag(mContext->vbi, TT2_MIX_HALF_SCREEN);
             mContext->mixVideoState = TT2_MIX_HALF_SCREEN;
             mContext->transparentBackground = 0;
             notifyMixVideoState(TT2_MIX_HALF_SCREEN);
             break;
         case TT2_MIX_HALF_SCREEN:
-            vbi_set_subtitle_mix_video_flag(mContext->vbi, MIX_VIDEO_MODE_FALSE);
+            vbi_set_subtitle_mix_video_flag(mContext->vbi, TT2_MIX_BLACK);
             mContext->mixVideoState = TT2_MIX_BLACK;
             mContext->transparentBackground = 0;
             notifyMixVideoState(TT2_MIX_BLACK);
             break;
         default:
-            vbi_set_subtitle_mix_video_flag(mContext->vbi, MIX_VIDEO_MODE_FALSE);
+            vbi_set_subtitle_mix_video_flag(mContext->vbi, TT2_MIX_BLACK);
             mContext->mixVideoState = TT2_MIX_BLACK;
             mContext->transparentBackground = 0;
             notifyMixVideoState(TT2_MIX_BLACK);
@@ -2200,7 +2201,22 @@ bool TeletextParser::handleControl() {
             if (ttParam->regionId >= 0) mContext->regionId = ttParam->regionId;
             return goHomeLocked();
         case TT_EVENT_GO_TO_PAGE:
-            mContext->transparentBackground = 0;
+            if (vbi_get_subtitle_mix_video_flag(mContext->vbi) == TT2_MIX_TRANSPARENT) {
+                vbi_set_subtitle_mix_video_flag(mContext->vbi, TT2_MIX_TRANSPARENT);
+                mContext->mixVideoState = TT2_MIX_TRANSPARENT;
+                mContext->transparentBackground = 1;
+                notifyMixVideoState(TT2_MIX_TRANSPARENT);
+            } else if (vbi_get_subtitle_mix_video_flag(mContext->vbi) == TT2_MIX_HALF_SCREEN) {
+                vbi_set_subtitle_mix_video_flag(mContext->vbi, TT2_MIX_HALF_SCREEN);
+                mContext->mixVideoState = TT2_MIX_HALF_SCREEN;
+                mContext->transparentBackground = 0;
+                notifyMixVideoState(TT2_MIX_HALF_SCREEN);
+            } else if (vbi_get_subtitle_mix_video_flag(mContext->vbi) == TT2_MIX_BLACK) {
+                vbi_set_subtitle_mix_video_flag(mContext->vbi, TT2_MIX_BLACK);
+                mContext->mixVideoState = TT2_MIX_BLACK;
+                mContext->transparentBackground = 0;
+                notifyMixVideoState(TT2_MIX_BLACK);
+            }
             mContext->opacity = mContext->transparentBackground ? 0 : 255;
             mContext->pageState = TT2_SEARCH_STATE;
             mContext->subtitleMode = TT2_GRAPHICS_MODE;
