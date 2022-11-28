@@ -1303,7 +1303,7 @@ int TeletextParser::saveTeletextGraphicsRect2Spu(std::shared_ptr<AML_SPUVAR> spu
         return -1;
     }
     if (spu->spu_data != nullptr) {
-        ALOGE("Error, resued spu data, we designed not reusable!!\n\n\n\n\n!!");
+        ALOGE("Error, reused spu data, we designed not reusable!!\n\n\n\n\n!!");
         free(spu->spu_data);
     }
     spu->buffer_size = resx * resy * sizeof(uint32_t);
@@ -1355,7 +1355,7 @@ int TeletextParser::saveDisplayRect2Spu(std::shared_ptr<AML_SPUVAR> spu, AVSubti
 
     spu->buffer_size = resx * resy * sizeof(uint32_t);
     if (spu->spu_data != nullptr) {
-        ALOGE("Error, resued spu data, we designed not reusable!!\n\n\n\n\n!!");
+        ALOGE("Error, reused spu data, we designed not reusable!!\n\n\n\n\n!!");
         free(spu->spu_data);
     }
     spu->spu_data = (unsigned char *)malloc(spu->buffer_size);
