@@ -157,7 +157,7 @@ int ExtSubFactory::detect(std::shared_ptr<DataSource> source) {
         }
 
         if ((strstr(line, "VobSub index file") != nullptr)
-            || sscanf(line, "timestamp: [%d]:[%d]:[%d]:[%d], filepos: [%d]", &i, &i, &i, &i, &i) == 5) {
+            || strncmp("timestamp:", line, 10) == 0 ) {
             return SUB_IDXSUB;
         }
 

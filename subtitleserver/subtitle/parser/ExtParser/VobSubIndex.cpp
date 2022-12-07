@@ -176,13 +176,17 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
             c = rar_getc(mpeg->stream);
             if (c < 0)
                 return -1;
-            if ((c & 0xc0) == 0x40)
+            if ((c & 0xc0) == 0x40) {
                 version = 4;
-            else if ((c & 0xf0) == 0x20)
+            } else if ((c & 0xf0) == 0x20) {
                 version = 2;
-            else {
-                ALOGE("VobSub: Unsupported MPEG version: 0x%02x\n", c);
-                return -1;
+            } else if ((c & 0xf0) == 0) {
+                ALOGE("VobSub: Unsupported MPEG version: 0x%02x,try specifying version 2 to parse.\n", c);
+                version = 2;
+            } else {
+                 ALOGE("VobSub: Unsupported MPEG version: 0x%02x\n", c);
+                 return -1;
+
             }
             if (version == 4) {
                 if (rar_seek(mpeg->stream, 9, SEEK_CUR))
@@ -439,10 +443,12 @@ static int vobsub_parse_palette(vobsub_t *vob, const char *line) {
 
         while (isxdigit(*p))
             ++p;
-        if (p - line != 6)
+        if (p - line < 0) {
             return -1;
+        }
 
         tmp = strtoul(line, NULL, 16);
+        if (tmp == 0) tmp = 0xffffff;
         r = tmp >> 16 & 0xff;
         g = tmp >> 8 & 0xff;
         b = tmp & 0xff;
@@ -579,12 +585,12 @@ std::shared_ptr<ExtSubItem> VobSubIndex::decodedItem() {
             sscanf(line,"size: %dx%d", &mOrigFrameWidth, &mOrigFrameHeight);
         } else if (strncmp("org:", line, 4) == 0) {
             sscanf(line,"org: %d, %d", &mOriginX, &mOriginY);
-        } else if (strncmp("timestamp:", line, 10) == 0) {
+        } else if (strncmp("timestamp:", line, 10) == 0 && strncmp("filepos:", line + 25, 8) == 0) {
             //res = vobsub_parse_timestamp(vob, line + 10);
             // timestamp: HH:MM:SS.mmm, filepos: 0
             int hour=0, min=0, sec=0, ms=0;
             long long pos=0;
-            if (sscanf(line, "timestamp: %d:%d:%d:%d, filepos:%llx",
+            if (sscanf(line, "timestamp: %02d:%02d:%02d:%03d, filepos:%llx",
                     &hour, &min, &sec, &ms, &pos) != 5) {
                 //continue;
             }
