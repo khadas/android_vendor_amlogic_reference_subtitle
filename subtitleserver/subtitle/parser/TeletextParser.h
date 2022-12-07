@@ -149,6 +149,8 @@ struct TeletextContext {
     bool            resetShowSubtitlePageNumberTimeFlag;
     bool            gotoAtvSubtitleFlg;
     bool            gotoDtvSubtitleFlg;
+    int             subtitlePages[TELETEXT_SUBTITLE_MAX_NUMBER];
+    int             subtitlePageId;
 
     bool            isSubtitle;
 
@@ -245,6 +247,7 @@ private:
     int mGotoPageNum;
     int mUpdateParamCount;
     static TeletextParser *sInstance;
+
 
     std::mutex mMutex;
     std::list<std::shared_ptr<TeletextParam>> mControlCmds;
