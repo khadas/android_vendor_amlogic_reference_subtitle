@@ -465,9 +465,7 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data)
 				return;
 			}
 			/* Convert to json attributes */
-			if (cc->vbi_pgno <= 6) {
-				ret = tvcc_to_json (&cc->decoder, cc->vbi_pgno, json_buffer, JSON_STRING_LENGTH);
-			}
+			ret = tvcc_to_json (&cc->decoder, cc->vbi_pgno, json_buffer, JSON_STRING_LENGTH);
 			if (ret == -1)
 			{
 				AM_DEBUG(0, "tvcc_to_json failed");
