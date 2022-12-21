@@ -567,7 +567,7 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
                         /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 1/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
                 } else {
                     vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
-                        0, 2*ctx->heightIndex + chopTop, page->columns, height,
+                        0, (ctx->heightIndex == DOUBLE_HEIGHT_SCROLL_SECTION_PLUS) ? 2*ctx->heightIndex-1:2*ctx->heightIndex + chopTop, page->columns, height,
                         /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 0/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
                 }
             } else {
@@ -578,7 +578,7 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
                         /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 1/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
                 } else {
                     vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
-                        0, 2*ctx->heightIndex + chopTop, page->columns, height,
+                        0, (ctx->heightIndex == DOUBLE_HEIGHT_SCROLL_SECTION_PLUS) ? 2*ctx->heightIndex-1:2*ctx->heightIndex + chopTop, page->columns, height,
                         /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 0/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
                 }
 
@@ -593,7 +593,7 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
                     /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, ctx->dispMode/*0*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
             } else {
                 vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
-                    0, 2*ctx->heightIndex + chopTop, page->columns, height,
+                    0, ((ctx->heightIndex == DOUBLE_HEIGHT_SCROLL_SECTION_PLUS) ? (2*ctx->heightIndex-1): 2*ctx->heightIndex) + chopTop, page->columns, height,
                     /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, ctx->dispMode/*0*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
             }
         }
@@ -616,11 +616,11 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
 
             if (page->pgno < 0) {
                 vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
-                        0, 2*ctx->heightIndex + chopTop, page->columns, height,
+                        0, (ctx->heightIndex == DOUBLE_HEIGHT_SCROLL_SECTION_PLUS) ? 2*ctx->heightIndex-1:2*ctx->heightIndex + chopTop, page->columns, height,
                         /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 0/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
             } else {
                 vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
-                        0, 2*ctx->heightIndex + chopTop, page->columns, height,
+                        0, (ctx->heightIndex == DOUBLE_HEIGHT_SCROLL_SECTION_PLUS) ? 2*ctx->heightIndex-1:2*ctx->heightIndex + chopTop, page->columns, height,
                         /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, 1/*ctx->isSubtitle*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
             }
 
@@ -628,7 +628,7 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
             ctx->lasttime = std::chrono::system_clock::now();
             ctx->subtitlePageNumberShowTimeOutFlag = false;
             vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
-                    0, 2*ctx->heightIndex + chopTop, page->columns, height,
+                    0, (ctx->heightIndex == DOUBLE_HEIGHT_SCROLL_SECTION_PLUS) ? 2*ctx->heightIndex-1:2*ctx->heightIndex + chopTop, page->columns, height,
                     /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, ctx->dispMode/*0*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
         }
         #endif
@@ -640,12 +640,12 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
                 /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, ctx->dispMode/*0*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
         } else {
             vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
-                0, 2*ctx->heightIndex + chopTop, page->columns, height,
+                0, (ctx->heightIndex == DOUBLE_HEIGHT_SCROLL_SECTION_PLUS) ? 2*ctx->heightIndex-1:2*ctx->heightIndex + chopTop, page->columns, height,
                 /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, ctx->dispMode/*0*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
         }
         #else
             vbi_draw_vt_page_region(page, VBI_PIXFMT_PAL8, subRect->pict.data[0], subRect->pict.lineSize[0],
-                0, 2*ctx->heightIndex + chopTop, page->columns, height,
+                0, (ctx->heightIndex == DOUBLE_HEIGHT_SCROLL_SECTION_PLUS) ? 2*ctx->heightIndex-1:2*ctx->heightIndex + chopTop, page->columns, height,
                 /*reveal*/ctx->reveal, /*flash*/ ctx->flash, /*Subtitle*/ctx->isSubtitle, ctx->dispMode/*0*/, 1, ctx->lockSubpg/*0*/,  ctx->time, 0);
         #endif
     #endif
