@@ -51,6 +51,14 @@ cc_library_shared {
         "-Wno-unused-const-variable",
         "-O0",
     ],
+    arch: {
+        x86: {
+            enabled: false,
+        },
+        x86_64: {
+            enabled: false,
+        },
+    }
 
 }
 
