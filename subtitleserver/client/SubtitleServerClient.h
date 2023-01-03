@@ -113,6 +113,8 @@ public:
 
     bool setSubType(int type);
     int getSubType();
+    std::string getSubLanguage(int idx);
+    bool setSubLanguage(std::string lang);
     bool resetForSeek();
 
     bool setPipId(int mode, int id);

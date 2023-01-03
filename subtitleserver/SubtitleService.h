@@ -29,6 +29,7 @@ public:
     int totalSubtitles();
     int subtitleType();
     std::string currentLanguage();
+    void setLanguage(std::string lang);
 
 
     int updateVideoPosAt(int timeAt);

@@ -455,6 +455,11 @@ std::string SubtitleService::currentLanguage() {
     return std::string("N/A");
 }
 
+void SubtitleService::setLanguage(std::string lang) {
+       if (mSubtiles != nullptr) {
+        mSubtiles->onGetLanguage(lang);
+    }
+}
 
 void SubtitleService::dump(int fd) {
     dprintf(fd, "\n\n SubtitleService:\n");

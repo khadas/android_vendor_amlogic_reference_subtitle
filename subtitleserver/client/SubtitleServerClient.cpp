@@ -392,6 +392,33 @@ int SubtitleServerClient::totalTracks() {
     return track;
 }
 
+std::string SubtitleServerClient::getSubLanguage(int idx) {
+    Mutex::Autolock _l(mLock);
+    if (mRemote == nullptr) {
+        initRemoteLocked();
+    }
+    std::string subLanguage;
+    auto r = mRemote->getLanguage(mSessionId, [&] (const Result &ret, const std::string& language) {
+            if (ret == Result::OK) {
+                subLanguage = language;
+                LOG(INFO) << "Get subLanguage:" << subLanguage;
+            }
+        });
+    checkRemoteResultLocked(r);
+    return subLanguage;
+}
+
+bool SubtitleServerClient::setSubLanguage(std::string lang) {
+    Mutex::Autolock _l(mLock);
+    if (mRemote == nullptr) {
+        initRemoteLocked();
+    }
+
+    auto r = mRemote->setLanguage(mSessionId, lang);
+    checkRemoteResultLocked(r);
+    return r.isOk();
+}
+
 int SubtitleServerClient::getSubType() {
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {

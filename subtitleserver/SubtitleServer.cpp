@@ -286,6 +286,15 @@ Return<void> SubtitleServer::getLanguage(int32_t sId, getLanguage_cb _hidl_cb) {
     return Void();
 }
 
+Return<Result> SubtitleServer::setLanguage(int32_t sId, const hidl_string& lang) {
+    std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
+    ALOGV("%s ss=%p setLanguage=%s", __func__, ss.get(), lang.c_str());
+
+    if (ss != nullptr) {
+        ss->setLanguage(lang);
+    }
+    return Result {};
+}
 
 Return<Result> SubtitleServer::setSubType(int32_t sId, int32_t type) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);

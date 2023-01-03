@@ -370,6 +370,27 @@ static void nativeSetSubType(JNIEnv* env, jclass clazz, jint type) {
     }
 }
 
+static jstring nativeGetSubLanguage(JNIEnv* env, jclass clazz, jint idx) {
+    if (getJniContext()->mSubContext != nullptr) {
+        std::string val;
+        val = getJniContext()->mSubContext->getSubLanguage(idx);
+        return env->NewStringUTF(val.c_str());
+    } else {
+        ALOGE("Subtitle Connection not established");
+    }
+    return env->NewStringUTF("");
+}
+
+static void nativeSetSubLanguage(JNIEnv* env, jclass clazz, jstring jlang) {
+    if (getJniContext()->mSubContext != nullptr) {
+        const char *lang = env->GetStringUTFChars(jlang, nullptr);
+        getJniContext()->mSubContext->setSubLanguage(lang);
+        env->ReleaseStringUTFChars(jlang, lang);
+    } else {
+        ALOGE("Subtitle Connection not established");
+    }
+}
+
 static void nativeSetSctePid(JNIEnv* env, jclass clazz, jint pid) {
     if (getJniContext()->mSubContext != nullptr) {
         getJniContext()->mSubContext->setSubPid(pid);
@@ -546,6 +567,8 @@ static JNINativeMethod SubtitleManager_Methods[] = {
     {"nativeInnerSubtitles", "()I", (void *)nativeInnerSubtitles},
     {"nativeGetSubType", "()I", (void *)nativeGetSubType},
     {"nativeSetSubType", "(I)V", (void *)nativeSetSubType},
+    {"nativeGetSubLanguage", "(I)Ljava/lang/String;", (void *)nativeGetSubLanguage},
+    {"nativeSetSubLanguage", "(Ljava/lang/String;)V", (void *)nativeSetSubLanguage},
     {"nativeSetPlayerType", "(I)V", (void *)nativeSetPlayerType},
     {"nativeSetSctePid", "(I)V", (void *)nativeSetSctePid},
     {"nativeSetSubPid", "(III)V", (void *)nativeSetSubPid},
