@@ -419,6 +419,8 @@ bool SubtitleService::stopSubtitle() {
     mSubtiles = nullptr;
     mSubParam.subType = TYPE_SUBTITLE_INVALID;
     mSubParam.dtvSubType = DTV_SUB_INVALID;
+    mSubParam.dtvkitDvbParam.ancillaryId = 0;
+    mSubParam.dtvkitDvbParam.compositionId = 0;
     return true;
 }
 
