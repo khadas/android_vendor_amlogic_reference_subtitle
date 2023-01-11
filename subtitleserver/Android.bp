@@ -145,6 +145,7 @@ cc_binary {
     "-Wno-unused-function",
     "-Werror=format-security",
     "-Werror=array-bounds",
+    "-Wno-error=implicit-function-declaration",
     "-Wno-unused-variable",
     "-Wno-unused-parameter",
     "-DNEED_CACHE_ZVBI_STATUS",
