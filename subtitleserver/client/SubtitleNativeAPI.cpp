@@ -15,6 +15,7 @@
 
 #define DEBUG_CALL 0
 #define DEBUG_SESSION 0
+#define INVALID_PIP_ID -1
 
 using ::android::CallStack;
 using ::android::sp;
@@ -349,6 +350,7 @@ int amlsub_GetParameter(AmlSubtitleHnd handle, AmlSubtitleParamCmd cmd, void *va
 
 AmlSubtitleStatus amlsub_SetPip(AmlSubtitleHnd handle, AmlSubtitlePipMode mode, int value) {
     if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    if (value == INVALID_PIP_ID) return SUB_STAT_INV;
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
