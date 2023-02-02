@@ -19,6 +19,8 @@ static std::shared_ptr<Parser> ParserFactory::create(
             return std::shared_ptr<Parser>(new DemoParser(source));
         case TYPE_SUBTITLE_DVB:
             return std::shared_ptr<Parser>(new DemoParser(source));
+        case TYPE_SUBTITLE_ARIB_B24:
+            return std::shared_ptr<Parser>(new DemoParser(source));
         case TYPE_SUBTITLE_TMD_TXT:
             return std::shared_ptr<Parser>(new DemoParser(source));
         case TYPE_SUBTITLE_IDX_SUB:

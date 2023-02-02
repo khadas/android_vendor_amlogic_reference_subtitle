@@ -48,6 +48,9 @@ Subtitle::Subtitle(bool isExtSub, int trackId, ParserEventNotifier *notifier) :
     mSubPrams->dtvkitDvbParam.ancillaryId = 0;
     mSubPrams->dtvkitDvbParam.compositionId= 0;
 
+    mSubPrams->dtvkitArib24Param.demuxId = 0;
+    mSubPrams->dtvkitArib24Param.pid= 0;
+
     mPresentation = std::shared_ptr<Presentation>(new Presentation(nullptr));
 }
 
@@ -306,6 +309,8 @@ void Subtitle::run() {
                     mParser->updateParameter(TYPE_SUBTITLE_DVB_TELETEXT, &mSubPrams->ttParam);
                 } else if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_SCTE27) {
                     mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_SCTE27, &mSubPrams->scteParam);
+                } else if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_ARIB_B24) {
+                    mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_ARIB_B24, &mSubPrams->dtvkitArib24Param);
                 }
             }
             break;

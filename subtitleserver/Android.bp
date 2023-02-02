@@ -70,6 +70,7 @@ cc_binary {
     "subtitle/Subtitle.cpp",
     "subtitle/Presentation.cpp",
     "subtitle/parser/ParserFactory.cpp",
+    "subtitle/parser/AribB24Parser.cpp",
     "subtitle/parser/AssParser.cpp",
     "subtitle/parser/PgsParser.cpp",
     "subtitle/parser/DvbParser.cpp",
@@ -174,6 +175,7 @@ cc_binary {
 
   static_libs: [
     "libzvbi_static",
+    "libaribcaption_static",
     "libicuuc_stubdata_product",
     "libicuuc_product",
     "libicui18n_product",

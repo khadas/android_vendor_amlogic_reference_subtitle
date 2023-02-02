@@ -248,7 +248,7 @@ static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid, int flag)
         } else {
           pesp.flags= DMX_SUBTITLE_NO_SEC;
         }
-        if (12 == DemuxSource::getCurrentInstance()->mSubType) {
+        if (TYPE_SUBTITLE_DTVKIT_DVB == DemuxSource::getCurrentInstance()->mSubType) {
             ALOGE("[open_dmx] dvb demux");
             pesp.pes_type = DMX_PES_SUBTITLE;
             pesp.input = DMX_IN_FRONTEND;
@@ -256,7 +256,7 @@ static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid, int flag)
             if (ret != AM_SUCCESS)
                 goto error;
             ALOGE("[open_dmx]AM_DMX_SetPesFilter");
-        } else if (13 == DemuxSource::getCurrentInstance()->mSubType) {
+        } else if (TYPE_SUBTITLE_DTVKIT_TELETEXT == DemuxSource::getCurrentInstance()->mSubType) {
             ALOGE("[open_dmx] teletext demux");
             pesp.pes_type = DMX_PES_SUBTITLE;//DMX_PES_TELETEXT;
             pesp.input = DMX_IN_FRONTEND;
@@ -264,7 +264,7 @@ static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid, int flag)
             if (ret != AM_SUCCESS)
                 goto error;
             ALOGE("[open_dmx]AM_DMX_SetPesFilter");
-        } else if (14 == DemuxSource::getCurrentInstance()->mSubType) {
+        } else if (TYPE_SUBTITLE_DTVKIT_SCTE27 == DemuxSource::getCurrentInstance()->mSubType) {
             //the scte27 data is section
             ALOGE("[open_dmx] scte27 demux: start section filter");
             memset(&param, 0, sizeof(param));
@@ -276,6 +276,15 @@ static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid, int flag)
             if (ret != AM_SUCCESS) {
                 goto error;
             }
+        } else if (TYPE_SUBTITLE_DTVKIT_ARIB_B24 == DemuxSource::getCurrentInstance()->mSubType) {
+            //the arib data is section
+            ALOGE("[open_dmx] arib24 demux");
+            pesp.pes_type = DMX_PES_SUBTITLE;
+            pesp.input = DMX_IN_FRONTEND;
+            ret = AM_DMX_SetPesFilter(dmx_id, data->filter_handle, &pesp);
+            if (ret != AM_SUCCESS)
+                goto error;
+            ALOGE("[open_dmx]AM_DMX_SetPesFilter");
         }
 
         ret = AM_DMX_SetCallback(dmx_id, data->filter_handle, pes_data_cb, data);
@@ -360,6 +369,15 @@ void DemuxSource::updateParameter(int type, void *data) {
         mDemuxId = pScteParam->demuxId;
         mPid = pScteParam->SCTE27_PID;
         mSecureLevelFlag = pScteParam->flag;
+    } else if (TYPE_SUBTITLE_DTVKIT_ARIB_B24 == type) {
+        DtvKitArib24Param *pArib24Param = (DtvKitArib24Param* )data;
+        if ((mState == E_SOURCE_STARTED) && (mPid != pArib24Param->pid)) {
+              restartDemux = true;
+        }
+        mDemuxId = pArib24Param->demuxId;
+        mPid = pArib24Param->pid;
+        mSecureLevelFlag = pArib24Param->flag;
+        mParam1 = pArib24Param->languageCodeId;
     }
     ALOGE(" in updateParameter restartDemux=%d ",restartDemux);
     mSubType = type;

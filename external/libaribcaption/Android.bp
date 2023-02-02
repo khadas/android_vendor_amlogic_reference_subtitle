@@ -1,0 +1,129 @@
+// TODO: link dvb
+// *** THIS PACKAGE HAS SPECIAL LICENSING CONDITIONS.  PLEASE
+//     CONSULT THE OWNERS AND opensource-licensing@google.com BEFORE
+//     DEPENDING ON IT IN YOUR PROJECT. ***
+package {
+    default_applicable_licenses: [
+        "vendor_amlogic_reference_subtitle_external_libaribcaption_src_license",
+    ],
+}
+
+// Added automatically by a large-scale-change that took the approach of
+// 'apply every license found to every target'. While this makes sure we respect
+// every license restriction, it may not be entirely correct.
+//
+// e.g. GPL in an MIT project might only apply to the contrib/ directory.
+//
+// Please consider splitting the single license below into multiple licenses,
+// taking care not to lose any license_kind information, and overriding the
+// default license using the 'licenses: [...]' property on targets as needed.
+//
+// For unused files, consider creating a 'fileGroup' with "//visibility:private"
+// to attach the license to, and including a comment whether the files may be
+// used in the current project.
+//
+// large-scale-change included anything that looked like it might be a license
+// text as a license_text. e.g. LICENSE, NOTICE, COPYING etc.
+//
+// Please consider removing redundant or irrelevant files from 'license_text:'.
+// See: http://go/android-license-faq
+license {
+    name: "vendor_amlogic_reference_subtitle_external_libaribcaption_src_license",
+    visibility: [":__subpackages__"],
+    license_kinds: [
+        "SPDX-license-identifier-Apache-2.0",
+        "SPDX-license-identifier-BSD",
+        "SPDX-license-identifier-FTL",
+        "SPDX-license-identifier-GPL",
+        "SPDX-license-identifier-GPL-2.0",
+        "SPDX-license-identifier-LGPL",
+        "SPDX-license-identifier-LGPL-2.1",
+        "SPDX-license-identifier-MIT",
+        "legacy_by_exception_only", // by exception only
+        "legacy_notice",
+        "legacy_unencumbered",
+    ],
+}
+
+cc_library_static {
+    vendor_available: true,
+    name: "libaribcaption_static",
+
+    srcs: [
+        "src/base/aligned_alloc.cpp",
+        "src/base/logger.cpp",
+        "src/base/md5.c",
+        "src/base/tinyxml2.cpp",
+        "src/common/caption_capi.cpp",
+        "src/common/context.cpp",
+        "src/common/context_capi.cpp",
+        "src/decoder/b24_codesets.cpp",
+        "src/decoder/b24_colors.cpp",
+        "src/decoder/b24_drcs_conv.cpp",
+        "src/decoder/decoder.cpp",
+        "src/decoder/decoder_capi.cpp",
+        "src/decoder/decoder_impl.cpp",
+    ],
+
+    cflags: [
+        "-Werror", // Must keep this, never allow remove this flag!
+        "-Wno-unused-parameter",
+        "-Wno-unused-function",
+        "-Wno-unused-variable",
+        "-Wno-implicit-fallthrough",
+        "-Wno-invalid-source-encoding", // not throw this when saw utf8 name
+        "-D_REENTRANT",
+        "-D_GNU_SOURCE",
+        "-DENABLE_DVB=1",
+        "-DENABLE_V4L=1",
+        "-DENABLE_V4L2=1",
+        "-DHAVE_ICONV=1",
+        "-DANDROID",
+        "-DARIBCC_USE_FONTCONFIG",
+        "-DARIBCC_USE_FREETYPE",
+        "-DARIBCC_IS_ANDROID",
+    ],
+
+    clang_cflags: ["-Wno-error=tautological-pointer-compare"],
+
+    arch: {
+        arm: {
+            instruction_set: "arm",
+        },
+    },
+
+    export_include_dirs: [
+        "include",
+        "src",
+    ],
+
+    shared_libs: [
+       "liblog",
+    ],
+}
+
+cc_library_shared {
+    vendor: true,
+    name: "libaribcaption",
+    compile_multilib: "both",
+
+    arch: {
+        x86: {
+            enabled: false,
+        },
+        x86_64: {
+            enabled: false,
+        },
+    },
+
+    shared_libs: [
+       "liblog",
+    ],
+
+    export_include_dirs: ["include"],
+
+    whole_static_libs: [
+       "libaribcaption_static",
+    ],
+
+}

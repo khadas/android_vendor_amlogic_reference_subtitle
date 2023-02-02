@@ -29,6 +29,7 @@ static AmlSubDataType __mapServerType2ApiType(int type) {
     case TYPE_SUBTITLE_EXTERNAL:
     case TYPE_SUBTITLE_MKV_STR:
     case TYPE_SUBTITLE_SSA:
+    case TYPE_SUBTITLE_ARIB_B24:
         return SUB_DATA_TYPE_STRING;
 
     case TYPE_SUBTITLE_CLOSED_CAPTION:
@@ -51,6 +52,8 @@ static int __mapApiType2SubtitleType(int type) {
         return DTV_SUB_DTVKIT_TELETEXT;
     case TYPE_SUBTITLE_SCTE27:
         return DTV_SUB_DTVKIT_SCTE27;
+    case TYPE_SUBTITLE_ARIB_B24:
+        return TYPE_SUBTITLE_DTVKIT_ARIB_B24;
     }
     //default:
     return type;

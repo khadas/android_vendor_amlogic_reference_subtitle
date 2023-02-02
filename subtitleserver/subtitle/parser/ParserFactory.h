@@ -83,6 +83,8 @@ typedef enum {
     DTV_SUB_DTVKIT_DVB         =5,
     DTV_SUB_DTVKIT_TELETEXT = 6,
     DTV_SUB_DTVKIT_SCTE27    = 7,
+    DTV_SUB_ARIB24    = 8,
+    DTV_SUB_DTVKIT_ARIB24    = 9,
 } DtvSubtitleType;
 
 enum VideoFormat {
@@ -113,6 +115,13 @@ typedef struct {
    int compositionId = 0;
    int ancillaryId = 0;
 }DtvKitDvbParam;
+
+typedef struct {
+   int demuxId = 0;
+   int pid = 0;
+   int flag = 0;
+   int languageCodeId = 0;
+}DtvKitArib24Param;
 
 typedef struct {
    int demuxId = 0;
@@ -225,6 +234,7 @@ struct SubtitleParamType {
     int mediaId;
 
     int idxSubTrackId; // only for idxsub
+    DtvKitArib24Param dtvkitArib24Param; //the pes pid for filter subtitle data from demux
     DtvKitDvbParam dtvkitDvbParam; //the pes pid for filter subtitle data from demux
     SubtitleParamType() : playerId(0), mediaId(-1), idxSubTrackId(0) {
         subType = TYPE_SUBTITLE_INVALID;
@@ -247,6 +257,9 @@ struct SubtitleParamType {
                 break;
             case DTV_SUB_DTVKIT_SCTE27:
                 subType = TYPE_SUBTITLE_DTVKIT_SCTE27;
+                break;
+            case DTV_SUB_DTVKIT_ARIB24:
+                subType = TYPE_SUBTITLE_DTVKIT_ARIB_B24;
                 break;
             default:
                 break;
