@@ -132,20 +132,16 @@ int UserDataAfd::stop() {
     LOGI("stopUserData");
     // TODO: should impl a real status/notify manner
     // this is too simple...
-    {
-        std::unique_lock<std::mutex> autolock(mMutex);
-        if (mThread == nullptr) {
-            return -1;
-        }
-    }
-    AM_EVT_Unsubscribe(USERDATA_DEVICE_NUM, AM_USERDATA_EVT_AFD, afd_evt_callback, NULL);
-    if ((mMode & AM_USERDATA_MODE_CC) ==  AM_USERDATA_MODE_CC)
-        AM_USERDATA_Close(USERDATA_DEVICE_NUM);
     std::unique_lock<std::mutex> autolock(mMutex);
     if (mThread != nullptr) {
         mThread->join();
         mThread = nullptr;
+    } else {
+        return -1;
     }
+    AM_EVT_Unsubscribe(USERDATA_DEVICE_NUM, AM_USERDATA_EVT_AFD, afd_evt_callback, NULL);
+    if ((mMode & AM_USERDATA_MODE_CC) ==  AM_USERDATA_MODE_CC)
+        AM_USERDATA_Close(USERDATA_DEVICE_NUM);
     return 0;
 }
 
