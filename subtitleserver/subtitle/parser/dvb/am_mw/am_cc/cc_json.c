@@ -1000,6 +1000,9 @@ dtvcc_window_to_json (struct tvcc_decoder *td, struct dtvcc_window *win, Output 
 	if (o_str_prop(out, "scroll_direction", direction_to_str(win->style.scroll_direction)) < 0)
 		return -1;
 
+	o_bool_prop(out, "rollup", win->style.need_rollup);
+	o_int_prop(out, "curr_row", win->style.curr_row);
+
 	if (o_bool_prop(out, "wordwrap", win->style.wordwrap) < 0)
 		return -1;
 

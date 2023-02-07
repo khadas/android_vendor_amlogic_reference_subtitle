@@ -578,7 +578,7 @@ static int aml_process_scte_userdata(AM_USERDATA_Device_t *dev, uint8_t *data, i
 #endif
 
 	flags = meta_info->flags;
-	pts = meta_info->vpts;
+	pts = 0;//meta_info->vpts;
 
 	if (ud->scte_enable != 1)
 		return len;
