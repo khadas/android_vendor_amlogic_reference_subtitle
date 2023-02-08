@@ -659,7 +659,9 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                     }
 
                    // fire this. can be more than required
-                   mLooper->sendMessageDelayed(ms2ns(100), this, Message(MSG_PTS_TIME_CHECK_SPU));
+                   //set 15ms, because the cc is synize with the video frrame.And the max video fps is 60.
+                   //So there is a cc in the video frame coming up in each 15ms .
+                   mLooper->sendMessageDelayed(ms2ns(15), this, Message(MSG_PTS_TIME_CHECK_SPU));
                 } else {
                     ALOGE("Error! should not nullptr here!");
                 }

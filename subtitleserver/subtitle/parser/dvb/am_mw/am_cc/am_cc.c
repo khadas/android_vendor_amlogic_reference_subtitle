@@ -634,7 +634,7 @@ static int am_cc_render(AM_CC_Decoder_t *cc)
 				AM_DEBUG(AM_DEBUG_LEVEL, "render_thread pts gap large than 0, value %d", decode_time_gap);
 				has_data_to_render = 0;
 				node = node->json_chain_next;
-				continue;
+				break;
 			}
 			AM_DEBUG(AM_DEBUG_LEVEL, "render_thread pts in range, node->pts %x videopts %x", node->pts, cc->video_pts);
 		}
@@ -1120,7 +1120,7 @@ static void *am_cc_render_thread(void *arg)
 		if (cc->curr_data_mask & (1 << cc->vbi_pgno)) {
 			nodata = 0;
 			last   = now;
-		} else if ((now - last) > 14000) {
+		} else if ((now - last) > 10000 && nodata ==0) {
 			last = now;
 			AM_DEBUG(0, "cc render thread: No data now.");
 			if ((cc->vbi_pgno < AM_CC_CAPTION_TEXT1) || (cc->vbi_pgno > AM_CC_CAPTION_TEXT4)) {
