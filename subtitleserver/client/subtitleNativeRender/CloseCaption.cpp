@@ -11,6 +11,12 @@
 
 #include "MyLog.h"
 
+//#define CC_LEFT_ALIGNED
+#ifdef CC_LEFT_ALIGNED
+#define CC_VERTICAL_POSITION_MIN 82
+#define CC_VERTICAL_POSITION_MAX 85
+#endif
+
 namespace Amlogic {
 namespace NativeRender {
 namespace CloseCaption {
@@ -55,6 +61,11 @@ Configure::Configure() {
 
 static bool gDebug = true;
 static bool gDump = true;
+
+#ifdef CC_LEFT_ALIGNED
+static bool mHorizontalAlign = true;
+static bool mVerticalAlign = true;
+#endif
 
 void CaptionScreen::updateScreen(int w, int h) {
     //Safe title must be calculated using video width and height.
@@ -136,8 +147,23 @@ double CaptionScreen::getWindowLeftTopY(bool anchorRelative, int anchorV, int an
         /* mAnchorV is vertical steps */
         offset = mSafeTitleHeight * anchorV / mAnchorVertical + mSafeTitleTop;
     } else {
+        #ifndef CC_LEFT_ALIGNED
         /* mAnchorV is percentage */
         offset = mSafeTitleHeight * anchorV / 100 + mSafeTitleTop;
+        #else
+        if (mVerticalAlign) {
+            if (anchorV < CC_VERTICAL_POSITION_MIN) {
+                offset = mSafeTitleHeight * CC_VERTICAL_POSITION_MIN / 100 + mSafeTitleTop;
+            } else if (anchorV > CC_VERTICAL_POSITION_MAX) {
+                offset = mSafeTitleHeight * CC_VERTICAL_POSITION_MAX / 100 + mSafeTitleTop;
+            } else {
+                offset = mSafeTitleHeight * anchorV / 100 + mSafeTitleTop;
+            }
+        } else {
+            /* mAnchorV is percentage */
+            offset = mSafeTitleHeight * anchorV / 100 + mSafeTitleTop;
+        }
+        #endif
     }
 
     switch (anchorPoint) {
@@ -322,7 +348,7 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
 
 
     ALOGD("win.mWindowRight:%f, mStringLengthOnPaint:%f", win.mWindowRight, mStringLengthOnPaint);
-
+    #ifndef CC_LEFT_ALIGNED
     if (ignoreCaseCompare(win.mJustify, "left")) {
         if (row.mPriorStrPositionForDraw == -1) {
             row.mPriorStrPositionForDraw = (win.mWindowRight - mStringLengthOnPaint)/2;
@@ -364,6 +390,59 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
         mStrRight = mStrLeft + mStringLengthOnPaint;
         row.mPriorStrPositionForDraw = mStrRight;
     }
+
+    #else
+    if (mHorizontalAlign) {
+        /* default using left justfication */
+        if (row.mPriorStrPositionForDraw == -1) {
+            row.mPriorStrPositionForDraw = win.mWindowStartX + mStrStartX;
+        }
+        ALOGD("%s mPriorStrPositionForDraw=%f winStartX:%f, strStartX:%f", __func__, row.mPriorStrPositionForDraw, win.mWindowStartX, mStrStartX);
+        mStrLeft = row.mPriorStrPositionForDraw;
+        mStrRight = mStrLeft + mStringLengthOnPaint;
+        row.mPriorStrPositionForDraw = mStrRight;
+    } else {
+        if (ignoreCaseCompare(win.mJustify, "left")) {
+            if (row.mPriorStrPositionForDraw == -1) {
+                row.mPriorStrPositionForDraw = (win.mWindowRight - mStringLengthOnPaint)/2;
+            }
+            ALOGD_IF(gDebug, "%s mPriorStrPositionForDraw=%f winStartX:%f, strStartX:%f", __func__, row.mPriorStrPositionForDraw, win.mWindowStartX, mStrStartX);
+            mStrLeft = row.mPriorStrPositionForDraw;
+            mStrRight = mStrLeft + mStringLengthOnPaint;
+            row.mPriorStrPositionForDraw = mStrRight;
+        } else if (ignoreCaseCompare(win.mJustify, "right")) {
+            if (row.mPriorStrPositionForDraw == -1) {
+                row.mPriorStrPositionForDraw = win.mWindowStartX + win.mWindowWidth;
+            }
+            mStrRight = row.mPriorStrPositionForDraw;
+            mStrLeft = mStrRight - mStringLengthOnPaint;
+            row.mPriorStrPositionForDraw = mStrLeft;
+        } else if (ignoreCaseCompare(win.mJustify, "full")) {
+            if (row.mPriorStrPositionForDraw == -1) {
+                row.mPriorStrPositionForDraw = win.mWindowStartX;
+            }
+
+            mStrLeft = row.mPriorStrPositionForDraw;
+            mStrRight = mStrLeft + row.mCharacterGap * mStrCharactersCount;
+            row.mPriorStrPositionForDraw = mStrRight;
+        } else if (ignoreCaseCompare(win.mJustify, "center")) {
+            if (row.mPriorStrPositionForDraw == -1) {
+                row.mPriorStrPositionForDraw = (win.mWindowWidth - row.mRowLengthOnPaint)/2 + win.mWindowStartX;
+            }
+            mStrLeft = row.mPriorStrPositionForDraw;
+            mStrRight = mStrLeft + mStringLengthOnPaint;
+            row.mPriorStrPositionForDraw = mStrRight;
+        } else {
+            /* default using left justfication */
+            if (row.mPriorStrPositionForDraw == -1) {
+                row.mPriorStrPositionForDraw = win.mWindowStartX + mStrStartX;
+            }
+            mStrLeft = row.mPriorStrPositionForDraw;
+            mStrRight = mStrLeft + mStringLengthOnPaint;
+            row.mPriorStrPositionForDraw = mStrRight;
+        }
+    }
+    #endif
 
     /* Draw background, a rect, if opacity == 0, skip it */
     if (mStrBottom < mConfig->getScreen()->mSafeTitleTop + mConfig->getScreen()->mMaxFontHeight) {
@@ -525,6 +604,12 @@ Rows::Rows(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Value &r
 
     double singleCharWidth = (mVersion==CC_VER_CEA708) ?
             mConfig->mWindowMaxFontSize : mConfig->getScreen()->mFixedCharWidth;
+    #ifdef
+    // mRowStartX will effect cc frame position, need ignore it
+    if (mHorizontalAlign) {
+        mRowStartX = 0.0;
+    }
+    #endif
 
     for (int i=0; i<mStrCount; i++) {
         RowString row(ver, mConfig, mRowArray[i]);
@@ -871,6 +956,12 @@ void Window::dump(std :: string prefix) {
 
 CloseCaption::CloseCaption(std::shared_ptr<Configure> config) {
     mConfig = config;
+
+    #ifdef CC_LEFT_ALIGNED
+    mHorizontalAlign = property_get_bool("system.subtitle.horizontal.align.flag", true);
+    mVerticalAlign = property_get_bool("system.subtitle.vertical.align.flag", true);
+    #endif
+
 }
 
 bool CloseCaption::parserJson(const char*str) {
