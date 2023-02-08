@@ -84,8 +84,6 @@ cc_library_static {
         "-DARIBCC_IS_ANDROID",
     ],
 
-    clang_cflags: ["-Wno-error=tautological-pointer-compare"],
-
     arch: {
         arm: {
             instruction_set: "arm",
