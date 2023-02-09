@@ -10,6 +10,7 @@
 #include "SkTextBox.h"
 
 #include "MyLog.h"
+#include <cutils/properties.h>
 
 //#define CC_LEFT_ALIGNED
 #ifdef CC_LEFT_ALIGNED
@@ -604,7 +605,7 @@ Rows::Rows(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Value &r
 
     double singleCharWidth = (mVersion==CC_VER_CEA708) ?
             mConfig->mWindowMaxFontSize : mConfig->getScreen()->mFixedCharWidth;
-    #ifdef
+    #ifdef CC_LEFT_ALIGNED
     // mRowStartX will effect cc frame position, need ignore it
     if (mHorizontalAlign) {
         mRowStartX = 0.0;
