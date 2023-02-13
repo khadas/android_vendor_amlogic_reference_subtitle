@@ -438,6 +438,7 @@ bool SubtitleService::stopSubtitle() {
     mSubParam.dtvSubType = DTV_SUB_INVALID;
     mSubParam.dtvkitDvbParam.ancillaryId = 0;
     mSubParam.dtvkitDvbParam.compositionId = 0;
+    mSubParam.dtvkitArib24Param.languageCodeId = 0;
     return true;
 }
 

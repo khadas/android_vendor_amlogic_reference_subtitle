@@ -50,6 +50,15 @@
 #define HIGH_32_BIT_PTS 0xFFFFFFFF
 #define TSYNC_32_BIT_PTS 0xFFFFFFFF
 
+#define CLOCK_FREQ INT64_C(1000000)
+#if (CLOCK_FREQ % 1000) == 0
+#define ARIB_B24_TICK_FROM_MS(ms)  ((CLOCK_FREQ / INT64_C(1000)) * (ms))
+#elif (1000 % CLOCK_FREQ) == 0
+#define ARIB_B24_TICK_FROM_MS(ms)  ((ms)  / (INT64_C(1000) / CLOCK_FREQ))
+#else /* rounded overflowing conversion */
+#define ARIB_B24_TICK_FROM_MS(ms)  (CLOCK_FREQ * (ms) / 1000)
+#endif /* CLOCK_FREQ / 1000 */
+
 bool static inline isMore32Bit(int64_t pts) {
     if (((pts >> 32) & HIGH_32_BIT_PTS) > 0) {
         return true;
@@ -297,8 +306,12 @@ int AribB24Parser::aribB24DecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *src
     spu->spu_start_x = 0;
     spu->spu_start_y = 0;
     //default spu display in windows width and height
-    spu->spu_origin_display_w = 720;
-    spu->spu_origin_display_h = 576;
+    //Since the underlying rendering of arib b24 subtitles is a picture,
+    //font files need to be built in the vendor partition,
+    //so first comment out the relevant code and give up the picture rendering
+    //spu->spu_origin_display_w = 720;
+    //spu->spu_origin_display_h = 576;
+    spu->isSimpleText = true;
     aribcc_caption_t caption;
     aribcc_decode_status_t status = aribcc_decoder_decode(mContext->p_decoder, buf, bufSize, spu->pts, &caption);
     if (status == ARIBCC_DECODE_STATUS_ERROR) {
@@ -320,8 +333,14 @@ int AribB24Parser::aribB24DecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *src
         str = caption.text;
         LOGD(" %s aribcc_decoder_decode() str:%s\n", __FUNCTION__, str.c_str());
         spu->buffer_size = str.length();
+        if (caption.wait_duration == ARIBCC_DURATION_INDEFINITE) {
+            //p_spu->b_ephemer = true;
+            spu->isImmediatePresent = true;
+        } else {
+            spu->m_delay = spu->pts + ARIB_B24_TICK_FROM_MS(caption.wait_duration);
+        }
         pbuf = (uint32_t *)malloc(str.length());
-        LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, pbuf, spu->buffer_size);
+        LOGI("@@[%s::%d]malloc ptr=%p, size=%d spu->m_delay:%lld caption.pts:%lld caption.wait_duration:%lld\n", __FUNCTION__, __LINE__, pbuf, spu->buffer_size, spu->m_delay, caption.pts, caption.wait_duration);
         if (!pbuf) {
             LOGE("%s fail \n", __FUNCTION__);
             free(pbuf);

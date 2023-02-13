@@ -50,6 +50,7 @@ Subtitle::Subtitle(bool isExtSub, int trackId, ParserEventNotifier *notifier) :
 
     mSubPrams->dtvkitArib24Param.demuxId = 0;
     mSubPrams->dtvkitArib24Param.pid= 0;
+    mSubPrams->dtvkitArib24Param.languageCodeId = 0;
 
     mPresentation = std::shared_ptr<Presentation>(new Presentation(nullptr));
 }
