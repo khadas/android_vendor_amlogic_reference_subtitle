@@ -36,13 +36,32 @@ std::shared_ptr<ExtSubItem> SubViewer2::decodedItem() {
 
     while (mReader->getLine(line)) {
         if (sscanf(line, "{T %d:%d:%d:%d %[^\n\r]", &a1, &a2, &a3, &a4, text) < 5) {
-            continue;
+            if (sscanf(line, "{T %d:%d:%d:%d", &a1, &a2, &a3, &a4) < 4)
+            {
+                continue;
+            }
+            mReader->getLine(text);
         }
 
         std::shared_ptr<ExtSubItem> item = std::shared_ptr<ExtSubItem>(new ExtSubItem());
         item->start = a1 * 360000 + a2 * 6000 + a3 * 100 + a4 / 10;
         item->end = item->start + 200;
         item->lines.push_back(std::string(text));
+
+        if (mReader->getLine(line)) {
+            if (sscanf(line, "{T %d:%d:%d:%d", &a1, &a2, &a3, &a4) < 4) {
+                if (mReader->getLine(line)) {
+                    if (sscanf(line, "{T %d:%d:%d:%d", &a1, &a2, &a3, &a4) == 4) {
+                        item->end = a1 * 360000 + a2 * 6000 + a3 * 100 + a4 / 10;
+                    }
+                    mReader->backtoLastLine();
+                }
+            }else {
+                item->end = a1 * 360000 + a2 * 6000 + a3 * 100 + a4 / 10;
+                mReader->backtoLastLine();
+            }
+        }
+
         free(line);
         free(text);
 

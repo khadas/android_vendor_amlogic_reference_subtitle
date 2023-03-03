@@ -38,6 +38,7 @@ ExtSubStreamReader::ExtSubStreamReader(int charset, std::shared_ptr<DataSource> 
 
     mBufferSize = 0;
     mFileRead = 0;
+    mLastLineLen = 0;
 
 
     mDataSource->lseek(0, SEEK_SET);
@@ -96,6 +97,7 @@ bool ExtSubStreamReader::rewindStream() {
     if (mDataSource != nullptr && mDataSource->lseek(0, SEEK_SET) > 0) {
         mBufferSize = 0;
         mFileRead = 0;
+        mLastLineLen = 0;
         free(mBuffer);
         mBuffer = nullptr;
         return true;
@@ -309,6 +311,7 @@ char *ExtSubStreamReader::getLine(char *s/*, int fd*/) {
         }
 
         mFileRead = 0;
+        mLastLineLen = 0;
         offset = 0;
         mBufferSize = mDataSource->read(mBuffer, LINE_LEN);
     }
@@ -372,6 +375,7 @@ char *ExtSubStreamReader::getLine(char *s/*, int fd*/) {
             //ALOGD("found: %p %s lineLen=%d [%d %d] \n", mBuffer + mFileRead, s, lineLen, offset, mFileRead);
 
             // eat the last newline!
+            mLastLineLen = lineLen + lineCharLen;
             mFileRead = offset + lineCharLen;
             break;
         } else {
@@ -381,6 +385,7 @@ char *ExtSubStreamReader::getLine(char *s/*, int fd*/) {
                 ALOGE("Error! line is too long( > %d byte), ignore", LINE_LEN);
                 free(mBuffer);
                 mBufferSize = mFileRead = 0;
+                mLastLineLen = 0;
                 mBuffer = nullptr;
                 return nullptr;
             }
@@ -394,6 +399,7 @@ char *ExtSubStreamReader::getLine(char *s/*, int fd*/) {
                 // resume check again...
                 mBufferSize = remainderSize + read;
                 mFileRead = offset = 0;
+                mLastLineLen = 0;
                 ALOGD("read more: %d", read);
                 continue;
             } else {
@@ -404,6 +410,7 @@ char *ExtSubStreamReader::getLine(char *s/*, int fd*/) {
                     s[lineLen] = '\0';
                     free(mBuffer);
                     mBufferSize = mFileRead = 0;
+                    mLastLineLen = 0;
                     mBuffer = nullptr;
                     ALOGE("End of line found!");
                     break;
@@ -426,5 +433,13 @@ char *ExtSubStreamReader::getLine(char *s/*, int fd*/) {
         return nullptr;
     }
 }
+void ExtSubStreamReader::backtoLastLine() {
+    if (mFileRead  > mLastLineLen) {
+        mFileRead = mFileRead - mLastLineLen;
+    }
+    else
+        mFileRead = 0;
+}
+
 
 

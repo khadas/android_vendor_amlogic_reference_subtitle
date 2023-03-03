@@ -100,6 +100,7 @@ public:
     char *strIStr(const char *haystack, const char *needle);
     void trimSpace(char *s) ;
     char *getLine(char *s/*, int fd*/);
+    void backtoLastLine();
     bool rewindStream();
     size_t totalStreamSize();
 
@@ -110,6 +111,7 @@ private:
     char *mBuffer;
     int mBufferSize;
     unsigned mFileRead;
+    unsigned mLastLineLen;
     std::shared_ptr<DataSource> mDataSource;
     int mEncoding;
     size_t mStreamSize;
