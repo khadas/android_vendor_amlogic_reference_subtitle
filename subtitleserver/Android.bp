@@ -176,9 +176,6 @@ cc_binary {
   static_libs: [
     "libzvbi_static",
     "libaribcaption_static",
-    "libicuuc_stubdata_product",
-    "libicuuc_product",
-    "libicui18n_product",
   ],
 
   shared_libs: [

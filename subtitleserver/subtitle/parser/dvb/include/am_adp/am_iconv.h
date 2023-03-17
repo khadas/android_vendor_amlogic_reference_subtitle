@@ -24,8 +24,8 @@ extern "C"
 {
 #endif
 
-#define USE_VENDOR_ICU
-#if 1 //def ANDROID
+//#define USE_VENDOR_ICU
+#if USE_VENDOR_ICU
 #include <malloc.h>
 #include <unicode/ucnv.h>
 #include <unicode/putil.h>
