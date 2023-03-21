@@ -2289,7 +2289,10 @@ bool TeletextParser::handleControl() {
 int TeletextParser::convertPageDecimal2Hex(int magazine, int page) {
     LOGI("%s, magazine:%d, page:%d\n", __FUNCTION__, magazine, page);
     int pageNum;
-    if (magazine == 0) {
+    if (magazine < TELETEXT_MIN_MAGAZINE_NUMBER ||  magazine > TELETEXT_MAX_MAGAZINE_NUMBER || page < TELETEXT_MIN_SUBPAGE_NUMBER || page > TELETEXT_MAX_SUBPAGE_NUMBER ) {
+        LOGE("%s, Page number parameter input error, corrected to default page 100\n", __FUNCTION__);
+        pageNum = 100;
+    } else if (magazine == TELETEXT_MIN_MAGAZINE_NUMBER) {
        pageNum = 800 + vbi_bcd2dec(page);
     } else {
        // pageNum = magazine * 100 + page;
@@ -2351,7 +2354,7 @@ int TeletextParser::initContext() {
     mContext->subPageNum = AM_TT2_ANY_SUBNO;
     mContext->pageState = TT2_DISPLAY_STATE;
     mContext->searchDir = 1;
-    mContext->gotoPage = 0;
+    mContext->gotoPage = 100;
     //1:transparent 0:black default transparent
     mContext->transparentBackground = 0;
     //display backGround, page not full Green, need add prop define non-page display backGround
