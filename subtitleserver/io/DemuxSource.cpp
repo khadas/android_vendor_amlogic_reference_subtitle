@@ -285,6 +285,15 @@ static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid, int flag)
             if (ret != AM_SUCCESS)
                 goto error;
             ALOGE("[open_dmx]AM_DMX_SetPesFilter");
+        } else if (TYPE_SUBTITLE_DTVKIT_TTML == DemuxSource::getCurrentInstance()->mSubType) {
+            //the ttml data is section
+            ALOGE("[open_dmx] ttml demux");
+            pesp.pes_type = DMX_PES_SUBTITLE;
+            pesp.input = DMX_IN_FRONTEND;
+            ret = AM_DMX_SetPesFilter(dmx_id, data->filter_handle, &pesp);
+            if (ret != AM_SUCCESS)
+                goto error;
+            ALOGE("[open_dmx]AM_DMX_SetPesFilter");
         }
 
         ret = AM_DMX_SetCallback(dmx_id, data->filter_handle, pes_data_cb, data);
@@ -378,6 +387,14 @@ void DemuxSource::updateParameter(int type, void *data) {
         mPid = pArib24Param->pid;
         mSecureLevelFlag = pArib24Param->flag;
         mParam1 = pArib24Param->languageCodeId;
+    } else if (TYPE_SUBTITLE_DTVKIT_TTML == type) {
+        DtvKitTtmlParam *pTtmlParam = (DtvKitTtmlParam* )data;
+        if ((mState == E_SOURCE_STARTED) && (mPid != pTtmlParam->pid)) {
+              restartDemux = true;
+        }
+        mDemuxId = pTtmlParam->demuxId;
+        mPid = pTtmlParam->pid;
+        mSecureLevelFlag = pTtmlParam->flag;
     }
     ALOGE(" in updateParameter restartDemux=%d ",restartDemux);
     mSubType = type;
@@ -395,9 +412,9 @@ void DemuxSource::updateParameter(int type, void *data) {
 
 void DemuxSource::setPipId (int mode, int id) {
    ALOGE("setPipId  mode:%d, id = %d", mode, id);
-   if (1 == mode) {
+   if (PIP_PLAYER_ID == mode) {
        mPlayerId = id;
-   } else if (2 == mode) {
+   } else if (PIP_MEDIASYNC_ID == mode) {
        if ((-1 != mMediaSyncId) || (mMediaSyncId != id)) {
            mMediaSyncId = id;
            if (mMediaSync != nullptr) {

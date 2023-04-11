@@ -76,6 +76,7 @@ cc_binary {
     "subtitle/parser/DvbParser.cpp",
     "subtitle/parser/DvdParser.cpp",
     "subtitle/parser/TeletextParser.cpp",
+    "subtitle/parser/TtmlParser.cpp",
     "subtitle/parser/ClosedCaptionParser.cpp",
     "subtitle/parser/Scte27Parser.cpp",
     "subtitle/parser/bprint.c",

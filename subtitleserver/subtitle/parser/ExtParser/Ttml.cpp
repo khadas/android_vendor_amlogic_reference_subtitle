@@ -45,12 +45,15 @@ void TTML::parseXml() {
     tinyxml2::XMLElement *div = body->FirstChildElement("div");
     if (div == nullptr) div = body->FirstChildElement("tt:div");
     tinyxml2::XMLElement *parag;
+    tinyxml2::XMLElement *spanarag;
     if (div == nullptr) {
         ALOGD("%d", __LINE__);
         parag = root->FirstChildElement("p");
+        if (parag == nullptr) parag = root->FirstChildElement("tt:p");
     } else {
         ALOGD("%d", __LINE__);
         parag = div->FirstChildElement("p");
+        if (parag == nullptr) parag = div->FirstChildElement("tt:p");
     }
 
     while (parag != nullptr) {
@@ -70,8 +73,14 @@ void TTML::parseXml() {
             ALOGD("parseXml end:%s\n", attr->Value());
         }
 
-        ALOGD("parseXml Text:%s\n", parag->GetText());
-        item->lines.push_back(std::string(parag->GetText()));
+        ALOGD("parseXml parag Text:%s\n", parag->GetText());
+        if (parag->GetText() == nullptr) {
+            spanarag = parag->FirstChildElement("tt:span");
+            ALOGD("parseXml spanarag Text:%s\n", spanarag->GetText());
+            item->lines.push_back(std::string(spanarag->GetText()));
+        } else {
+            item->lines.push_back(std::string(parag->GetText()));
+        }
 
         parag = parag->NextSiblingElement();
         mSubtitles.push_back(item);

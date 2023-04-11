@@ -51,7 +51,8 @@ Subtitle::Subtitle(bool isExtSub, int trackId, ParserEventNotifier *notifier) :
     mSubPrams->dtvkitArib24Param.demuxId = 0;
     mSubPrams->dtvkitArib24Param.pid= 0;
     mSubPrams->dtvkitArib24Param.languageCodeId = 0;
-
+    mSubPrams->dtvkitTtmlParam.demuxId = 0;
+    mSubPrams->dtvkitTtmlParam.pid= 0;
     mPresentation = std::shared_ptr<Presentation>(new Presentation(nullptr));
 }
 
@@ -272,6 +273,12 @@ void Subtitle::run() {
                 } else if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_TELETEXT
                          || mSubPrams->subType == TYPE_SUBTITLE_DVB_TELETEXT) {
                     mParser->updateParameter(TYPE_SUBTITLE_DVB_TELETEXT, &mSubPrams->ttParam);
+                } else if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_ARIB_B24
+                         || mSubPrams->subType == TYPE_SUBTITLE_ARIB_B24) {
+                    mParser->updateParameter(TYPE_SUBTITLE_ARIB_B24, &mSubPrams->ttParam);
+                } else if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_TTML
+                         || mSubPrams->subType == TYPE_SUBTITLE_TTML) {
+                    mParser->updateParameter(TYPE_SUBTITLE_TTML, &mSubPrams->ttParam);
                 } else if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_SCTE27) {
                     mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_SCTE27, &mSubPrams->scteParam);
                 } else if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CAPTION) {
@@ -312,12 +319,14 @@ void Subtitle::run() {
                     mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_SCTE27, &mSubPrams->scteParam);
                 } else if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_ARIB_B24) {
                     mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_ARIB_B24, &mSubPrams->dtvkitArib24Param);
+                } else if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_TTML) {
+                    mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_TTML, &mSubPrams->dtvkitTtmlParam);
                 }
             }
             break;
             case ACTION_SUBTITLE_RESET_MEDIASYNC:
                 if (mParser != nullptr) {
-                    mParser->setPipId(2, mSubPrams->mediaId);
+                    mParser->setPipId(PIP_MEDIASYNC_ID, mSubPrams->mediaId);
             }
             break;
             case ACTION_SUBTITLE_RESET_FOR_SEEK:

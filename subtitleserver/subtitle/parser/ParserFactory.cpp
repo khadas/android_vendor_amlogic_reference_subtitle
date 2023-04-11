@@ -1,6 +1,7 @@
 #include "ParserFactory.h"
 
 #include "AribB24Parser.h"
+#include "TtmlParser.h"
 #include "AssParser.h"
 #include "DvbParser.h"
 #include "DvdParser.h"
@@ -44,6 +45,10 @@ std::shared_ptr<Parser> ParserFactory::create(
         case TYPE_SUBTITLE_ARIB_B24:
         case TYPE_SUBTITLE_DTVKIT_ARIB_B24:
             return std::shared_ptr<Parser>(new AribB24Parser(source));
+
+        case TYPE_SUBTITLE_TTML:
+        case TYPE_SUBTITLE_DTVKIT_TTML:
+            return std::shared_ptr<Parser>(new TtmlParser(source));
 
         case TYPE_SUBTITLE_TMD_TXT:
             return std::shared_ptr<Parser>(new AssParser(source));
@@ -98,6 +103,7 @@ DisplayType ParserFactory::getDisplayType(int type)
         case TYPE_SUBTITLE_MKV_STR:
         case TYPE_SUBTITLE_TMD_TXT:
         case TYPE_SUBTITLE_ARIB_B24:
+        case TYPE_SUBTITLE_TTML:
         case  TYPE_SUBTITLE_SSA:
             return SUBTITLE_TEXT_DISPLAY;
 
