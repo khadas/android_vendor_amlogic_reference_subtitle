@@ -152,19 +152,16 @@ static inline void readColorTable(unsigned char *buf, int size, PgsInfo *pgsInfo
         unsigned char y = buf[pos + 1];
         unsigned char u = buf[pos + 2];
         unsigned char v = buf[pos + 3];
-        y -= 16;
-        u -= 128;
-        v -= 128;
-        unsigned char r = (298 * y + 409 * v + 128) >> 8;
-        unsigned char g = (298 * y - 100 * u - 208 * v + 128) >> 8;
-        unsigned char b = (298 * y + 516 * u + 128) >> 8;
+        unsigned char r = y + (v - 128) + ((v - 128) * 103 >> 8);
+        unsigned char g = y - ((u - 128) * 88 >> 8) - ((v - 128) * 183 >> 8);
+        unsigned char b = y + (u - 128) + ((u - 128) * 198 >> 8);
         /*
         R = Y + 1.140V
         G = Y - 0.395U - 0.581V
         B = Y + 2.032U
         */
         pgsInfo->palette[buf[pos]] =
-            (r << 24) | (g << 16) | (b << 8) | (buf[pos + 4]);
+            ((r > 255 ? 255: r) << 24) | ((g > 255 ? 255: g) << 16) | ((b > 255 ? 255: b) << 8) | (buf[pos + 4]);
     }
 }
 
