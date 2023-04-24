@@ -127,6 +127,7 @@ static inline void readSubpictureHeader(unsigned char *buf, PgsInfo *pgsInfo) {
     pgsInfo->itemFlag = buf[0xe]; //cropped |=0x80, forced |= 0x40
     pgsInfo->x = (buf[0xf] << 8) | buf[0x10];
     pgsInfo->y = (buf[0x11] << 8) | buf[0x12];
+    LOGI("readSubpictureHeader:width:%d,height:%d", pgsInfo->width, pgsInfo->height);
 }
 
 static inline void readWindowHeader(unsigned char *buf, PgsInfo *pgsInfo) {
@@ -365,8 +366,14 @@ int PgsParser::parserOnePgs(std::shared_ptr<AML_SPUVAR> spu) {
             save2BitmapFile(filename, (uint32_t *)spu->spu_data, spu->spu_width, spu->spu_height);
         }
         if (spu->spu_origin_display_w <= 0 || spu->spu_origin_display_h <= 0) {
-            spu->spu_origin_display_w = VideoInfo::Instance()->getVideoWidth();
-            spu->spu_origin_display_h = VideoInfo::Instance()->getVideoHeight();
+            if (mPgsEpgs->pgsInfo->width > 0 && mPgsEpgs->pgsInfo->height > 0) {
+                 spu->spu_origin_display_w = mPgsEpgs->pgsInfo->width;
+                 spu->spu_origin_display_h = mPgsEpgs->pgsInfo->height;
+
+            } else {
+                spu->spu_origin_display_w = VideoInfo::Instance()->getVideoWidth();
+                spu->spu_origin_display_h = VideoInfo::Instance()->getVideoHeight();
+            }
         }
 
         addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));

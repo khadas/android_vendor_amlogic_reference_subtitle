@@ -283,13 +283,13 @@ static jboolean nativeOpenSubIdx(JNIEnv* env, jobject object, jstring jpath, jin
     bool res = false;
     int fd = -1;
 
-    const char *cpath = env->GetStringUTFChars(jpath, nullptr);
-
     if (getJniContext()->mSubContext != nullptr) {
         getJniContext()->mSubContext->userDataOpen();
         bool isExt = getJniContext()->callJava_isExternalSubtitle();
         ALOGD("isExt? %d", isExt);
-        if (isExt && cpath != nullptr) {
+
+        if (isExt) {
+            const char *cpath = env->GetStringUTFChars(jpath, nullptr);
             std::string path = cpath;
             fd = ::open(path.c_str(), O_RDONLY);
             size_t pos = path.rfind(".");
@@ -318,15 +318,14 @@ static jboolean nativeOpenSubIdx(JNIEnv* env, jobject object, jstring jpath, jin
             } else {
                 res = getJniContext()->mSubContext->open(fd, ioType);
             }
+            env->ReleaseStringUTFChars(jpath, cpath);
         } else {
             res = getJniContext()->mSubContext->open(-1, ioType);
         }
     } else {
        ALOGE("Subtitle Connection not established");
     }
-
     if (fd >= 0) ::close(fd);
-    env->ReleaseStringUTFChars(jpath, cpath);
     return true;
 }
 
