@@ -208,7 +208,9 @@ static void reportAvailableCallback(AM_SCTE27_Handle_t handle) {
     (void)handle;
     std::unique_lock<std::mutex> autolock(gLock);
     Scte27Parser *parser = Scte27Parser::getCurrentInstance();
-    parser->notifyCallerAvail(1);
+    if (parser != nullptr) {
+        parser->notifyCallerAvail(1);
+    }
 }
 
 static void langCallback(AM_SCTE27_Handle_t handle, char *buffer, int size) {
@@ -243,6 +245,7 @@ Scte27Parser::~Scte27Parser() {
     }
 
     stopScte27();
+    stopParser();
 
     delete mScteContext;
 }
