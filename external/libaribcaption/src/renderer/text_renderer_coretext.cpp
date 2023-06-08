@@ -24,6 +24,19 @@
 #include "renderer/font_provider_coretext.hpp"
 #include "renderer/text_renderer_coretext.hpp"
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
+#define LOG_TAG    "libaribcaption"
+#ifdef ANDROID
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#else
+#define LOGI(...) printf(__VA_ARGS__)
+#define LOGE(...) printf(__VA_ARGS__)
+#endif
+
 namespace aribcaption {
 
 TextRendererCoreText::TextRendererCoreText(Context& context, FontProvider& font_provider)
@@ -98,7 +111,7 @@ auto TextRendererCoreText::DrawChar(TextRenderContext& render_ctx, int target_x,
                                     std::optional<UnderlineInfo> underline_info,
                                     TextRenderFallbackPolicy fallback_policy) -> TextRenderStatus {
     if (!render_ctx.GetPrivate()) {
-        log_->e("TextRendererCoreText: Invalid TextRenderContext, BeginDraw() failed or not called");
+        LOGE("TextRendererCoreText: Invalid TextRenderContext, BeginDraw() failed or not called");
         return TextRenderStatus::kOtherError;
     }
 
@@ -117,7 +130,7 @@ auto TextRendererCoreText::DrawChar(TextRenderContext& render_ctx, int target_x,
     if (!main_ctfont_) {
         auto result = LoadCTFont();
         if (result.is_err()) {
-            log_->e("TextRendererCoreText: Cannot find valid font");
+            LOGE("TextRendererCoreText: Cannot find valid font");
             return FontProviderErrorToStatus(result.error());
         }
         std::pair<ScopedCFRef<CTFontRef>, size_t>& pair = result.value();
@@ -130,7 +143,7 @@ auto TextRendererCoreText::DrawChar(TextRenderContext& render_ctx, int target_x,
         main_ctfont_pixel_height_ = char_height;
         main_ctfont_sized_ = CreateSizedCTFont(main_ctfont_.get(), char_height);
         if (!main_ctfont_sized_) {
-            log_->e("TextRendererCoreText: Create sized CTFont failed");
+            LOGE("TextRendererCoreText: Create sized CTFont failed");
             return TextRenderStatus::kOtherError;
         }
     }
@@ -149,7 +162,7 @@ auto TextRendererCoreText::DrawChar(TextRenderContext& render_ctx, int target_x,
     if (!has_glyph) {
         ScopedCFRef<CFStringRef> cf_main_family_name(CTFontCopyFamilyName(ctfont));
         std::string main_family_name = cfstr::CFStringToStdString(cf_main_family_name.get());
-        log_->w("TextRendererCoreText: Main font %s doesn't contain U+%04X", main_family_name.c_str(), ucs4);
+        LOGI("TextRendererCoreText: Main font %s doesn't contain U+%04X", main_family_name.c_str(), ucs4);
 
         if (fallback_policy == TextRenderFallbackPolicy::kFailOnCodePointNotFound) {
             return TextRenderStatus::kCodePointNotFound;
@@ -170,7 +183,7 @@ auto TextRendererCoreText::DrawChar(TextRenderContext& render_ctx, int target_x,
             // Load next fallback CTFont by specific codepoint
             auto result = LoadCTFont(ucs4, main_face_index_ + 1);
             if (result.is_err()) {
-                log_->e("TextRendererCoreText: Cannot find available fallback font for U+%04X", ucs4);
+                LOGE("TextRendererCoreText: Cannot find available fallback font for U+%04X", ucs4);
                 return FontProviderErrorToStatus(result.error());
             }
             std::pair<ScopedCFRef<CTFontRef>, size_t>& pair = result.value();
@@ -183,7 +196,7 @@ auto TextRendererCoreText::DrawChar(TextRenderContext& render_ctx, int target_x,
             fallback_ctfont_pixel_height_ = char_height;
             fallback_ctfont_sized_ = CreateSizedCTFont(fallback_ctfont_.get(), char_height);
             if (!fallback_ctfont_sized_) {
-                log_->e("TextRendererCoreText: Create sized fallback CTFont failed");
+                LOGE("TextRendererCoreText: Create sized fallback CTFont failed");
                 return TextRenderStatus::kOtherError;
             }
         }
@@ -283,7 +296,7 @@ auto TextRendererCoreText::LoadCTFont(std::optional<uint32_t> codepoint, std::op
 
     FontfaceInfo& info = result.value();
     if (info.provider_type != FontProviderType::kCoreText) {
-        log_->e("TextRendererCoreText: Font provider must be FontProviderCoreText");
+        LOGE("TextRendererCoreText: Font provider must be FontProviderCoreText");
         return Err(FontProviderError::kOtherError);
     }
 

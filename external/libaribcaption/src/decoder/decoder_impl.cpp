@@ -31,6 +31,18 @@
 #include "decoder/b24_macros.hpp"
 #include "decoder/decoder_impl.hpp"
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
+#define LOG_TAG    "libaribcaption"
+#ifdef ANDROID
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#else
+#define LOGI(...) printf(__VA_ARGS__)
+#define LOGE(...) printf(__VA_ARGS__)
+#endif
 namespace aribcaption::internal {
 
 DecoderImpl::DecoderImpl(Context& context) : log_(GetContextLogger(context)) {}
@@ -100,13 +112,13 @@ uint32_t DecoderImpl::QueryISO6392LanguageCode(LanguageId language_id) const {
 
 DecodeStatus DecoderImpl::Decode(const uint8_t* pes_data, size_t length, int64_t pts, DecodeResult& out_result) {
     if (pes_data == nullptr) {
-        log_->e("DecoderImpl: pes_data is nullptr");
+        LOGE("DecoderImpl: pes_data is nullptr");
         assert(pes_data != nullptr);
         return DecodeStatus::kError;
     }
 
     if (length < 3) {
-        log_->e("DecoderImpl: pes_data size < 3, cannot parse");
+        LOGE("DecoderImpl: pes_data size < 3, cannot parse");
         return DecodeStatus::kError;
     }
 
@@ -119,29 +131,33 @@ DecodeStatus DecoderImpl::Decode(const uint8_t* pes_data, size_t length, int64_t
     size_t PES_data_packet_header_length = data[2] & 0x0F;
 
     if (data_identifier != 0x80 && data_identifier != 0x81) {
-        log_->e("DecoderImpl: Invalid data_identifier: 0x%02X", data_identifier);
+        LOGE("DecoderImpl: Invalid data_identifier: 0x%02X", data_identifier);
         return DecodeStatus::kError;
     } else if (data_identifier != static_cast<uint8_t>(type_)) {
-        log_->e("DecoderImpl: data_identifier mismatch, found: 0x%02X, expected: 0x%02X",
+        LOGE("DecoderImpl: data_identifier mismatch, found: 0x%02X, expected: 0x%02X",
                 data_identifier,
                 static_cast<uint8_t>(type_));
         return DecodeStatus::kError;
     }
 
     if (private_stream_id != 0xFF) {
-        log_->e("DecoderImpl: Invalid private_stream_id: 0x%02X", private_stream_id);
+        LOGE("DecoderImpl: Invalid private_stream_id: 0x%02X", private_stream_id);
         return DecodeStatus::kError;
     }
 
     size_t data_group_begin = 3 + PES_data_packet_header_length;
     if (data_group_begin + 5 > length) {
-        log_->e("DecoderImpl: pes_data length does not enough for a whole data_group");
+        LOGE("DecoderImpl: pes_data length does not enough for a whole data_group");
         return DecodeStatus::kError;
     }
 
     uint8_t data_group_id = (data[data_group_begin] & 0b11111100) >> 2;
     size_t data_group_size = ((size_t)data[data_group_begin + 3] << 8) |
                              ((size_t)data[data_group_begin + 4] << 0);
+    if (data_group_begin + 5 + data_group_size > length) {
+        LOGE("DecoderImpl: pes_data length does not enough for a whole data_group");
+        return DecodeStatus::kError;
+    }
 
     if (data_group_size == 0) {
         return DecodeStatus::kNoCaption;
@@ -210,10 +226,12 @@ void DecoderImpl::Flush() {
 
 auto DecoderImpl::DetectEncodingScheme() -> EncodingScheme {
     EncodingScheme encoding_scheme = EncodingScheme::kARIB_STD_B24_JIS;
-    bool has_jpn = false, has_latin = false, has_eng = false, has_tgl = false;
+    bool has_ucs = false, has_jpn = false, has_latin = false, has_eng = false, has_tgl = false;
 
     for (const auto& info : language_infos_) {
-        if (info.iso6392_language_code == ThreeCC("jpn")) {
+        if (info.TCS == 1) {
+            has_ucs = true;
+        } else if (info.iso6392_language_code == ThreeCC("jpn")) {
             has_jpn = true;
         } else if (info.iso6392_language_code == ThreeCC("por") || info.iso6392_language_code == ThreeCC("spa")) {
             has_latin = true;
@@ -224,7 +242,9 @@ auto DecoderImpl::DetectEncodingScheme() -> EncodingScheme {
         }
     }
 
-    if (has_jpn) {
+    if (has_ucs) {
+        encoding_scheme = EncodingScheme::kARIB_STD_B24_UTF8;
+    } else if (has_jpn) {
         encoding_scheme = EncodingScheme::kARIB_STD_B24_JIS;
     } else if (has_latin) {
         encoding_scheme = EncodingScheme::kABNT_NBR_15606_1_Latin;
@@ -357,7 +377,7 @@ void DecoderImpl::ResetInternalState() {
 
 bool DecoderImpl::ParseCaptionManagementData(const uint8_t* data, size_t length) {
     if (length < 10) {
-        log_->e("DecoderImpl: Data not enough for parsing CaptionManagementData");
+        LOGE("DecoderImpl: Data not enough for parsing CaptionManagementData");
         return false;
     }
 
@@ -372,14 +392,14 @@ bool DecoderImpl::ParseCaptionManagementData(const uint8_t* data, size_t length)
     offset += 1;
 
     if (num_languages == 0 || num_languages > 2) {
-        log_->e("DecoderImpl: Invalid num_languages: %u, maximum: 2", num_languages);
+        LOGE("DecoderImpl: Invalid num_languages: %u, maximum: 2", num_languages);
         return false;
     }
     language_infos_.resize(num_languages);
 
     for (uint8_t i = 0; i < num_languages; i++) {
-        if (offset + 5 > length) {
-            log_->e("DecoderImpl: Data not enough for parsing language specific info in CaptionManagementData");
+        if (offset + 6 > length) {
+            LOGE("DecoderImpl: Data not enough for parsing language specific info in CaptionManagementData");
             return false;
         }
 
@@ -421,7 +441,7 @@ bool DecoderImpl::ParseCaptionManagementData(const uint8_t* data, size_t length)
     }
 
     if (offset + 3 > length) {
-        log_->e("DecoderImpl: Data not enough for parsing CaptionManagementData");
+        LOGE("DecoderImpl: Data not enough for parsing CaptionManagementData");
         return false;
     }
 
@@ -433,7 +453,7 @@ bool DecoderImpl::ParseCaptionManagementData(const uint8_t* data, size_t length)
     if (data_unit_loop_length == 0) {
         return true;
     } else if (offset + data_unit_loop_length > length) {
-        log_->e("DecoderImpl: Data not enough for parsing CaptionManagementData");
+        LOGE("DecoderImpl: Data not enough for parsing CaptionManagementData");
         return false;
     }
 
@@ -443,7 +463,7 @@ bool DecoderImpl::ParseCaptionManagementData(const uint8_t* data, size_t length)
 
 bool DecoderImpl::ParseCaptionStatementData(const uint8_t* data, size_t length) {
     if (length < 4) {
-        log_->e("DecoderImpl: Data not enough for parsing CaptionStatementData");
+        LOGE("DecoderImpl: Data not enough for parsing CaptionStatementData");
         return false;
     }
 
@@ -455,7 +475,7 @@ bool DecoderImpl::ParseCaptionStatementData(const uint8_t* data, size_t length) 
     }
 
     if (offset + 4 > length) {
-        log_->e("DecoderImpl: Data not enough for parsing CaptionStatementData");
+        LOGE("DecoderImpl: Data not enough for parsing CaptionStatementData");
         return false;
     }
 
@@ -467,7 +487,7 @@ bool DecoderImpl::ParseCaptionStatementData(const uint8_t* data, size_t length) 
     if (data_unit_loop_length == 0) {
         return true;
     } else if (offset + data_unit_loop_length > length) {
-        log_->e("DecoderImpl: Data not enough for parsing CaptionStatementData");
+        LOGE("DecoderImpl: Data not enough for parsing CaptionStatementData");
         return false;
     }
 
@@ -476,14 +496,14 @@ bool DecoderImpl::ParseCaptionStatementData(const uint8_t* data, size_t length) 
 }
 
 bool DecoderImpl::ParseDataUnit(const uint8_t* data, size_t length) {
-    if (length < 5) {
-        log_->e("DecoderImpl: Data not enough for parsing DataUnit");
-        return false;
-    }
-
     size_t offset = 0;
 
     while (offset < length) {
+        if (offset + 5 > length) {
+            LOGE("DecoderImpl: Data not enough for parsing DataUnit");
+            return false;
+        }
+
         uint8_t unit_separator = data[offset];
         uint8_t data_unit_parameter = data[offset + 1];
         size_t data_unit_size = ((size_t)data[offset + 2] << 16) |
@@ -491,14 +511,14 @@ bool DecoderImpl::ParseDataUnit(const uint8_t* data, size_t length) {
                                 ((size_t)data[offset + 4] <<  0);
 
         if (unit_separator != 0x1F) {
-            log_->e("DecoderImpl: Invalid unit_separator: 0x%02X", unit_separator);
+            LOGE("DecoderImpl: Invalid unit_separator: 0x%02X", unit_separator);
             return false;
         }
 
         if (data_unit_size == 0) {
             return true;
         } else if (offset + 5 + data_unit_size > length) {
-            log_->e("DecoderImpl: Data not enough for parsing DataUnit");
+            LOGE("DecoderImpl: Data not enough for parsing DataUnit");
             return false;
         }
 
@@ -551,7 +571,7 @@ bool DecoderImpl::ParseStatementBody(const uint8_t* data, size_t length) {
         }
 
         if (!ret) {
-            log_->e("DecoderImpl: Parse character 0x%02X failed near 0x%04zX", data[offset], offset);
+            LOGE("DecoderImpl: Parse character 0x%02X failed near 0x%04zX", data[offset], offset);
             return false;
         }
         offset += bytes_processed;
@@ -561,13 +581,18 @@ bool DecoderImpl::ParseStatementBody(const uint8_t* data, size_t length) {
 }
 
 bool DecoderImpl::ParseDRCS(const uint8_t* data, size_t length, size_t byte_count) {
+    if (length == 0) {
+        LOGE("DecoderImpl: Data not enough for parsing DRCS");
+        return false;
+    }
+
     size_t offset = 0;
     uint8_t number_of_code = data[offset];
     offset += 1;
 
     for (uint8_t i = 0; i < number_of_code; i++) {
         if (offset + 3 > length) {
-            log_->e("DecoderImpl: Data not enough for parsing DRCS");
+            LOGE("DecoderImpl: Data not enough for parsing DRCS");
             return false;
         }
 
@@ -577,7 +602,7 @@ bool DecoderImpl::ParseDRCS(const uint8_t* data, size_t length, size_t byte_coun
 
         for (uint8_t j = 0; j < number_of_font; j++) {
             if (offset + 4 > length) {
-                log_->e("DecoderImpl: Data not enough for parsing DRCS");
+                LOGE("DecoderImpl: Data not enough for parsing DRCS");
                 return false;
             }
 
@@ -602,7 +627,7 @@ bool DecoderImpl::ParseDRCS(const uint8_t* data, size_t length, size_t byte_coun
                 size_t bitmap_size = width * height * depth_bits / 8;
 
                 if (offset + bitmap_size > length) {
-                    log_->e("DecoderImpl: Data not enough for parsing DRCS");
+                    LOGE("DecoderImpl: Data not enough for parsing DRCS");
                     return false;
                 }
 
@@ -611,11 +636,10 @@ bool DecoderImpl::ParseDRCS(const uint8_t* data, size_t length, size_t byte_coun
                 drcs.height = static_cast<int>(height);
                 drcs.depth = static_cast<int>(depth);
                 drcs.depth_bits = static_cast<int>(depth_bits);
-                drcs.pixels.resize(bitmap_size);
-                memcpy(&drcs.pixels[0], &data[offset], bitmap_size);
+                drcs.pixels.assign(data + offset, data + offset + bitmap_size);
                 offset += bitmap_size;
 
-                drcs.md5 = md5::GetDigest(&drcs.pixels[0], bitmap_size);
+                drcs.md5 = md5::GetDigest(drcs.pixels.data(), bitmap_size);
 
                 // Find alternative replacement
                 auto iter = kDRCSReplacementMap.find(drcs.md5);
@@ -623,7 +647,7 @@ bool DecoderImpl::ParseDRCS(const uint8_t* data, size_t length, size_t byte_coun
                     drcs.alternative_ucs4 = iter->second;
                     utf::UTF8AppendCodePoint(drcs.alternative_text, iter->second);
                 } else {
-                    log_->w("DecoderImpl: Cannot convert unrecognized DRCS pattern with MD5 %s to Unicode", drcs.md5.c_str());
+                    LOGI("DecoderImpl: Cannot convert unrecognized DRCS pattern with MD5 %s to Unicode", drcs.md5.c_str());
                 }
 
                 if (byte_count == 1) {
@@ -634,10 +658,16 @@ bool DecoderImpl::ParseDRCS(const uint8_t* data, size_t length, size_t byte_coun
                                        static_cast<uint8_t>(GraphicSet::kDRCS_0);
                     drcs_maps_[map_index].insert_or_assign(ch, std::move(drcs));
                 } else if (byte_count == 2) {
-                    uint16_t ch = character_code & 0x7F7F;
+                    uint16_t ch = character_code;
+                    ch = ch >= 0xEC00 && ch <= 0xF8FF ? ch : ch & 0x7F7F;
                     drcs_maps_[0].insert_or_assign(ch, std::move(drcs));
                 }
             } else {
+                if (offset + 4 > length) {
+                    LOGE("DecoderImpl: Data not enough for parsing DRCS");
+                    return false;
+                }
+
                 [[maybe_unused]] uint8_t region_x = data[offset];
                 [[maybe_unused]] uint8_t region_y = data[offset + 1];
                 size_t geometric_data_length = ((size_t)data[offset + 2] << 8) |
@@ -729,6 +759,7 @@ bool DecoderImpl::HandleC0(const uint8_t* data, size_t remain_bytes, size_t* byt
             uint8_t y = data[1] & 0b00111111;
             uint8_t x = data[2] & 0b00111111;
             SetAbsoluteActivePos(static_cast<int>(x), static_cast<int>(y));
+            if (!(caption_->text.empty())) caption_->text = caption_->text + '\n';  // Encountered segment flags add line breaks.
             bytes = 3;
             break;
         }
@@ -948,7 +979,7 @@ bool DecoderImpl::HandleC1(const uint8_t* data, size_t remain_bytes, size_t* byt
             bytes = 2;
             break;
         case C1::TIME:  // Time Controls
-            if (remain_bytes < 2)
+            if (remain_bytes < 3)
                 return false;
             if (data[1] == 0x20) {
                 uint8_t p2 = data[2] & 0b00111111;
@@ -1032,7 +1063,7 @@ bool DecoderImpl::HandleCSI(const uint8_t* data, size_t remain_bytes, size_t* by
 
     // move to F
     if (++offset >= remain_bytes) {
-        log_->e("DecoderImpl: Data not enough for handling CSI control character");
+        LOGE("DecoderImpl: Data not enough for handling CSI control character");
         return false;
     }
 
@@ -1257,7 +1288,19 @@ bool DecoderImpl::HandleUTF8(const uint8_t* data, size_t remain_bytes, size_t* b
     }
 
     uint32_t ucs4 = utf::DecodeUTF8ToCodePoint(data, remain_bytes, bytes_processed);
-    PushCharacter(ucs4);
+    if (ucs4 >= 0xEC00 && ucs4 <= 0xF8FF) {
+        // DRCS is mapped into the PUA starts with U+EC00 (STD-B24)
+        auto iter = drcs_maps_[0].find(static_cast<uint16_t>(ucs4));
+        if (iter == drcs_maps_[0].end()) {
+            // Unfindable DRCS character, insert Geta Mark instead
+            PushCharacter(0x3013);
+        } else {
+            PushDRCSCharacter(ucs4, iter->second);
+        }
+    } else {
+        PushCharacter(ucs4);
+    }
+
     MoveRelativeActivePos(1, 0);
 
     return true;

@@ -26,6 +26,16 @@
 #include "renderer/font_provider_directwrite.hpp"
 #include "renderer/text_renderer_directwrite.hpp"
 
+#define LOG_TAG    "libaribcaption"
+#ifdef ANDROID
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#else
+#define LOGI(...) printf(__VA_ARGS__)
+#define LOGE(...) printf(__VA_ARGS__)
+#endif
+
+
 namespace aribcaption {
 
 class OutlineTextRenderer : public IDWriteTextRenderer {
@@ -207,14 +217,14 @@ TextRendererDirectWrite::~TextRendererDirectWrite() = default;
 bool TextRendererDirectWrite::Initialize() {
     auto& provider = static_cast<FontProviderDirectWrite&>(font_provider_);
     if (provider.GetType() != FontProviderType::kDirectWrite) {
-        log_->e("TextRendererDirectWrite: Font provider must be FontProviderDirectWrite");
+        LOGE("TextRendererDirectWrite: Font provider must be FontProviderDirectWrite");
         return false;
     }
 
     // Retrieve IDWriteFactory from FontProviderDirectWrite
     dwrite_factory_ = provider.GetDWriteFactory();
     if (!dwrite_factory_) {
-        log_->e("TextRendererDirectWrite: FontProviderDirectWrite::GetDWriteFactory() returns nullptr");
+        LOGE("TextRendererDirectWrite: FontProviderDirectWrite::GetDWriteFactory() returns nullptr");
         return false;
     }
 
@@ -224,7 +234,7 @@ bool TextRendererDirectWrite::Initialize() {
                                   CLSCTX_INPROC_SERVER,
                                   IID_PPV_ARGS(&wic_factory_));
     if (FAILED(hr)) {
-        log_->e("TextRendererDirectWrite: CoCreateInstance for CLSID_WICImagingFactory failed");
+        LOGE("TextRendererDirectWrite: CoCreateInstance for CLSID_WICImagingFactory failed");
         return false;
     }
 
@@ -235,7 +245,7 @@ bool TextRendererDirectWrite::Initialize() {
 #endif
     hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, d2d1_options, d2d_factory_.GetAddressOf());
     if (FAILED(hr)) {
-        log_->e("TextRendererDirectWrite: D2D1CreateFactory() failed");
+        LOGE("TextRendererDirectWrite: D2D1CreateFactory() failed");
         return false;
     }
 
@@ -253,7 +263,7 @@ bool TextRendererDirectWrite::Initialize() {
         0,
         &stroke_style_);
     if (FAILED(hr)) {
-        log_->e("TextRendererDirectWrite: ID2D1Factory::CreateStrokeStyle() failed");
+        LOGE("TextRendererDirectWrite: ID2D1Factory::CreateStrokeStyle() failed");
         return false;
     }
 
@@ -291,14 +301,14 @@ auto TextRendererDirectWrite::BeginDraw(Bitmap& target_bmp) -> TextRenderContext
                                             WICBitmapCreateCacheOption::WICBitmapCacheOnLoad,
                                             &priv->wic_bitmap);
     if (FAILED(hr)) {
-        log_->e("TextRendererDirectWrite: Allocate IWICBitmap failed");
+        LOGE("TextRendererDirectWrite: Allocate IWICBitmap failed");
         return TextRenderContext(target_bmp);
     }
 
     // Create WIC-target Direct2D render target
     priv->d2d_render_target = CreateWICRenderTarget(priv->wic_bitmap.Get());
     if (!priv->d2d_render_target) {
-        log_->e("TextRendererDirectWrite: Create WIC ID2D1RenderTarget failed");
+        LOGE("TextRendererDirectWrite: Create WIC ID2D1RenderTarget failed");
         return TextRenderContext(target_bmp);
     }
 
@@ -315,13 +325,13 @@ void TextRendererDirectWrite::EndDraw(TextRenderContext& context) {
 
     HRESULT hr = priv->d2d_render_target->EndDraw();
     if (FAILED(hr)) {
-        log_->e("TextRendererDirectWrite: ID2D1RenderTarget::EndDraw() returned error");
+        LOGE("TextRendererDirectWrite: ID2D1RenderTarget::EndDraw() returned error");
     }
     priv->d2d_render_target.Reset();
 
     bool result = BlendWICBitmapToBitmap(priv->wic_bitmap.Get(), context.GetBitmap(), 0, 0);
     if (!result) {
-        log_->e("TextRendererDirectWrite: BlendWICBitmapToBitmap() failed");
+        LOGE("TextRendererDirectWrite: BlendWICBitmapToBitmap() failed");
     }
     priv->wic_bitmap.Reset();
 }
@@ -332,7 +342,7 @@ auto TextRendererDirectWrite::DrawChar(TextRenderContext& render_ctx, int target
                                        std::optional<UnderlineInfo> underline_info,
                                        TextRenderFallbackPolicy fallback_policy) -> TextRenderStatus {
     if (!render_ctx.GetPrivate()) {
-        log_->e("TextRendererDirectWrite: Invalid TextRenderContext, BeginDraw() failed or not called");
+        LOGE("TextRendererDirectWrite: Invalid TextRenderContext, BeginDraw() failed or not called");
         return TextRenderStatus::kOtherError;
     }
 
@@ -351,7 +361,7 @@ auto TextRendererDirectWrite::DrawChar(TextRenderContext& render_ctx, int target
     if (!main_faceinfo_) {
         auto result = LoadDWriteFont();
         if (result.is_err()) {
-            log_->e("TextRendererDirectWrite: Cannot find valid font");
+            LOGE("TextRendererDirectWrite: Cannot find valid font");
             return FontProviderErrorToStatus(result.error());
         }
         auto& pair = result.value();
@@ -364,7 +374,7 @@ auto TextRendererDirectWrite::DrawChar(TextRenderContext& render_ctx, int target
         main_text_format_pixel_height_ = char_height;
         main_text_format_ = CreateDWriteTextFormat(main_faceinfo_.value(), char_height);
         if (!main_text_format_) {
-            log_->e("TextRendererDirectWrite: Create IDWriteTextFormat failed");
+            LOGE("TextRendererDirectWrite: Create IDWriteTextFormat failed");
             return TextRenderStatus::kOtherError;
         }
     }
@@ -374,7 +384,7 @@ auto TextRendererDirectWrite::DrawChar(TextRenderContext& render_ctx, int target
 
     // If codepoint was not found in main font, load fallback font
     if (!FontfaceHasCharacter(main_faceinfo_.value(), ucs4)) {
-        log_->w("TextRendererDirectWrite: Main font %s doesn't contain U+%04X",
+        LOGI("TextRendererDirectWrite: Main font %s doesn't contain U+%04X",
                 main_faceinfo_.value().family_name.c_str(), ucs4);
 
         if (fallback_policy == TextRenderFallbackPolicy::kFailOnCodePointNotFound) {
@@ -392,7 +402,7 @@ auto TextRendererDirectWrite::DrawChar(TextRenderContext& render_ctx, int target
             // Fallback font not loaded, or doesn't contain required codepoint
             auto result = LoadDWriteFont(ucs4, main_face_index_ + 1);
             if (result.is_err()) {
-                log_->e("TextRendererDirectWrite: Cannot find available fallback font for U+%04X", ucs4);
+                LOGE("TextRendererDirectWrite: Cannot find available fallback font for U+%04X", ucs4);
                 return FontProviderErrorToStatus(result.error());
             }
             auto& pair = result.value();
@@ -407,7 +417,7 @@ auto TextRendererDirectWrite::DrawChar(TextRenderContext& render_ctx, int target
             fallback_text_format_pixel_height_ = char_height;
             fallback_text_format_ = CreateDWriteTextFormat(fallback_faceinfo_.value(), char_height);
             if (!fallback_text_format_) {
-                log_->e("TextRendererDirectWrite: Create fallback IDWriteTextFormat failed");
+                LOGE("TextRendererDirectWrite: Create fallback IDWriteTextFormat failed");
                 return TextRenderStatus::kOtherError;
             }
         }
@@ -425,7 +435,7 @@ auto TextRendererDirectWrite::DrawChar(TextRenderContext& render_ctx, int target
                                                    static_cast<UINT32>(wide_char.length()),
                                                    text_format, 16384.0f, 16384.0f, &text_layout);
     if (FAILED(hr) || !text_layout) {
-        log_->e("TextRendererDirectWrite: Create IDWriteTextLayout failed");
+        LOGE("TextRendererDirectWrite: Create IDWriteTextLayout failed");
         return TextRenderStatus::kOtherError;
     }
 
@@ -459,7 +469,7 @@ auto TextRendererDirectWrite::DrawChar(TextRenderContext& render_ctx, int target
     DWRITE_TEXT_METRICS metrics = {0};
     hr = text_layout->GetMetrics(&metrics);
     if (FAILED(hr)) {
-        log_->e("TextRendererDirectWrite: GetMetrics() failed");
+        LOGE("TextRendererDirectWrite: GetMetrics() failed");
         return TextRenderStatus::kOtherError;
     }
 
@@ -543,7 +553,7 @@ auto TextRendererDirectWrite::LoadDWriteFont(std::optional<uint32_t> codepoint,
 
     FontfaceInfo& info = result.value();
     if (info.provider_type != FontProviderType::kDirectWrite) {
-        log_->e("TextRendererDirectWrite: Font provider must be FontProviderDirectWrite");
+        LOGE("TextRendererDirectWrite: Font provider must be FontProviderDirectWrite");
         return Err(FontProviderError::kOtherError);
     }
 
@@ -578,7 +588,7 @@ auto TextRendererDirectWrite::CreateDWriteTextFormat(FontfaceInfo& face_info, in
                                                    ISO6392ToWindowsLocaleName(iso6392_language_code_),
                                                    &text_format);
     if (FAILED(hr) || !text_format) {
-        log_->e("TextRendererDirectWrite: IDWriteFactory::CreateTextFormat() failed");
+        LOGE("TextRendererDirectWrite: IDWriteFactory::CreateTextFormat() failed");
         return nullptr;
     }
 
@@ -601,7 +611,7 @@ auto TextRendererDirectWrite::CreateWICRenderTarget(IWICBitmap* target) -> ComPt
     ComPtr<ID2D1RenderTarget> render_target;
     HRESULT hr = d2d_factory_->CreateWicBitmapRenderTarget(target, properties, &render_target);
     if (FAILED(hr)) {
-        log_->e("TextRendererDirectWrite: CreateWicBitmapRenderTarget() failed");
+        LOGE("TextRendererDirectWrite: CreateWicBitmapRenderTarget() failed");
     }
 
     return render_target;
@@ -619,7 +629,7 @@ bool TextRendererDirectWrite::BlendWICBitmapToBitmap(IWICBitmap* wic_bitmap,
     ComPtr<IWICBitmapLock> lock;
     HRESULT hr = wic_bitmap->Lock(&lock_rect, WICBitmapLockRead, &lock);
     if (FAILED(hr)) {
-        log_->e("TextRendererDirectWrite: IWICBitmap::Lock() failed");
+        LOGE("TextRendererDirectWrite: IWICBitmap::Lock() failed");
         return false;
     }
 
@@ -630,7 +640,7 @@ bool TextRendererDirectWrite::BlendWICBitmapToBitmap(IWICBitmap* wic_bitmap,
     uint8_t* buffer = nullptr;
     hr = lock->GetDataPointer(&buffer_size, &buffer);
     if (FAILED(hr) || !buffer) {
-        log_->e("TextRendererDirectWrite: IWICBitmapLock::GetDataPointer() failed");
+        LOGE("TextRendererDirectWrite: IWICBitmapLock::GetDataPointer() failed");
         return false;
     }
 

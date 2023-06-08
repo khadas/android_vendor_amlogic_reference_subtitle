@@ -21,6 +21,19 @@
 #include "base/wchar_helper.hpp"
 #include "renderer/font_provider_directwrite.hpp"
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
+#define LOG_TAG    "libaribcaption"
+#ifdef ANDROID
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#else
+#define LOGI(...) printf(__VA_ARGS__)
+#define LOGE(...) printf(__VA_ARGS__)
+#endif
+
 namespace aribcaption {
 
 constexpr IID IID_IDWriteFactory = {0xb859ee5a, 0xd838, 0x4b5b, {0xa2, 0xe8, 0x1a, 0xdc, 0x7d, 0x93, 0xdb, 0x48}};
@@ -36,13 +49,13 @@ bool FontProviderDirectWrite::Initialize() {
                                      IID_IDWriteFactory,
                                      static_cast<IUnknown**>(&dwrite_factory_));
     if (FAILED(hr)) {
-        log_->e("FontProviderDirectWrite: Failed to create IDWriteFactory");
+        LOGE("FontProviderDirectWrite: Failed to create IDWriteFactory");
         return false;
     }
 
     hr = dwrite_factory_->GetGdiInterop(&dwrite_gdi_interop_);
     if (FAILED(hr)) {
-        log_->e("FontProviderDirectWrite: Failed to retrieve IDWriteGdiInterop");
+        LOGE("FontProviderDirectWrite: Failed to retrieve IDWriteGdiInterop");
         return false;
     }
 
@@ -149,21 +162,21 @@ auto FontProviderDirectWrite::GetFontFace(const std::string& font_name,
     ComPtr<IDWriteFont> dwrite_font;
     HRESULT hr = dwrite_gdi_interop_->CreateFontFromLOGFONT(&lf, &dwrite_font);
     if (FAILED(hr)) {
-        log_->e("FontProviderDirectWrite: IDWriteGdiInterop::CreateFontFromLOGFONT() failed");
+        LOGE("FontProviderDirectWrite: IDWriteGdiInterop::CreateFontFromLOGFONT() failed");
         return Err(FontProviderError::kFontNotFound);
     }
 
     ComPtr<IDWriteFontFamily> dwrite_font_family;
     hr = dwrite_font->GetFontFamily(&dwrite_font_family);
     if (FAILED(hr)) {
-        log_->e("FontProviderDirectWrite: IDWriteFont::GetFontFamily() failed");
+        LOGE("FontProviderDirectWrite: IDWriteFont::GetFontFamily() failed");
         return Err(FontProviderError::kOtherError);
     }
 
     ComPtr<IDWriteFontFace> dwrite_fontface;
     hr = dwrite_font->CreateFontFace(&dwrite_fontface);
     if (FAILED(hr)) {
-        log_->e("FontProviderDirectWrite: IDWriteFont::CreateFontFace() failed");
+        LOGE("FontProviderDirectWrite: IDWriteFont::CreateFontFace() failed");
         return Err(FontProviderError::kOtherError);
     }
 
@@ -172,7 +185,7 @@ auto FontProviderDirectWrite::GetFontFace(const std::string& font_name,
         BOOL ucs4_exists = FALSE;
         hr = dwrite_font->HasCharacter(ucs4.value(), &ucs4_exists);
         if (FAILED(hr) || !ucs4_exists) {
-            log_->w("FontProviderDirectWrite: Font %s doesn't contain U+%04X", font_name.c_str(), ucs4.value());
+            LOGI("FontProviderDirectWrite: Font %s doesn't contain U+%04X", font_name.c_str(), ucs4.value());
             return Err(FontProviderError::kCodePointNotFound);
         }
     }
@@ -180,15 +193,10 @@ auto FontProviderDirectWrite::GetFontFace(const std::string& font_name,
     // Retrieve Font family name
     BOOL exists = FALSE;
     ComPtr<IDWriteLocalizedStrings> localized_family_names;
-    hr = dwrite_font->GetInformationalStrings(DWRITE_INFORMATIONAL_STRING_WIN32_FAMILY_NAMES,
-                                              &localized_family_names,
-                                              &exists);
-    if (FAILED(hr) || !exists) {
-        hr = dwrite_font_family->GetFamilyNames(&localized_family_names);
-        if (FAILED(hr)) {
-            log_->w("FontProviderDirectWrite: Retrieve font family name failed");
-            return Err(FontProviderError::kOtherError);
-        }
+    hr = dwrite_font_family->GetFamilyNames(&localized_family_names);
+    if (FAILED(hr)) {
+        LOGI("FontProviderDirectWrite: Retrieve font family name failed");
+        return Err(FontProviderError::kOtherError);
     }
 
     // Retrieve Font PostScript name
@@ -197,7 +205,7 @@ auto FontProviderDirectWrite::GetFontFace(const std::string& font_name,
                                               &localized_postscript_names,
                                               &exists);
     if (FAILED(hr) || !exists) {
-        log_->w("FontProviderDirectWrite: Retrieve font PostScript name failed");
+        LOGI("FontProviderDirectWrite: Retrieve font PostScript name failed");
         return Err(FontProviderError::kOtherError);
     }
 
@@ -206,7 +214,7 @@ auto FontProviderDirectWrite::GetFontFace(const std::string& font_name,
     ComPtr<IDWriteFontFile> dwrite_font_file;
     hr = dwrite_fontface->GetFiles(&file_count, &dwrite_font_file);
     if (FAILED(hr) || !dwrite_font_file) {
-        log_->w("FontProviderDirectWrite: Retrieve font file name failed");
+        LOGI("FontProviderDirectWrite: Retrieve font file name failed");
         return Err(FontProviderError::kOtherError);
     }
 
@@ -215,21 +223,21 @@ auto FontProviderDirectWrite::GetFontFace(const std::string& font_name,
 
     hr = dwrite_font_file->GetReferenceKey(&reference_key, &key_size);
     if (FAILED(hr)) {
-        log_->w("FontProviderDirectWrite: IDWriteFontFile::GetReferenceKey() failed");
+        LOGI("FontProviderDirectWrite: IDWriteFontFile::GetReferenceKey() failed");
         return Err(FontProviderError::kOtherError);
     }
 
     ComPtr<IDWriteFontFileLoader> dwrite_font_fileloader;
     hr = dwrite_font_file->GetLoader(&dwrite_font_fileloader);
     if (FAILED(hr)) {
-        log_->w("FontProviderDirectWrite: IDWriteFontFileLoader::GetLoader() failed");
+        LOGI("FontProviderDirectWrite: IDWriteFontFileLoader::GetLoader() failed");
         return Err(FontProviderError::kOtherError);
     }
 
     ComPtr<IDWriteLocalFontFileLoader> dwrite_local_font_fileloader;
     hr = dwrite_font_fileloader.As(&dwrite_local_font_fileloader);
     if (FAILED(hr)) {
-        log_->w("FontProviderDirectWrite: QueryInterface to IDWriteLocalFontFileLoader failed");
+        LOGI("FontProviderDirectWrite: QueryInterface to IDWriteLocalFontFileLoader failed");
         return Err(FontProviderError::kOtherError);
     }
 
@@ -237,14 +245,14 @@ auto FontProviderDirectWrite::GetFontFace(const std::string& font_name,
     uint32_t file_path_len = 0;
     hr = dwrite_local_font_fileloader->GetFilePathLengthFromKey(reference_key, key_size, &file_path_len);
     if (FAILED(hr)) {
-        log_->w("FontProviderDirectWrite: IDWriteLocalFontFileLoader GetFilePathLengthFromKey() failed");
+        LOGI("FontProviderDirectWrite: IDWriteLocalFontFileLoader GetFilePathLengthFromKey() failed");
         return Err(FontProviderError::kOtherError);
     }
 
     file_path.resize(file_path_len);
     hr = dwrite_local_font_fileloader->GetFilePathFromKey(reference_key, key_size, file_path.data(), file_path_len + 1);
     if (FAILED(hr)) {
-        log_->w("FontProviderDirectWrite: IDWriteLocalFontFileLoader GetFilePathFromKey() failed");
+        LOGI("FontProviderDirectWrite: IDWriteLocalFontFileLoader GetFilePathFromKey() failed");
         return Err(FontProviderError::kOtherError);
     }
 

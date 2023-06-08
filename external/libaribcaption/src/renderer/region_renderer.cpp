@@ -21,15 +21,13 @@
 #include "renderer/canvas.hpp"
 #include "renderer/region_renderer.hpp"
 
-#ifdef ANDROID
-#include <android/log.h>
-#endif
-
 #define LOG_TAG    "libaribcaption"
 #ifdef ANDROID
 #define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 #else
 #define LOGI(...) printf(__VA_ARGS__)
+#define LOGE(...) printf(__VA_ARGS__)
 #endif
 
 
@@ -117,23 +115,23 @@ auto RegionRenderer::RenderCaptionRegion(const CaptionRegion& region,
     bool has_codepoint_not_found_error = false;
     [[maybe_unused]] bool has_other_error = false;
 
-    if (ScaleWidth(region.width) < 3 || ScaleHeight(region.height) < 3) {
+    if (ScaleWidth(region.width, region.x) < 3 || ScaleHeight(region.height, region.y) < 3) {
         return Err(RegionRenderError::kImageTooSmall);
     }
 
-    Bitmap bitmap(ScaleWidth(region.width),
-                  ScaleHeight(region.height),
+    Bitmap bitmap(ScaleWidth(region.width, region.x),
+                  ScaleHeight(region.height, region.y),
                   PixelFormat::kRGBA8888);
     Canvas canvas(bitmap);
     TextRenderContext text_render_ctx = text_renderer_->BeginDraw(bitmap);
 
     for (const CaptionChar& ch : region.chars) {
-        int section_x = ScaleX(ch.x - region.x);
-        int section_y = ScaleY(ch.y - region.y);
+        int section_x = ScaleX(ch.x) - ScaleX(region.x);
+        int section_y = ScaleY(ch.y) - ScaleY(region.y);
         Rect section_rect(section_x,
                           section_y,
-                          section_x + ScaleWidth(ch.section_width()),
-                          section_y + ScaleHeight(ch.section_height()));
+                          section_x + ScaleWidth(ch.section_width(), ch.x),
+                          section_y + ScaleHeight(ch.section_height(), ch.y));
         if (section_rect.width() < 3 || section_rect.height() < 3) {
             continue;  // Too small, skip
         }
@@ -145,8 +143,8 @@ auto RegionRenderer::RenderCaptionRegion(const CaptionRegion& region,
 
         // Draw enclosure if needed
         if (ch.enclosure_style) {
-            int w = ScaleX(1);  // use floor
-            int h = ScaleY(1);  // use floor
+            int w = std::max(ScaleX(1), 1);  // use floor
+            int h = std::max(ScaleY(1), 1);  // use floor
             if (ch.enclosure_style & EnclosureStyle::kEnclosureStyleTop) {
                 canvas.ClearRect(ch.text_color,
                                  Rect(section_rect.left,
@@ -230,7 +228,7 @@ auto RegionRenderer::RenderCaptionRegion(const CaptionRegion& region,
             }
 
             if (status != TextRenderStatus::kOK) {
-                log_->e("RegionRenderer: TextRenderer::DrawChar() returned error: %d", static_cast<int>(status));
+                LOGE("RegionRenderer: TextRenderer::DrawChar() returned error: %d", static_cast<int>(status));
                 if (status == TextRenderStatus::kFontNotFound) {
                     has_font_not_found_error = true;
                 } else if (status == TextRenderStatus::kCodePointNotFound) {
@@ -249,11 +247,11 @@ auto RegionRenderer::RenderCaptionRegion(const CaptionRegion& region,
                 succeed++;
             } else {
                 if (status == TextRenderStatus::kCodePointNotFound) {
-                    log_->w("RegionRenderer: Cannot find alternative codepoint U+%04X, fallback to DRCS rendering",
+                    LOGI("RegionRenderer: Cannot find alternative codepoint U+%04X, fallback to DRCS rendering",
                             ch.codepoint);
                     has_codepoint_not_found_error = true;
                 } else {
-                    log_->e("RegionRenderer: TextRenderer::DrawChar() returned error: %d", static_cast<int>(status));
+                    LOGE("RegionRenderer: TextRenderer::DrawChar() returned error: %d", static_cast<int>(status));
                     if (status == TextRenderStatus::kFontNotFound) {
                         has_font_not_found_error = true;
                     } else if (status == TextRenderStatus::kOtherError) {
@@ -279,11 +277,11 @@ auto RegionRenderer::RenderCaptionRegion(const CaptionRegion& region,
                 if (ret) {
                     succeed++;
                 } else {
-                    log_->e("RegionRenderer: drcs_renderer_.DrawDRCS() returned error");
+                    LOGE("RegionRenderer: drcs_renderer_.DrawDRCS() returned error");
                 }
             } else {
                 // DRCS not found in drcs_map
-                log_->e("RegionRenderer: Missing DRCS for drcs_code %u", ch.drcs_code);
+                LOGE("RegionRenderer: Missing DRCS for drcs_code %u", ch.drcs_code);
             }
         }
     }
