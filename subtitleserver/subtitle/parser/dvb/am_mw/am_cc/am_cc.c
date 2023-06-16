@@ -1125,8 +1125,8 @@ static void *am_cc_render_thread(void *arg)
 			AM_DEBUG(0, "cc render thread: No data now.");
 			if ((cc->vbi_pgno < AM_CC_CAPTION_TEXT1) || (cc->vbi_pgno > AM_CC_CAPTION_TEXT4)) {
 				am_cc_clear(cc);
-				//if (cc->vbi_pgno < AM_CC_CAPTION_TEXT1)
-				//	vbi_caption_reset(cc->decoder.vbi);
+				if (cc->vbi_pgno < AM_CC_CAPTION_TEXT1)
+					vbi_caption_reset(cc->decoder.vbi);
 				nodata = 1;
 			}
 		}
