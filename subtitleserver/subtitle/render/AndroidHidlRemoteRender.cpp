@@ -18,13 +18,13 @@ static const int SHOWING_SUB = 1;
 bool AndroidHidlRemoteRender::postSubtitleData() {
     // TODO: share buffers. if need performance
     //std:: string out;
-    int width=0, height=0, size=0,x =0, y=0, videoWidth = 0, videoHeight = 0;
+    int width=0, height=0, size=0,x =0, y=0, videoWidth = 0, videoHeight = 0, objectSegmentId = 0;
 
     sp<AndroidCallbackMessageQueue> queue = AndroidCallbackMessageQueue::Instance();
 
     if (mShowingSubs.size() <= 0) {
         if (queue != nullptr) {
-            queue->postDisplayData(nullptr, mParseType, 0, 0, 0, 0, 0, 0, 0, FADING_SUB);
+            queue->postDisplayData(nullptr, mParseType, 0, 0, 0, 0, 0, 0, 0, FADING_SUB, 0);
             return true;
         } else {
             ALOGE("Error! should not null here!");
@@ -59,6 +59,7 @@ bool AndroidHidlRemoteRender::postSubtitleData() {
         y = (*it)->spu_start_y;
         videoWidth = (*it)->spu_origin_display_w;
         videoHeight = (*it)->spu_origin_display_h;
+        objectSegmentId = (*it)->objectSegmentId;
         size = (*it)->buffer_size;
 
         ALOGD(" in AndroidHidlRemoteRender:%s type:%d, width=%d, height=%d data=%p size=%d",
@@ -83,7 +84,7 @@ bool AndroidHidlRemoteRender::postSubtitleData() {
         /* The same as vlc player. showing and fading policy */
         if (queue != nullptr) {
             mParseType = ((*it)->isQtoneData) ? TYPE_SUBTITLE_Q_TONE_DATA: mParseType;
-            queue->postDisplayData((const char *)((*it)->spu_data), mParseType, x, y, width, height, videoWidth, videoHeight, size, SHOWING_SUB);
+            queue->postDisplayData((const char *)((*it)->spu_data), mParseType, x, y, width, height, videoWidth, videoHeight, size, SHOWING_SUB, objectSegmentId);
             return true;
         } else {
             return false;

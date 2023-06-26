@@ -25,6 +25,7 @@ typedef struct alm_spuvar
     bool     isExtSub = false;
     bool     isKeepShowing = false; //no auto fading out, until close
     bool     isTtxSubtitle = false;
+    unsigned int objectSegmentId = 0; //objectSegmentId: the current number object segment object.
 
     int64_t m_delay = 0;
     unsigned char *spu_data = NULL;

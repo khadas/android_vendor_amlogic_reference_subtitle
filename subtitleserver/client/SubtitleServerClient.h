@@ -76,7 +76,7 @@ public:
 
     virtual void onSubtitleEvent(const char *data, int size, int parserType,
                 int x, int y, int width, int height,
-                int videoWidth, int videoHeight, int cmd) = 0;
+                int videoWidth, int videoHeight, int cmd, int objectSegmentId) = 0;
 
     virtual void onSubtitleDataEvent(int event, int id) = 0;
 

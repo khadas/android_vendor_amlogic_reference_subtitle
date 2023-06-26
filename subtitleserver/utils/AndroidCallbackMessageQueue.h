@@ -47,7 +47,7 @@ public:
 
     bool postDisplayData(const char *data,  int type,
             int x, int y, int width, int height,
-            int videoWidth, int videoHeight, int size, int cmd);
+            int videoWidth, int videoHeight, int size, int cmd, int objectSegmentId);
 
     virtual void onSubtitleDataEvent(int event, int id) override;
 
@@ -78,6 +78,7 @@ private:
         int videoHeight;
         int size;
         int isShow;
+        int objectSegmentId; //objectSegmentId: the current number object segment object.
         char *lang;
     };
 

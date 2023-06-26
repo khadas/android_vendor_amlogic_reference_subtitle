@@ -89,7 +89,7 @@ public:
 
     virtual void onSubtitleEvent(const char *data, int size, int parserType,
                 int x, int y, int width, int height,
-                int videoWidth, int videoHeight, int showing) {
+                int videoWidth, int videoHeight, int showing, int objectSegmentId) {
         if (mDataCb != nullptr) {
             mDataCb(data, size,
                 __mapServerType2ApiType((AmlSubtitletype)parserType),

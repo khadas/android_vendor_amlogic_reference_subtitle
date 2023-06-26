@@ -105,26 +105,26 @@ struct JniContext {
         env->SetByteArrayRegion(byteArray, 0, strlen(data),(jbyte *)data);
         // Text data do not care positions, no such info!
         env->CallVoidMethod(mSubtitleManagerObject, mNotifySubtitleEvent, nullptr, byteArray,
-                type, /*x,y*/0, 0, /*w,h*/0, 0, /*vw,vh*/0, 0, !(cmd==0));
+                type, /*x,y*/0, 0, /*w,h*/0, 0, /*vw,vh*/0, 0, !(cmd==0), 0);
         env->DeleteLocalRef(byteArray);
         if (needDetach) DetachJniEnv();
    }
 
     void callJava_showBitmapData(const char *data, int size, int uiType,
             int x, int y, int width, int height,
-            int videoWidth, int videoHeight, int cmd) {
+            int videoWidth, int videoHeight, int cmd, int objectSegmentId) {
         bool needDetach = false;
 
         if (width <= 0 || height <= 0 || size <= 0) {
             ALOGE("invalid parameter width=%d height=%d size=%d", width, height, size);
-	     return;
+            return;
         }
 
         JNIEnv *env = getJniEnv(&needDetach);
         jintArray array = env->NewIntArray(width*height);
         env->SetIntArrayRegion(array, 0, width*height, (jint *)data);
         env->CallVoidMethod(mSubtitleManagerObject, mNotifySubtitleEvent, array, nullptr,
-                uiType, x, y, width, height, videoWidth, videoHeight, !(cmd==0));
+                uiType, x, y, width, height, videoWidth, videoHeight, !(cmd==0), objectSegmentId);
 
         env->DeleteLocalRef(array);
         if (needDetach) DetachJniEnv();
@@ -189,17 +189,17 @@ public:
     // TODO: maybe, we can split to notify Text and notify Bitmap
     virtual void onSubtitleEvent(const char *data, int size, int parserType,
             int x, int y, int width, int height,
-            int videoWidth, int videoHeight, int cmd)
+            int videoWidth, int videoHeight, int cmd, int objectSegmentId)
 {
         jint uiType = getJniContext()->callJava_subtitleTextOrImage(parserType);
 
-        ALOGD("in onStringSubtitleEvent subtitleType=%d size=%d x=%d, y= %d width=%d height=%d videow=%d, videoh=%d cmd=%d\n",
-                uiType, size, x, y, width, height, videoWidth, videoHeight,cmd);
+        ALOGD("in onStringSubtitleEvent subtitleType=%d size=%d x=%d, y= %d width=%d height=%d videow=%d, videoh=%d cmd=%d objectSegmentId=%d\n",
+                uiType, size, x, y, width, height, videoWidth, videoHeight, cmd, objectSegmentId);
 
         if (uiType == 1 && width > 0 && height > 0) uiType = 2;
 
         if (((uiType == 2) || (uiType == 4)) && size > 0) {
-            getJniContext()->callJava_showBitmapData(data, size, uiType, x, y, width, height, videoWidth, videoHeight, cmd);
+            getJniContext()->callJava_showBitmapData(data, size, uiType, x, y, width, height, videoWidth, videoHeight, cmd, objectSegmentId);
         } else {
             getJniContext()->callJava_showTextData(data, uiType, cmd);
         }
@@ -233,7 +233,6 @@ public:
         ALOGD("onSubtitleInfo:what:%d, extra:%d", what, extra);
         getJniContext()->callJava_notifySubtitleInfo(what, extra);
     }
-
 
     // sometime, server may crash, we need clean up in server side.
     virtual void onServerDied() {
@@ -601,7 +600,7 @@ int register_com_droidlogic_app_SubtitleManager(JNIEnv *env) {
         return -1;
     }
 
-    GET_METHOD_ID(getJniContext()->mNotifySubtitleEvent, clazz, "notifySubtitleEvent", "([I[BIIIIIIIZ)V");
+    GET_METHOD_ID(getJniContext()->mNotifySubtitleEvent, clazz, "notifySubtitleEvent", "([I[BIIIIIIIZI)V");
     GET_METHOD_ID(getJniContext()->mSubtitleTextOrImage, clazz, "subtitleTextOrImage", "(I)I");
     GET_METHOD_ID(getJniContext()->mNotifySubtitleUIEvent, clazz, "notifySubtitleUIEvent", "(I[I)V");
     GET_METHOD_ID(getJniContext()->mUpdateChannelId, clazz, "updateChannelId", "(II)V");

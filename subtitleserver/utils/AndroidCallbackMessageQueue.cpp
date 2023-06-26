@@ -143,7 +143,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
             }
             default:
             {
-                parcel.bodyInt.resize(8);
+                parcel.bodyInt.resize(9);
                 parcel.bodyInt[0] = data->width;
                 parcel.bodyInt[1] = data->height;
                 parcel.bodyInt[2] = data->size;
@@ -152,6 +152,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
                 parcel.bodyInt[5] = data->y;
                 parcel.bodyInt[6] = data->videoWidth;
                 parcel.bodyInt[7] = data->videoHeight;
+                parcel.bodyInt[8] = data->objectSegmentId; //objectSegmentId: the current number object segment object.
                 parcel.mem = *(data->mem);
                 ALOGI("onSubtitleDataEvent, type:%d width:%d, height:%d, size:%d", data->type, data->width, data->height, data->size);
                 mProxyHandler->onSubtitleDisplayNotify(parcel);
@@ -243,7 +244,7 @@ void AndroidCallbackMessageQueue::onSubtitleInfo(int what, int extra) {
 
 bool AndroidCallbackMessageQueue::postDisplayData(const char *data,  int type,
         int x, int y, int width, int height,
-        int videoWidth, int videoHeight, int size, int cmd) {
+        int videoWidth, int videoHeight, int size, int cmd, int objectSegmentId) {
 
     sp<HidlMemory> mem;
     sp<IAllocator> ashmemAllocator = IAllocator::getService("ashmem");
@@ -282,11 +283,12 @@ bool AndroidCallbackMessageQueue::postDisplayData(const char *data,  int type,
         subtitleData->size = size;
         subtitleData->isShow = cmd;
         subtitleData->mem = mem;
+        subtitleData->objectSegmentId = objectSegmentId; //objectSegmentId: the current number object segment object.
         mSubtitleData.push_back(std::move(subtitleData));
         mLooper->sendMessage(this, Message(MSG_CHECK_SUBDATA));
 
-    ALOGD(" in postDisplayData:%s type:%d, width=%d, height=%d size=%d",
-        __func__, type,  width, height, size);
+    ALOGD(" in postDisplayData:%s type:%d, width=%d, height=%d size=%d objectSegmentId=%d",
+        __func__, type,  width, height, size, objectSegmentId);
 
     } else {
         ALOGE("Fail to process hidl memory!!");
