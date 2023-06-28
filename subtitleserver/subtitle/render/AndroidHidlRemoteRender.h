@@ -15,6 +15,7 @@ public:
     AndroidHidlRemoteRender(std::shared_ptr<Display> display) {
         mDisplay = display;
         mParseType = -1;
+        mCurrentMaxObjectId = 0;
     }
     AndroidHidlRemoteRender() {}
     //SkiaRender() = delete;
@@ -38,6 +39,7 @@ private:
     // however, later may changed, add one here.
     std::mutex mLock;
     int mParseType;
+    int mCurrentMaxObjectId;
 };
 
 #endif

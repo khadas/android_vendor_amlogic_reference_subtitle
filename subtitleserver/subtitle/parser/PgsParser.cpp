@@ -22,6 +22,10 @@
 #define MAX_EPOCH_OBJECTS  64  // Max 64 allowed per PGS epoch
 #define MAX_OBJECT_REFS    2   // Max objects per display set
 
+#define DEFAULT_DELAY_TIME 2 //second
+#define DEFAULT_DVB_TIME_MULTI 90
+
+
 enum SegmentType {
     PALETTE_SEGMENT      = 0x14,
     OBJECT_SEGMENT       = 0x15,
@@ -631,8 +635,8 @@ int PgsParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
         pts = subPeekAsInt64(tmpbuf + 7);
 
         spu->m_delay = subPeekAsInt32(tmpbuf + 15);
-        if (spu->m_delay != 0) {
-            spu->m_delay += pts;
+        if (spu->m_delay == 0) {
+            spu->m_delay = pts + (DEFAULT_DELAY_TIME * 1000 * DEFAULT_DVB_TIME_MULTI);
         }
         dts = pts;
         spu->subtitle_type = TYPE_SUBTITLE_PGS;

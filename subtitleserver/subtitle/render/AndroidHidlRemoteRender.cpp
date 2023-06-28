@@ -24,7 +24,11 @@ bool AndroidHidlRemoteRender::postSubtitleData() {
 
     if (mShowingSubs.size() <= 0) {
         if (queue != nullptr) {
-            queue->postDisplayData(nullptr, mParseType, 0, 0, 0, 0, 0, 0, 0, FADING_SUB, 0);
+            for (int i=0; i<=mCurrentMaxObjectId; i++) {
+                ALOGD("AndroidHidlRemoteRender:%s objectId=%d",__func__, i);
+                queue->postDisplayData(nullptr, mParseType, 0, 0, 0, 0, 0, 0, 0, FADING_SUB, i);
+            }
+            mCurrentMaxObjectId = 0;
             return true;
         } else {
             ALOGE("Error! should not null here!");
@@ -60,6 +64,7 @@ bool AndroidHidlRemoteRender::postSubtitleData() {
         videoWidth = (*it)->spu_origin_display_w;
         videoHeight = (*it)->spu_origin_display_h;
         objectSegmentId = (*it)->objectSegmentId;
+        if (mCurrentMaxObjectId < objectSegmentId) mCurrentMaxObjectId = objectSegmentId;
         size = (*it)->buffer_size;
 
         ALOGD(" in AndroidHidlRemoteRender:%s type:%d, width=%d, height=%d data=%p size=%d",

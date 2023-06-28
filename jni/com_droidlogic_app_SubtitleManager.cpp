@@ -96,7 +96,7 @@ struct JniContext {
         if (needDetach) DetachJniEnv();
         return uiType;
     }
-    void callJava_showTextData(const char *data, int type, int cmd) {
+    void callJava_showTextData(const char *data, int type, int cmd, int objectSegmentId) {
         bool needDetach = false;
         //jint i = 0;
         JNIEnv *env = getJniEnv(&needDetach);
@@ -105,7 +105,7 @@ struct JniContext {
         env->SetByteArrayRegion(byteArray, 0, strlen(data),(jbyte *)data);
         // Text data do not care positions, no such info!
         env->CallVoidMethod(mSubtitleManagerObject, mNotifySubtitleEvent, nullptr, byteArray,
-                type, /*x,y*/0, 0, /*w,h*/0, 0, /*vw,vh*/0, 0, !(cmd==0), 0);
+                type, /*x,y*/0, 0, /*w,h*/0, 0, /*vw,vh*/0, 0, !(cmd==0), objectSegmentId);
         env->DeleteLocalRef(byteArray);
         if (needDetach) DetachJniEnv();
    }
@@ -201,7 +201,7 @@ public:
         if (((uiType == 2) || (uiType == 4)) && size > 0) {
             getJniContext()->callJava_showBitmapData(data, size, uiType, x, y, width, height, videoWidth, videoHeight, cmd, objectSegmentId);
         } else {
-            getJniContext()->callJava_showTextData(data, uiType, cmd);
+            getJniContext()->callJava_showTextData(data, uiType, cmd, objectSegmentId);
         }
 
     }
