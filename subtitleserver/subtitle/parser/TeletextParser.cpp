@@ -493,8 +493,8 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
             resy = (page->rows - chopTop) * BITMAP_CHAR_HEIGHT;
             subRect->w = resx;
             subRect->h = resy;
-        } else {
-            LOGI("dropping empty page %3x\n", page->pgno);
+        } else if (!ctx->lockSubpg) {
+            LOGI("%s dropping empty page %3x\n", __FUNCTION__, page->pgno);
             subRect->type = SUBTITLE_NONE;
             return 0;
         }
@@ -1022,6 +1022,9 @@ static void handler(vbi_event *ev, void *userData) {
     LOGI("%d x %d page chop:%d\n", page->columns, page->rows, chopTop);
     vbi_teletext_set_current_page(ctx->vbi,ev->ev.ttx_page.pgno, ev->ev.ttx_page.subno);
 
+    if (ctx->lockSubpg == 0 || ctx->currentPage == nullptr) {
+        ctx->currentPage = page;
+    }
     if (ctx->totalPages < MAX_BUFFERED_PAGES) {
 
         newPages = (TeletextPage*)realloc(ctx->pages, (ctx->totalPages+1)*sizeof(TeletextPage));
@@ -1038,8 +1041,8 @@ static void handler(vbi_event *ev, void *userData) {
             //LOGI("%s, ret cur_page->pts:0x%x\n",__FUNCTION__,cur_page->pts);
             if (cur_page->subRect) {
                 res = (ctx->formatId == 0) ?
-                    genSubBitmap(ctx, cur_page->subRect, page, chopTop) :
-                    genSubText  (ctx, cur_page->subRect, page, chopTop);
+                    genSubBitmap(ctx, cur_page->subRect, ctx->currentPage, chopTop) :
+                    genSubText  (ctx, cur_page->subRect, ctx->currentPage, chopTop);
                 if (res < 0) {
                     if (cur_page->subRect->pict.data[0] != nullptr) {
                         free(cur_page->subRect->pict.data[0]);
@@ -1073,8 +1076,11 @@ static void handler(vbi_event *ev, void *userData) {
     }
 #endif
 
-    vbi_unref_page(page);
-    free(page);
+    if (!ctx->lockSubpg) {
+        vbi_unref_page(page);
+        free(page);
+    }
+
 }
 
 TeletextParser::TeletextParser(std::shared_ptr<DataSource> source) {
@@ -1448,6 +1454,9 @@ int TeletextParser::fetchVbiPageLocked(int pageNum, int subPageNum) {
     vbi_teletext_set_current_page(mContext->vbi, vbi_dec2bcd(mContext->gotoPage), vbi_dec2bcd(mContext->subPageNum));
     setNavigatorPageNumber(page,mContext->gotoPage);
     vbi_set_subtitle_flag(mContext->vbi, mContext->isSubtitle, mContext->subtitleMode, TELETEXT_USE_SUBTITLESERVER);
+    if (mContext->lockSubpg == 0 ||  mContext->currentPage == nullptr) {
+        mContext->currentPage = page;
+    }
     if (mContext->totalPages < MAX_BUFFERED_PAGES) {
         LOGI("%s, totalPages:%d\n",__FUNCTION__, mContext->totalPages);
         newPages = (TeletextPage*)realloc(mContext->pages, (mContext->totalPages+1)*sizeof(TeletextPage));
@@ -1464,8 +1473,8 @@ int TeletextParser::fetchVbiPageLocked(int pageNum, int subPageNum) {
             if (cur_page->subRect) {
                 LOGI("%s,formatId:%d\n",__FUNCTION__, mContext->formatId);
                 res = (mContext->formatId == 0) ?
-                    genSubBitmap(mContext, cur_page->subRect, page, chopTop) :
-                    genSubText  (mContext, cur_page->subRect, page, chopTop);
+                    genSubBitmap(mContext, cur_page->subRect, mContext->currentPage, chopTop) :
+                    genSubText  (mContext, cur_page->subRect, mContext->currentPage, chopTop);
                 if (res < 0) {
                     free(cur_page->subRect);
                     mContext->handlerRet = res;
@@ -1481,7 +1490,10 @@ int TeletextParser::fetchVbiPageLocked(int pageNum, int subPageNum) {
     } else {
         mContext->handlerRet = -1;//AVERROR(ENOSYS);
     }
-    free(page);
+
+    if (!mContext->lockSubpg) {
+        free(page);
+    }
 
 #ifdef NEED_CACHE_ZVBI_STATUS
     if (mContext->handlerRet >= 0 && mContext->subtitleMode == TT2_GRAPHICS_MODE) {
