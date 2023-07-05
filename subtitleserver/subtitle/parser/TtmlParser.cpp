@@ -84,18 +84,25 @@ static void save2BitmapFile(const char *filename, uint32_t *bitmap, int w, int h
 }
 
 /* EBU-TT-D timecodes have format hours:minutes:seconds[.fraction] */
-static int ttml_parse_timecode (const char * timestring)
+static int64_t ttml_parse_timecode(const char * beginTimeString, const char * endTimeString)
 {
-  int hours = 0, minutes = 0, seconds = 0, milliseconds = 0, time = 0;
+  int64_t beginHours = 0, beginMinutes = 0, beginSeconds = 0, beginMilliseconds = 0,
+            endHours = 0, endMinutes = 0, endSeconds = 0, endMilliseconds = 0,
+            time = 0;
 
-  LOGI("%s time string: %s\n",__FUNCTION__, timestring);
-  bool success = sscanf(timestring, "%d:%d:%d.%d", &hours, &minutes, &seconds, &milliseconds) == 4;
-  if (!success || hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59 || milliseconds < 0 || milliseconds > 999) {
-    LOGE ("%s invalid time string.", __FUNCTION__, timestring);
+  LOGI("%s begin time string: %s, end time string: %s\n",__FUNCTION__, beginTimeString, endTimeString);
+  bool beginSuccess = sscanf(beginTimeString, "%d:%d:%d.%d", &beginHours, &beginMinutes, &beginSeconds, &beginMilliseconds) == 4;
+  bool endSuccess = sscanf(endTimeString, "%d:%d:%d.%d", &endHours, &endMinutes, &endSeconds, &endMilliseconds) == 4;
+  if (!beginSuccess || beginHours < 0 || beginHours > 23 || beginMinutes < 0 || beginMinutes > 59 || beginSeconds < 0 || beginSeconds > 59 || beginMilliseconds < 0 || beginMilliseconds > 999) {
+    LOGE ("%s invalid begin time string.", __FUNCTION__, beginTimeString);
   }
 
-  LOGI("hours:%d minutes:%d seconds:%d milliseconds:%d", hours, minutes, seconds, milliseconds);
-  time = (hours * 3600 + minutes * 60 + seconds ) * 1000+ milliseconds;
+  if (!endSuccess || endHours < 0 || endHours > 23 || endMinutes < 0 || endMinutes > 59 || endSeconds < 0 || endSeconds > 59 || endMilliseconds < 0 || endMilliseconds > 999) {
+    LOGE ("%s invalid end time string.", __FUNCTION__, endTimeString);
+  }
+
+  time = ((endHours - beginHours) * 3600 + (endMinutes - beginMinutes) * 60 + (endSeconds - beginSeconds) ) * 1000+ (endMilliseconds - beginMilliseconds);
+  LOGI("%s time:%lld   end\n",__FUNCTION__, time);
   return time;
 }
 
@@ -217,6 +224,7 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
     int bufSize = srcLen;
     const uint8_t *p, *pEnd;
     const char *begin = NULL, *end = NULL;
+    std::string tempString;
     int pes_packet_start_position = 5;
 
     while (srcData[0] != '<' && srcLen > 0) {
@@ -273,7 +281,7 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
         if (parag == nullptr) parag = div->FirstChildElement("tt:p");
     }
 
-    while (parag != nullptr) {
+    if (parag != nullptr) {
         const tinyxml2::XMLAttribute *attr = parag->FindAttribute("xml:id");
         if (attr != nullptr) ALOGD("parseXml xml:id=%s\n", attr->Value());
 
@@ -294,24 +302,24 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
         ALOGD("%s parseXml Text:%s\n", __FUNCTION__, parag->GetText());
         if (parag->GetText() == nullptr) {
             spanarag = parag->FirstChildElement("tt:span");
-            ALOGD("parseXml spanarag Text:%s spu->pts:%lld %lld\n", spanarag->GetText(),spu->pts, (ttml_parse_timecode(begin) - ttml_parse_timecode(end)) / 90000);
-            spu->pts = spu->pts + (ttml_parse_timecode(begin) - ttml_parse_timecode(end)) / 9000;
-            spu->spu_data = (unsigned char *)malloc(strlen(spanarag->GetText()));
-            memset(spu->spu_data, 0, strlen(spanarag->GetText()));
-            memcpy(spu->spu_data, spanarag->GetText(), strlen(spanarag->GetText()));
+            ALOGD("parseXml spanarag Text:%s spu->pts:%lld diff:%lld\n", spanarag->GetText(), spu->pts, ttml_parse_timecode(begin, end) * 90);
+            spu->m_delay = spu->pts + ttml_parse_timecode(begin, end) * 90;
+            tempString = std::string(spanarag->GetText());
         }else {
-            ALOGD("parseXml parag Text:%s spu->pts:%lld %lld\n", parag->GetText(),spu->pts, (ttml_parse_timecode(begin) - ttml_parse_timecode(end)) / 90000);
-            spu->pts = spu->pts + (ttml_parse_timecode(begin) - ttml_parse_timecode(end)) / 9000;
-            spu->spu_data = (unsigned char *)malloc(strlen(parag->GetText()));
-            memset(spu->spu_data, 0, strlen(parag->GetText()));
-            memcpy(spu->spu_data, parag->GetText(), strlen(parag->GetText()));
+            ALOGD("parseXml parag Text:%s spu->pts:%lld %lld\n", parag->GetText(), spu->pts, ttml_parse_timecode(begin, end) * 90);
+            spu->m_delay = spu->pts + ttml_parse_timecode(begin, end) * 90;
+            tempString = std::string(parag->GetText());
         }
+        spu->spu_data = (unsigned char *)malloc((tempString.length()+1) * sizeof(char));
+        memset(spu->spu_data, 0, tempString.length() * sizeof(char));
+        memcpy(spu->spu_data, reinterpret_cast<unsigned char*>(const_cast<char*>(tempString.c_str())), tempString.length() * sizeof(char));
+        spu->spu_data[tempString.length()] = '\0';
         parag = parag->NextSiblingElement();
         addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
+        // spu->pts = spu->m_delay;
     }
     doc.Clear();
     return 0;
-
 }
 
 int TtmlParser::getTTMLSpu() {
