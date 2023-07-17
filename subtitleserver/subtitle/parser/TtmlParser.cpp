@@ -231,28 +231,51 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
         srcData++;
         srcLen--;
     }
-
     while (srcData[bufSize] != '>' && bufSize > 0) {
         bufSize--;
     }
-
     bufSize = bufSize+1;
     char buf[bufSize];
     for (int i = 0; i<bufSize; i++) {
         buf[i] = srcData[i];
     }
-
     ALOGD("%s bufSize:%d buf:%s ", __FUNCTION__, bufSize, buf);
+
     tinyxml2::XMLDocument doc;
     int ret = doc.Parse(buf, bufSize);
     if (ret != tinyxml2::XML_SUCCESS) {
         ALOGD("%s ret:%d Failed to parse XML", __FUNCTION__, ret);
         return -1;
     }
-
     tinyxml2::XMLElement* root = doc.RootElement();
     if (root == NULL) {
         ALOGD("%s Failed to load file: No root element.", __FUNCTION__);
+        doc.Clear();
+        return -1;
+    }
+
+    // TODO: parse header, if we support style metadata and layout property
+    // parse head
+    tinyxml2::XMLElement *head = root->FirstChildElement("head");
+    if (head == nullptr) head = root->FirstChildElement("tt:head");
+    if (head == nullptr) {
+        ALOGD("%s Error. no head found!", __FUNCTION__);
+        doc.Clear();
+        return -1;
+    }
+    tinyxml2::XMLElement *headLayout = head->FirstChildElement("layout");
+    if (headLayout == nullptr) headLayout = head->FirstChildElement("tt:layout");
+    if (headLayout == nullptr) {
+        ALOGD("%s Error. no head layout found!", __FUNCTION__);
+        doc.Clear();
+        return -1;
+    }
+
+
+    tinyxml2::XMLElement *headLayoutRegion = headLayout->FirstChildElement("region");
+    if (headLayoutRegion == nullptr) headLayoutRegion = headLayout->FirstChildElement("tt:region");
+    if (headLayoutRegion == nullptr) {
+        ALOGD("%s Error. no head layout region found!", __FUNCTION__);
         doc.Clear();
         return -1;
     }
@@ -267,57 +290,90 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
         return -1;
     }
 
-    tinyxml2::XMLElement *div = body->FirstChildElement("div");
-    if (div == nullptr) div = body->FirstChildElement("tt:div");
-    tinyxml2::XMLElement *parag;
-    tinyxml2::XMLElement *spanarag;
-    if (div == nullptr) {
-        ALOGD("%s %d", __FUNCTION__, __LINE__);
-        parag = root->FirstChildElement("p");
-        if (parag == nullptr) parag = root->FirstChildElement("tt:p");
-    } else {
-        ALOGD("%s %d", __FUNCTION__, __LINE__);
-        parag = div->FirstChildElement("p");
-        if (parag == nullptr) parag = div->FirstChildElement("tt:p");
+    tinyxml2::XMLElement *bodyDiv = body->FirstChildElement("div");
+    if (bodyDiv == nullptr) bodyDiv = body->FirstChildElement("tt:div");
+    if (bodyDiv == nullptr) {
+        ALOGD("%s Error. no body div found!", __FUNCTION__);
+        doc.Clear();
+        return -1;
     }
 
-    if (parag != nullptr) {
-        const tinyxml2::XMLAttribute *attr = parag->FindAttribute("xml:id");
-        if (attr != nullptr) ALOGD("parseXml xml:id=%s\n", attr->Value());
+    tinyxml2::XMLElement *bodyDivP = bodyDiv->FirstChildElement("p");
+    if (bodyDivP == nullptr) bodyDivP = bodyDiv->FirstChildElement("tt:p");
+    if (bodyDivP == nullptr) {
+        ALOGD("%s Error. no body div p found!", __FUNCTION__);
+        doc.Clear();
+        return -1;
+    }
 
-        attr = parag->FindAttribute("begin");
-        if (attr != nullptr) {
-            //spu->start = attr->FloatValue() *100; // subtitle pts multiply
-            begin = attr->Value();
-            ALOGD("%s parseXml begin:%s\n", __FUNCTION__, attr->Value());
+    tinyxml2::XMLElement *divSpanParagraph;
+    if (bodyDivP != nullptr) {
+        const tinyxml2::XMLAttribute *regionXmlIdAttribute = headLayoutRegion->FindAttribute("xml:id");
+        const tinyxml2::XMLAttribute *regionTtsExtentAttribute = headLayoutRegion->FindAttribute("tts:extent");
+        const tinyxml2::XMLAttribute *regionTtsOriginAttribute = headLayoutRegion->FindAttribute("tts:origin");
+        const tinyxml2::XMLAttribute *regionTtsPaddingAttribute = headLayoutRegion->FindAttribute("tts:padding");
+        const tinyxml2::XMLAttribute *regionTtsDisplayAlignAttribute = headLayoutRegion->FindAttribute("tts:displayAlign");
+        const tinyxml2::XMLAttribute *regionTtsWritingModeAttribute = headLayoutRegion->FindAttribute("tts:writingMode");
+
+        const tinyxml2::XMLAttribute *divXmlIdAttribute = bodyDiv->FindAttribute("xml:id");
+        const tinyxml2::XMLAttribute *divStyleAttribute = bodyDiv->FindAttribute("style");
+
+        const tinyxml2::XMLAttribute *divPBeginAttribute = bodyDivP->FindAttribute("begin");
+        const tinyxml2::XMLAttribute *divPEndAttribute = bodyDivP->FindAttribute("end");
+        const tinyxml2::XMLAttribute *divPStyleAttribute = bodyDivP->FindAttribute("style");
+        const tinyxml2::XMLAttribute *divPRegionAttribute = bodyDivP->FindAttribute("region");
+        const tinyxml2::XMLAttribute *divPXmlIdAttribute = bodyDivP->FindAttribute("xml:id");
+
+
+        std::string tempString;
+        tinyxml2::XMLElement *divPSpan = bodyDivP->FirstChildElement("span");
+        if (divPSpan == nullptr) divPSpan = bodyDivP->FirstChildElement("tt:span");
+        if (divPSpan == nullptr) {
+            ALOGD("%s Error. no divPSpan found!", __FUNCTION__);
+            doc.Clear();
+            return -1;
         }
 
-        attr = parag->FindAttribute("end");
-        if (attr != nullptr) {
-            //spu->end = attr->FloatValue() *100; // subtitle pts multiply
-            end = attr->Value();
-            ALOGD("%s parseXml end:%s\n", __FUNCTION__, attr->Value());
+        tinyxml2::XMLNode *childNodeBodyDivP = bodyDivP->FirstChild();
+        while (divPSpan != nullptr) {
+            const tinyxml2::XMLAttribute *divPSpanStyleAttribute = divPSpan->FindAttribute("style");
+            ALOGD("%s style=%s text:%s", __FUNCTION__, divPSpanStyleAttribute->Value(), divPSpan->GetText());
+            if (childNodeBodyDivP && (strcmp((childNodeBodyDivP->ToElement())->Value(), "tt:br") == 0)) {
+                tempString = tempString + "\n" + std::string(divPSpan->GetText());
+            } else {
+                tempString = tempString + std::string(divPSpan->GetText());
+            }
+            ALOGD("%s tempString:%s", __FUNCTION__, tempString.c_str());
+            divPSpan = divPSpan->NextSiblingElement("tt:span");
+            childNodeBodyDivP = childNodeBodyDivP->NextSibling();
         }
 
-        ALOGD("%s parseXml Text:%s\n", __FUNCTION__, parag->GetText());
-        if (parag->GetText() == nullptr) {
-            spanarag = parag->FirstChildElement("tt:span");
-            ALOGD("parseXml spanarag Text:%s spu->pts:%lld diff:%lld\n", spanarag->GetText(), spu->pts, ttml_parse_timecode(begin, end) * 90);
-            spu->m_delay = spu->pts + ttml_parse_timecode(begin, end) * 90;
-            tempString = std::string(spanarag->GetText());
-        }else {
-            ALOGD("parseXml parag Text:%s spu->pts:%lld %lld\n", parag->GetText(), spu->pts, ttml_parse_timecode(begin, end) * 90);
-            spu->m_delay = spu->pts + ttml_parse_timecode(begin, end) * 90;
-            tempString = std::string(parag->GetText());
-        }
+        ALOGD("%s Region: xml:id=%s tts:extent=%s tts:origin=%s tts:padding=%s tts:displayAlign=%s tts:writingMode=%s Div: xml:id=%s style=%s  ttp: begin=%s end=%s style=%s region=%s xml:id=%s  text=%s", __FUNCTION__,
+                regionXmlIdAttribute->Value(),
+                regionTtsExtentAttribute->Value(),
+                regionTtsOriginAttribute->Value(),
+                regionTtsPaddingAttribute->Value(),
+                regionTtsDisplayAlignAttribute->Value(),
+                regionTtsWritingModeAttribute->Value(),
+                divXmlIdAttribute->Value(),
+                divStyleAttribute->Value(),
+                divPBeginAttribute->Value(),
+                divPEndAttribute->Value(),
+                divPStyleAttribute->Value(),
+                divPRegionAttribute->Value(),
+                divPXmlIdAttribute->Value(),
+                tempString.c_str());
+
+        spu->m_delay = spu->pts + ttml_parse_timecode(divPBeginAttribute->Value(), divPEndAttribute->Value()) * 90;
         spu->spu_data = (unsigned char *)malloc((tempString.length()+1) * sizeof(char));
         memset(spu->spu_data, 0, tempString.length() * sizeof(char));
         memcpy(spu->spu_data, reinterpret_cast<unsigned char*>(const_cast<char*>(tempString.c_str())), tempString.length() * sizeof(char));
         spu->spu_data[tempString.length()] = '\0';
-        parag = parag->NextSiblingElement();
+        bodyDivP = bodyDivP->NextSiblingElement("tt:p");
         addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
         // spu->pts = spu->m_delay;
     }
+
     doc.Clear();
     return 0;
 }
@@ -513,9 +569,8 @@ int TtmlParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                 data[4], data[5], data[6], data[7]);
 
         ret = TtmlDecodeFrame(spu, data, dataLen);
-        if (ret != -1 && spu->buffer_size > 0) {
+        if (ret != -1) {
             if (mDumpSub) LOGI("dump-pts-swdmx!success pts(%lld) mIndex:%d frame was add\n", spu->pts, mIndex);
-            addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
             {
                 std::unique_lock<std::mutex> autolock(mMutex);
                 mPendingAction = 1;
@@ -558,12 +613,6 @@ int TtmlParser::atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
             if (ret != -1 && spu->buffer_size > 0) {
                 if (mDumpSub) LOGI("[%s::%d]dump-pts-atvHwDmx!success pts(%lld) mIndex:%d frame was add\n", __FUNCTION__,__LINE__, spu->pts, ++mIndex);
-                if (spu->spu_origin_display_w <= 0 || spu->spu_origin_display_h <= 0) {
-                    spu->spu_origin_display_w = VideoInfo::Instance()->getVideoWidth();
-                    spu->spu_origin_display_h = VideoInfo::Instance()->getVideoHeight();
-                }
-                //ttx,need immediatePresent show
-                addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
             } else {
                 if (mDumpSub) LOGI("[%s::%d]dump-pts-atvHwDmx!error this pts(%lld) frame was abandon\n", __FUNCTION__,__LINE__, spu->pts);
             }
