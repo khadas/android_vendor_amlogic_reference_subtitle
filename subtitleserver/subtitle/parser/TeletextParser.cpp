@@ -2556,19 +2556,22 @@ int TeletextParser::getDvbTeletextSpu() {
             return 0;
         }
 
-        std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
-        spu->sync_bytes = AML_PARSER_SYNC_WORD;
-
         packetHeader = ((packetHeader<<8) & 0x000000ffffffffff) | tmpbuf[0];
         if (mDumpSub) LOGI("## get_dvb_spu %x, %llx,-------------\n",tmpbuf[0], packetHeader);
 
         if ((packetHeader & 0xffffffff) == 0x000001bd) {
+            std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
+            spu->sync_bytes = AML_PARSER_SYNC_WORD;
             ret = hwDemuxParse(spu);
         } else if (((packetHeader & 0xffffffffff)>>8) == AML_PARSER_SYNC_WORD
                 && (((packetHeader & 0xff)== 0x77) || ((packetHeader & 0xff)==0xaa))) {
+            std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
+            spu->sync_bytes = AML_PARSER_SYNC_WORD;
             ret = softDemuxParse(spu);
         } else if (((packetHeader & 0xffffffffff)>>8) == AML_PARSER_SYNC_WORD
                 && ((packetHeader & 0xff)== 0x41)) {//AMLUA  ATV teletext
+            std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
+            spu->sync_bytes = AML_PARSER_SYNC_WORD;
             ret = atvHwDemuxParse(spu);
         }
 
