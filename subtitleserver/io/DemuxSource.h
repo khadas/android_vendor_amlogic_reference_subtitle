@@ -63,6 +63,7 @@ private:
     int mParam2; //ancillary_id
     static DemuxSource *sInstance;
     void* mMediaSync;
+    bool mMediaSyncDestroyFlag;
 
 };
 
