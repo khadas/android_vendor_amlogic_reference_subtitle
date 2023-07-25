@@ -1704,7 +1704,7 @@ int TeletextParser::getSubPageInfoLocked() {
     }
 
     if (mContext->lockSubpg == 1) {
-        LOGE("%s, return! sub page lock！\n", __FUNCTION__);
+        LOGE("%s, return! sub page lock! \n", __FUNCTION__);
         return mContext->subPageNum;
     }
     int subArray[VBI_LOP_SUBPAGE_LINK_LENGTH] = {0};
@@ -2546,33 +2546,64 @@ int TeletextParser::teletextDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *s
 
 int TeletextParser::getDvbTeletextSpu() {
     char tmpbuf[8];
+    char *originBuffer = NULL, *transportBuffer = NULL; // Pointer to dynamically allocated buffer
+    int bufferSize = 16384; // Set the initial buffer size as needed
+    int bufIndex = 0;
     int64_t packetHeader = 0;
+    bool packetHeaderFirst = false;
+    originBuffer = new char[bufferSize];
+    transportBuffer = new char[bufferSize];
 
     if (mDumpSub) LOGI("enter get_dvb_teletext_spu\n");
     int ret = -1;
 
     while (mDataSource->read(tmpbuf, 1) == 1) {
         if (mState == SUB_STOP) {
+            // Free the allocated buffer before returning
+            if (originBuffer != NULL) {
+                delete[] originBuffer;
+            }
+            if (transportBuffer != NULL) {
+                delete[] transportBuffer;
+            }
             return 0;
         }
 
-        packetHeader = ((packetHeader<<8) & 0x000000ffffffffff) | tmpbuf[0];
-        if (mDumpSub) LOGI("## get_dvb_spu %x, %llx,-------------\n",tmpbuf[0], packetHeader);
+        if (packetHeaderFirst) {
+            originBuffer[bufIndex++] = tmpbuf[0];
+        }
 
-        if ((packetHeader & 0xffffffff) == 0x000001bd) {
-            std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
-            spu->sync_bytes = AML_PARSER_SYNC_WORD;
-            ret = hwDemuxParse(spu);
+        packetHeader = ((packetHeader<<8) & 0x000000ffffffff00) | tmpbuf[0];
+
+        if (((packetHeader & 0xffffffff) == 0x000001bd)) {
+            // if the first data header is encountered
+            if (!packetHeaderFirst) {
+                packetHeaderFirst = true;
+                bufIndex = 0;
+            } else {
+                // If the second data header is encountered, stop saving data to the buffer
+                // Data stored in dataBuffer can be used here
+                // Reset the data buffer and data size, ready to receive the next data segment
+                memset(transportBuffer, 0x0, bufferSize);
+                memcpy(transportBuffer, originBuffer, bufIndex - 4);
+                std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
+                spu->sync_bytes = AML_PARSER_SYNC_WORD;
+                ret = hwDemuxParse(spu, transportBuffer ,bufIndex - 4);
+                bufIndex = 0;
+            }
+            packetHeader = 0;
         } else if (((packetHeader & 0xffffffffff)>>8) == AML_PARSER_SYNC_WORD
                 && (((packetHeader & 0xff)== 0x77) || ((packetHeader & 0xff)==0xaa))) {
             std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
             spu->sync_bytes = AML_PARSER_SYNC_WORD;
             ret = softDemuxParse(spu);
+            packetHeader = 0;
         } else if (((packetHeader & 0xffffffffff)>>8) == AML_PARSER_SYNC_WORD
                 && ((packetHeader & 0xff)== 0x41)) {//AMLUA  ATV teletext
             std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
             spu->sync_bytes = AML_PARSER_SYNC_WORD;
             ret = atvHwDemuxParse(spu);
+            packetHeader = 0;
         }
 
         if (mContext->vbi) {
@@ -2580,6 +2611,13 @@ int TeletextParser::getDvbTeletextSpu() {
         }
     }
 
+    if (originBuffer != NULL) {
+        delete[] originBuffer;
+    }
+
+    if (transportBuffer != NULL) {
+        delete[] transportBuffer;
+    }
     return ret;
 }
 
@@ -2689,7 +2727,7 @@ void TeletextParser::tt2AddBackCachePageLocked(int pgno, int subPgno)
     mBackPageStk.push(ttCachePage);
 }
 
-int TeletextParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
+int TeletextParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu, char *psrc, const int size) {
     char tmpbuf[256] = {0};
     int64_t dvbPts = 0, dvbDts = 0;
     int64_t tempPts = 0, tempDts = 0;
@@ -2697,45 +2735,45 @@ int TeletextParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
     bool needSkipData = false;
     int ret = 0;
 
-    if (mDataSource->read(tmpbuf, 2) == 2) {
-        packageLen = (tmpbuf[0] << 8) | tmpbuf[1];
+    if (psrc[0] || psrc[1]) {
+        packageLen = (psrc[0] << 8) | psrc[1];
         if (packageLen >= 3) {
-            if (mDataSource->read(tmpbuf, 3) == 3) {
+            if (psrc[2] || psrc[3] ||psrc[4]) {
                 packageLen -= 3;
-                pesHeaderLen = tmpbuf[2];
+                pesHeaderLen = psrc[4];
                 LOGI("get_dvb_teletext_spu-packageLen:%d, pesHeaderLen:%d\n", packageLen,pesHeaderLen);
 
                 if (packageLen >= pesHeaderLen) {
-                    if ((tmpbuf[1] & 0xc0) == 0x80) {
-                        if (mDataSource->read(tmpbuf, pesHeaderLen) == pesHeaderLen) {
-                            tempPts = (int64_t)(tmpbuf[0] & 0xe) << 29;
-                            tempPts = tempPts | ((tmpbuf[1] & 0xff) << 22);
-                            tempPts = tempPts | ((tmpbuf[2] & 0xfe) << 14);
-                            tempPts = tempPts | ((tmpbuf[3] & 0xff) << 7);
-                            tempPts = tempPts | ((tmpbuf[4] & 0xfe) >> 1);
+                    if ((psrc[3] & 0xc0) == 0x80) {
+                        //if (mDataSource->read(tmpbuf, pesHeaderLen) == pesHeaderLen) {
+                            tempPts = (int64_t)(psrc[5] & 0xe) << 29;
+                            tempPts = tempPts | ((psrc[6] & 0xff) << 22);
+                            tempPts = tempPts | ((psrc[7] & 0xfe) << 14);
+                            tempPts = tempPts | ((psrc[8] & 0xff) << 7);
+                            tempPts = tempPts | ((psrc[9] & 0xfe) >> 1);
                             dvbPts = tempPts; // - pts_aligned;
                             packageLen -= pesHeaderLen;
-                        }
-                    } else if ((tmpbuf[1] &0xc0) == 0xc0) {
-                        if (mDataSource->read(tmpbuf, pesHeaderLen) == pesHeaderLen) {
-                            tempPts = (int64_t)(tmpbuf[0] & 0xe) << 29;
-                            tempPts = tempPts | ((tmpbuf[1] & 0xff) << 22);
-                            tempPts = tempPts | ((tmpbuf[2] & 0xfe) << 14);
-                            tempPts = tempPts | ((tmpbuf[3] & 0xff) << 7);
-                            tempPts = tempPts | ((tmpbuf[4] & 0xfe) >> 1);
+                        //}
+                    } else if ((psrc[3] &0xc0) == 0xc0) {
+                        //if (mDataSource->read(tmpbuf, pesHeaderLen) == pesHeaderLen) {
+                            tempPts = (int64_t)(psrc[5] & 0xe) << 29;
+                            tempPts = tempPts | ((psrc[6] & 0xff) << 22);
+                            tempPts = tempPts | ((psrc[7] & 0xfe) << 14);
+                            tempPts = tempPts | ((psrc[8] & 0xff) << 7);
+                            tempPts = tempPts | ((psrc[9] & 0xfe) >> 1);
                             dvbPts = tempPts; // - pts_aligned;
-                            tempDts = (int64_t)(tmpbuf[5] & 0xe) << 29;
-                            tempDts = tempDts | ((tmpbuf[6] & 0xff) << 22);
-                            tempDts = tempDts | ((tmpbuf[7] & 0xfe) << 14);
-                            tempDts = tempDts | ((tmpbuf[8] & 0xff) << 7);
-                            tempDts = tempDts | ((tmpbuf[9] & 0xfe) >> 1);
+                            tempDts = (int64_t)(psrc[10] & 0xe) << 29;
+                            tempDts = tempDts | ((psrc[11] & 0xff) << 22);
+                            tempDts = tempDts | ((psrc[12] & 0xfe) << 14);
+                            tempDts = tempDts | ((psrc[13] & 0xff) << 7);
+                            tempDts = tempDts | ((psrc[14] & 0xfe) >> 1);
                             dvbDts = tempDts; // - pts_aligned;
                             packageLen -= pesHeaderLen;
-                        }
+                        //}
                     } else {
                         // No PTS, has the effect of displaying immediately.
                         //needSkipData = true;
-                        mDataSource->read(tmpbuf, pesHeaderLen);
+                        //mDataSource->read(tmpbuf, pesHeaderLen);
                         packageLen -= pesHeaderLen;
                     }
                 } else {
@@ -2746,15 +2784,14 @@ int TeletextParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
            needSkipData = true;
         }
 
-        if (needSkipData) {
-            for (int iii = 0; iii < packageLen; iii++) {
-                char tmp;
-                if (mDataSource->read(&tmp, 1)  == 0) {
+       if (needSkipData) {
+            for (int j = 0; j < packageLen; j++) {
+                if (psrc[j+pesHeaderLen]  == 0) {
                     return -1;
                 }
             }
         } else if (packageLen > 0) {
-            char *buf = NULL;
+            //char *buf = NULL;
             if ((packageLen) > (OSD_HALF_SIZE * 4)) {
                 LOGE("dvb packet is too big\n\n");
                 return -1;
@@ -2762,17 +2799,18 @@ int TeletextParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             spu->subtitle_type = TYPE_SUBTITLE_DVB_TELETEXT;
             spu->pts = dvbPts;
             mContext->dtvTeletext = true;
-            buf = (char *)malloc(packageLen);
-            if (buf) {
-                LOGI("packageLen is %d, pts is %llx, delay is %llx\n", packageLen, spu->pts, tempPts);
-            } else {
-                LOGI("packageLen buf malloc fail!!!\n");
-            }
+            //buf = (char *)malloc(packageLen);
+            //if (buf) {
+            //    LOGI("packageLen is %d, pts is %llx, delay is %llx\n", packageLen, spu->pts, tempPts);
+            //} else {
+            //   LOGI("packageLen buf malloc fail!!!\n");
+            //}
+            LOGI("packageLen is %d, pts is %llx, delay is %llx\n", packageLen, spu->pts, tempPts);
 
-            if (buf) {
-                memset(buf, 0x0, packageLen);
-                if (mDataSource->read(buf, packageLen) == packageLen) {
-                    ret = teletextDecodeFrame(spu, buf, packageLen);
+            if (psrc) {
+                //memset(buf, 0x0, size);
+                //if (mDataSource->read(buf, packageLen) == packageLen) {
+                    ret = teletextDecodeFrame(spu, psrc+pesHeaderLen+5, size - 5- pesHeaderLen);
                     LOGI(" @@@@@@@hwDemuxParse parse ret:%d, buffer_size:%d", ret, spu->buffer_size);
                     if (ret != -1 && ret != DATA_VALID_AND_BLANK && spu->buffer_size > 0) {
                         LOGI("dump-pts-hwdmx!success pts(%lld) %d frame was add\n", spu->pts, ++mIndex);
@@ -2785,7 +2823,7 @@ int TeletextParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                         //wait video first frame ready.
                         if (!mDataSource->isFileAvailable()) {
                             LOGI("video first frame not ready, need wait ready!!\n");
-                            if (buf) free(buf);
+                            //if (buf) free(buf);
                             return -1;
                         }
                         #endif
@@ -2804,17 +2842,17 @@ int TeletextParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                         LOGI(" addDecodedItem buffer_size=%d ctx->isSubtitle=%d pageType=0x%x mode=%d",
                                 spu->buffer_size, mContext->isSubtitle, mContext->pageType, mContext->subtitleMode);
                         addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
-                        if (buf) free(buf);
+                        //if (buf) free(buf);
                         return 0;
                     } else {
                         LOGI("dump-pts-hwdmx!error pts(%lld) frame was abandon ret=%d bufsize=%d\n", spu->pts, ret, spu->buffer_size);
-                        if (buf) free(buf);
+                        //if (buf) free(buf);
                         return -1;
                     }
-                }
-                LOGI("packageLen buf free=%p\n", buf);
-                LOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, buf);
-                free(buf);
+                //}
+                //LOGI("packageLen buf free=%p\n", buf);
+                //LOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, buf);
+                //free(buf);
             }
         }
     }

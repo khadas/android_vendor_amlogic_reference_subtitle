@@ -211,7 +211,7 @@ private:
 
     int getDvbTeletextSpu();
     int softDemuxParse(std::shared_ptr<AML_SPUVAR> spu);
-    int hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu);
+    int hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu, char *psrc, const int size);
     int atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu);
     int teletextDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *psrc, const int size);
 
