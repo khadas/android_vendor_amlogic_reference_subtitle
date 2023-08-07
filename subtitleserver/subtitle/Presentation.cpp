@@ -462,16 +462,16 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
         case MSG_PTS_TIME_CHECK_SPU: {
             mLooper->removeMessages(this, MSG_PTS_TIME_CHECK_SPU);
             std::shared_ptr<AML_SPUVAR> spu = mPresent->mParser->tryConsumeDecodedItem();
+            uint64_t timestamp = 0;
+            uint64_t pts = 0;
+            uint64_t ptsDiff = 0;
+            mSubtitlePts32Bit = false;
             if (spu != nullptr) {
                 // has subtitle to show! Post to render list
-                uint64_t timestamp = mPresent->mStartTimeModifier + mPresent->mCurrentPresentRelativeTime;
-                uint64_t pts = convertDvbTime2Ns(spu->pts);
-                uint64_t ptsDiff = (pts>timestamp) ? (pts-timestamp) : (timestamp-pts);
-                if (isMore32Bit(spu->pts)) {
-                    mSubtitlePts32Bit = false;
-                } else {
-                    mSubtitlePts32Bit = true;
-                }
+                timestamp = mPresent->mStartTimeModifier + mPresent->mCurrentPresentRelativeTime;
+                pts = convertDvbTime2Ns(spu->pts);
+                ptsDiff = (pts>timestamp) ? (pts-timestamp) : (timestamp-pts);
+
                 // The subtitle pts ahead more than 100S of video...maybe ahead more 20s
                 if ((ptsDiff >= 200*1000*1000*1000LL) && !(spu->isExtSub)) {
                     ALOGD("Got  SPU: spu is ptsDiff >= 200s pts:%lld spu->pts:%lld",pts, spu->pts);
@@ -480,14 +480,24 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                     spu->m_delay = spu->pts + DEFAULT_DELAY_TIME*1000*DVB_TIME_MULTI;
                     pts = convertDvbTime2Ns(spu->pts);
                 }
-                ALOGD("Got  SPU: TimeStamp:%lld startAtPts=%lld ItemPts=%lld(%lld) duration:%lld(%lld) data:%p(%p)",
+
+                if (isMore32Bit(spu->pts)) {
+                    mSubtitlePts32Bit = false;
+                } else {
+                    mSubtitlePts32Bit = true;
+                }
+
+                ALOGD("Got  SPU: TimeStamp:%lld startAtPts=%lld ItemPts=%lld(%lld) duration:%lld(%lld) data:%p(%p) type:%d timestamp:%lld",
                         ns2ms(mPresent->mCurrentPresentRelativeTime),
                         ns2ms(mPresent->mStartTimeModifier),
                         spu->pts, spu->pts/DVB_TIME_MULTI,
                         spu->m_delay, spu->m_delay/DVB_TIME_MULTI,
-                        spu->spu_data, spu->spu_data);
-                mPresent->mEmittedShowingSpu.push_back(spu);
-                mPresent->mEmittedShowingSpu.sort(cmpSpu);
+                        spu->spu_data, spu->spu_data,
+                        spu->subtitle_type, timestamp);
+                if (TYPE_SUBTITLE_CLOSED_CAPTION == spu->subtitle_type || timestamp != 0) {
+                    mPresent->mEmittedShowingSpu.push_back(spu);
+                    mPresent->mEmittedShowingSpu.sort(cmpSpu);
+                }
 
                 // if emitt to much spu and not consumed, we delete the oldest, save memory
                 /*int maxAllowedItem = spu->isBitmapSpu() ? MAX_ALLOWED_STREAM_SPU_NUM : MAX_ALLOWED_STREAM_SPU_NUM*50;
@@ -501,10 +511,10 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
             }
 
             // handle presentation showing.
-            uint64_t timestamp = mPresent->mStartTimeModifier + mPresent->mCurrentPresentRelativeTime;
+            timestamp = mPresent->mStartTimeModifier + mPresent->mCurrentPresentRelativeTime;
             if (mPresent->mEmittedShowingSpu.size() > 0) {
                 spu = mPresent->mEmittedShowingSpu.front();
-                ALOGD("spu->isExtSub:%d, timestamp:%lld mStartTimeModifier=%lld mCurrentPresentRelativeTime=%lld m_delay/DVB_TIME_MULTI:%lld",spu->isExtSub, ns2ms(timestamp),ns2ms(mPresent->mStartTimeModifier),ns2ms(mPresent->mCurrentPresentRelativeTime),spu->m_delay/DVB_TIME_MULTI);
+                ALOGD("spu->isExtSub:%d, timestamp:%lld mStartTimeModifier=%lld mCurrentPresentRelativeTime=%lld ItemPts=%lld(%lld) m_delay/DVB_TIME_MULTI:%lld",spu->isExtSub, ns2ms(timestamp),ns2ms(mPresent->mStartTimeModifier),ns2ms(mPresent->mCurrentPresentRelativeTime),spu->pts, spu->pts/DVB_TIME_MULTI, spu->m_delay/DVB_TIME_MULTI);
 
                 //in case seek done, then throw out-of-date subtitle
                 while (spu != nullptr && spu->isExtSub && spu->m_delay > 0 && (ns2ms(timestamp) >= spu->m_delay/DVB_TIME_MULTI)) {
@@ -537,7 +547,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                 }
 
                 if (spu != nullptr) {
-                    uint64_t pts = convertDvbTime2Ns(spu->pts);
+                    pts = convertDvbTime2Ns(spu->pts);
 
                     //If decoded pts is null, and is normal subtitle[not immediate display]...
                     // show it ...
@@ -666,6 +676,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                     ALOGE("Error! should not nullptr here!");
                 }
             }
+            mSubtitlePts32Bit = false;
         }
         break;
 
@@ -698,6 +709,7 @@ void Presentation::MessageProcess::looperLoop() {
         switch (ret) {
             case -1:
                 ALOGD("A_LOOPER_POLL_WAKE\n");
+                mSubtitlePts32Bit = false;
                 break;
             case -3: // timeout
                 break;

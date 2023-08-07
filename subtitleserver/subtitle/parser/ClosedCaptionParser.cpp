@@ -80,6 +80,7 @@ static void q_tone_data_cb(AM_CC_Handle_t handle, char *buffer, int size) {
     memcpy(spu->spu_data, buffer, size);
     spu->buffer_size = size;
     spu->isQtoneData = true;
+    spu->subtitle_type = TYPE_SUBTITLE_CLOSED_CAPTION;
 
     // report data:
     {
@@ -138,6 +139,7 @@ void json_update_cb(AM_CC_Handle_t handle) {
     memset(spu->spu_data, 0, mJsonLen);
     memcpy(spu->spu_data, ClosedCaptionParser::sJsonStr, mJsonLen);
     spu->buffer_size = mJsonLen;
+    spu->subtitle_type = TYPE_SUBTITLE_CLOSED_CAPTION;
 
     // report data:
     {
