@@ -78,7 +78,7 @@ int ExtParser::parse() {
         bool needIdling = true;
         if (mState == SUB_INIT) {
             mState = SUB_PLAYING;
-        } else if (mState == SUB_PLAYING) {
+        } else if (mState == SUB_PLAYING && mDecodedSpu.size() < mMaxSpuItems) {
             needIdling = getSpu() != 0;
         }
 
