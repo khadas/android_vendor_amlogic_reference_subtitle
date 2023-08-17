@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 magicxqq <xqq@xqq.im>. All rights reserved.
+ * Copyright (C) 2023 magicxqq <xqq@xqq.im>. All rights reserved.
  *
  * This file is part of libaribcaption.
  *
@@ -16,20 +16,25 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef ARIBCAPTION_PNG_WRITER_H
-#define ARIBCAPTION_PNG_WRITER_H
+#ifndef ARIBCAPTION_FLOATING_HELPER_HPP
+#define ARIBCAPTION_FLOATING_HELPER_HPP
 
-#include <stdbool.h>
-#include "aribcaption/image.h"
+#include <cmath>
+#include <type_traits>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace aribcaption::floating {
 
-bool png_writer_write_image_c(const char* filename, const aribcc_image_t* image);
+template <typename T,
+          typename = std::enable_if_t<std::is_floating_point_v<T>>>
+inline bool AlmostEquals(T lhs, T rhs, T epsilon) {
+    T diff = std::fabs(lhs - rhs);
+    T lhs_abs = std::fabs(lhs);
+    T rhs_abs = std::fabs(rhs);
 
-#ifdef __cplusplus
-}  // extern "C"
-#endif
+    T largest = lhs_abs > rhs_abs ? lhs_abs : rhs_abs;
+    return diff <= largest * epsilon;
+}
 
-#endif  // ARIBCAPTION_PNG_WRITER_H
+}  // namespace aribcaption::floating
+
+#endif  // ARIBCAPTION_FLOATING_HELPER_HPP

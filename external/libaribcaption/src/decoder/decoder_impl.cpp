@@ -100,6 +100,10 @@ void DecoderImpl::SetReplaceMSZFullWidthAlphanumeric(bool replace) {
     replace_msz_fullwidth_ascii_ = replace;
 }
 
+void DecoderImpl::SetReplaceMSZFullWidthJapanese(bool replace) {
+    replace_msz_fullwidth_ja_ = replace;
+}
+
 uint32_t DecoderImpl::QueryISO6392LanguageCode(LanguageId language_id) const {
     if (language_infos_.empty()) {
         return current_iso6392_language_code_;
@@ -436,7 +440,9 @@ bool DecoderImpl::ParseCaptionManagementData(const uint8_t* data, size_t length)
             ResetWritingFormat();
         }
 
-        language_infos_[language_tag] = language_info;
+        if (language_tag < num_languages) {
+            language_infos_[language_tag] = language_info;
+        }
     }
 
     if (request_encoding_ == EncodingScheme::kAuto) {
@@ -644,15 +650,14 @@ bool DecoderImpl::ParseDRCS(const uint8_t* data, size_t length, size_t byte_coun
 
                 uint8_t depth_bits = ([](uint8_t n) -> uint8_t {
                     uint8_t count = 0;
-                    while (n) {
-                        if ((n & 1) == 0) count++;
-                        n >>= 1;
+                    for (n--; n; n >>= 1) {
+                        count++;
                     }
                     return count;
                 })(depth);
-                size_t bitmap_size = width * height * depth_bits / 8;
+                size_t bitmap_size = (width * height * depth_bits + 7) / 8;
 
-                if (offset + bitmap_size > length) {
+                if (depth < 2 || offset + bitmap_size > length) {
                     LOGE("DecoderImpl: Data not enough for parsing DRCS");
                     return false;
                 }
@@ -804,7 +809,8 @@ bool DecoderImpl::HandleC0(const uint8_t* data, size_t remain_bytes, size_t* byt
             break;
         case C0::SP:   // Space character
             if (active_encoding_ == EncodingScheme::kABNT_NBR_15606_1_Latin ||
-                    active_encoding_ == EncodingScheme::kARIB_STD_B24_UTF8) {
+                    active_encoding_ == EncodingScheme::kARIB_STD_B24_UTF8 ||
+                    (replace_msz_fullwidth_ascii_ && char_horizontal_scale_ * 2 == char_vertical_scale_)) {
                 PushCharacter(0x0020);  // Space (Basic Latin)
             } else {
                 PushCharacter(0x3000);  // Ideographic Space (CJK)
@@ -856,14 +862,20 @@ bool DecoderImpl::HandleESC(const uint8_t* data, size_t remain_bytes, size_t* by
                     if (data[2] == 0x20) {  // 2-byte DRCS
                         if (remain_bytes < 4)
                             return false;
-                        GX_[GX_index] = kDRCSCodesetByF.at(data[3]);
+                        auto iter = kDRCSCodesetByF.find(data[3]);
+                        if (iter != kDRCSCodesetByF.end())
+                            GX_[GX_index] = iter->second;
                         bytes = 4;
                     } else {  // 2-byte G set
-                        GX_[GX_index] = kGCodesetByF.at(data[2]);
+                        auto iter = kGCodesetByF.find(data[2]);
+                        if (iter != kGCodesetByF.end())
+                            GX_[GX_index] = iter->second;
                         bytes = 3;
                     }
                 } else {  // 2-byte G set
-                    GX_[0] = kGCodesetByF.at(data[1]);
+                    auto iter = kGCodesetByF.find(data[1]);
+                    if (iter != kGCodesetByF.end())
+                        GX_[0] = iter->second;
                     bytes = 2;
                 }
             } else if (data[0] >= 0x28 && data[0] <= 0x2B) {  // 1-byte G set or DRCS
@@ -873,10 +885,14 @@ bool DecoderImpl::HandleESC(const uint8_t* data, size_t remain_bytes, size_t* by
                 if (data[1] == 0x20) {  // 1-byte DRCS
                     if (remain_bytes < 3)
                         return false;
-                    GX_[GX_index] = kDRCSCodesetByF.at(data[2]);
+                    auto iter = kDRCSCodesetByF.find(data[2]);
+                    if (iter != kDRCSCodesetByF.end())
+                        GX_[GX_index] = iter->second;
                     bytes = 3;
                 } else {  // 1-byte G set
-                    GX_[GX_index] = kGCodesetByF.at(data[1]);
+                    auto iter = kGCodesetByF.find(data[1]);
+                    if (iter != kGCodesetByF.end())
+                        GX_[GX_index] = iter->second;
                     bytes = 2;
                 }
             }
@@ -932,7 +948,8 @@ bool DecoderImpl::HandleC1(const uint8_t* data, size_t remain_bytes, size_t* byt
             if (data[1] == 0x20) {
                 if (remain_bytes < 3)
                     return false;
-                palette_ = data[2] & 0x0F;
+                // CLUT palette indexes larger than 7 are not used and not implemented
+                palette_ = data[2] & 0x07;
                 bytes = 3;
             } else if (data[1] >= 0x48 && data[1] <= 0x7F) {
                 switch (data[1] & 0xF0) {
@@ -1210,17 +1227,31 @@ bool DecoderImpl::HandleGLGR(const uint8_t* data, size_t remain_bytes, size_t* b
                entry->graphics_set == GraphicSet::kProportionalHiragana) {
         uint32_t index = (uint32_t)ch - 0x21;
         uint32_t ucs4 = kHiraganaTable[index];
+        if (ch >= 0x79 &&
+            replace_msz_fullwidth_ja_ &&
+            char_horizontal_scale_ * 2 == char_vertical_scale_) {
+            ucs4 = kKanaSymbolsTable_Halfwidth[ch - 0x79];
+        }
         PushCharacter(ucs4);
         MoveRelativeActivePos(1, 0);
     } else if (entry->graphics_set == GraphicSet::kKatakana ||
                entry->graphics_set == GraphicSet::kProportionalKatakana) {
         uint32_t index = (uint32_t)ch - 0x21;
         uint32_t ucs4 = kKatakanaTable[index];
+        if (ch >= 0x79 &&
+            replace_msz_fullwidth_ja_ &&
+            char_horizontal_scale_ * 2 == char_vertical_scale_) {
+            ucs4 = kKanaSymbolsTable_Halfwidth[ch - 0x79];
+        }
         PushCharacter(ucs4);
         MoveRelativeActivePos(1, 0);
     } else if (entry->graphics_set == GraphicSet::kJIS_X0201_Katakana) {
         uint32_t index = (uint32_t)ch - 0x21;
         uint32_t ucs4 = kJISX0201KatakanaTable[index];
+        if (replace_msz_fullwidth_ja_ &&
+            char_horizontal_scale_ * 2 == char_vertical_scale_) {
+            ucs4 = kJISX0201KatakanaTable_Halfwidth[index];
+        }
         PushCharacter(ucs4);
         MoveRelativeActivePos(1, 0);
     } else if (entry->graphics_set == GraphicSet::kKanji ||
@@ -1237,11 +1268,20 @@ bool DecoderImpl::HandleGLGR(const uint8_t* data, size_t remain_bytes, size_t* b
         if (ku < gaiji_begin_ku) {
             uint32_t index = ku * 94 + ten;
             ucs4 = kKanjiTable[index];
-            // If [ucs4 is Fullwidth alphanumeric] && [request replace] && [under MSZ mode]
-            if ((ucs4 >= 0xFF01 && ucs4 <= 0xFF5E) && replace_msz_fullwidth_ascii_ &&
-                char_horizontal_scale_ * 2 == char_vertical_scale_) {
+            // If [request replace MSZ fullwidth Japanese] && [under MSZ mode]
+            if (replace_msz_fullwidth_ja_ && char_horizontal_scale_ * 2 == char_vertical_scale_) {
+                // Replace symbols used in Japanese (CJK) paragraph, etc. into halfwidth characters
+                if (ku < 2) {
+                    ucs4 = kKanjiSymbolsTable_Halfwidth[index];
+                }
+            }
+            // If [request replace MSZ fullwidth ASCII] && [under MSZ mode]
+            if (replace_msz_fullwidth_ascii_ && char_horizontal_scale_ * 2 == char_vertical_scale_) {
+                // If [ucs4 is Ideographic Space or Fullwidth alphanumeric]
                 // Replace Fullwidth alphanumerics with Halfwidth alphanumerics
-                ucs4 = (ucs4 & 0xFF) + 0x20;
+                if (ucs4 == 0x3000 || (ucs4 >= 0xFF01 && ucs4 <= 0xFF5E)) {
+                    ucs4 = (ucs4 & 0xFF) + 0x20;
+                }
             }
         } else {  // ku >= 84
             // Additional Kanji + Additional Symbols

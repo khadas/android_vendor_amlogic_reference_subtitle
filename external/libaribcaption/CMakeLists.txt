@@ -20,7 +20,7 @@ cmake_minimum_required(VERSION 3.11)
 
 project(libaribcaption
     VERSION
-        1.0.0
+        1.0.1
     DESCRIPTION
         "Portable ARIB STD-B24 Caption Decoder/Renderer"
     HOMEPAGE_URL
@@ -171,6 +171,7 @@ add_library(aribcaption
         src/base/aligned_alloc.cpp
         src/base/always_inline.hpp
         src/base/cfstr_helper.hpp
+        src/base/floating_helper.hpp
         src/base/language_code.hpp
         src/base/logger.cpp
         src/base/logger.hpp
@@ -181,6 +182,7 @@ add_library(aribcaption
         src/base/scoped_cfref.hpp
         src/base/scoped_com_initializer.hpp
         src/base/scoped_holder.hpp
+        src/base/unicode_helper.hpp
         src/base/utf_helper.hpp
         src/base/wchar_helper.hpp
         src/common/caption_capi.cpp

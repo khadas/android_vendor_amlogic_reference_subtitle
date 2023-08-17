@@ -20,7 +20,9 @@
 #include <cstring>
 #include <cstdint>
 #include <cmath>
+#include "base/floating_helper.hpp"
 #include "base/scoped_holder.hpp"
+#include "base/unicode_helper.hpp"
 #include "base/utf_helper.hpp"
 #include "renderer/alphablend.hpp"
 #include "renderer/canvas.hpp"
@@ -96,7 +98,7 @@ void TextRendererFreetype::EndDraw(TextRenderContext& context) {
 
 auto TextRendererFreetype::DrawChar(TextRenderContext& render_ctx, int target_x, int target_y,
                                     uint32_t ucs4, CharStyle style, ColorRGBA color, ColorRGBA stroke_color,
-                                    float stroke_width, int char_width, int char_height,
+                                    float stroke_width, int char_width, int char_height, float aspect_ratio,
                                     std::optional<UnderlineInfo> underline_info,
                                     TextRenderFallbackPolicy fallback_policy) -> TextRenderStatus {
     assert(char_height > 0);
@@ -104,9 +106,8 @@ auto TextRendererFreetype::DrawChar(TextRenderContext& render_ctx, int target_x,
         stroke_width = 0.0f;
     }
 
-    // Handle space characters
-    if (ucs4 == 0x0009 || ucs4 == 0x0020 || ucs4 == 0x00A0 || ucs4 == 0x1680 ||
-        ucs4 == 0x3000 || ucs4 == 0x202F || ucs4 == 0x205F || (ucs4 >= 0x2000 && ucs4 <= 0x200A)) {
+    // Skip space characters
+    if (unicode::IsSpaceCharacter(ucs4)) {
         return TextRenderStatus::kOK;
     }
 
@@ -158,6 +159,13 @@ auto TextRendererFreetype::DrawChar(TextRenderContext& render_ctx, int target_x,
                 return TextRenderStatus::kCodePointNotFound;
             }
         }
+    }
+
+    // If aspect_ratio is 0.5 (1:2), this should be MSZ (Middle size)
+    bool is_requesting_halfwidth = floating::AlmostEquals(aspect_ratio, 0.5f, 0.05f);
+    if (is_requesting_halfwidth && unicode::IsHalfwidthCharacter(ucs4)) {
+        // Do not do horizontal scaling since the character is halfwidth already
+        char_width = char_height;
     }
 
     if (FT_Set_Pixel_Sizes(face, static_cast<FT_UInt>(char_width), static_cast<FT_UInt>(char_height))) {
