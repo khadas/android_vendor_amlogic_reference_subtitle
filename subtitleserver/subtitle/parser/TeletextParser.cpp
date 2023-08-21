@@ -1898,6 +1898,10 @@ int TeletextParser::nextSubPageLocked(int dir) {
         return -1;
     }
 
+    if (mContext->lockSubpg == 1) {
+       mContext->lockSubpg = 0;
+    }
+
     if (!mContext->lockSubpg && !mContext->atvTeletext && !mContext->dtvTeletext) {
         LOGE("%s,  page not be lock! invalid set!\n", __FUNCTION__);
         return -1;
