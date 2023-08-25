@@ -313,6 +313,11 @@ int AribB24Parser::aribB24DecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *src
     //spu->spu_origin_display_h = 576;
     spu->isSimpleText = true;
     aribcc_caption_t caption;
+    if (mDumpSub) {
+        for (int i = 0; i < bufSize; i++) {
+            LOGE("0x%x ", buf[i]);
+        }
+    }
     aribcc_decode_status_t status = aribcc_decoder_decode(mContext->p_decoder, buf, bufSize, spu->pts, &caption);
     if (status == ARIBCC_DECODE_STATUS_ERROR) {
          LOGE(" %s aribcc_decoder_decode() returned with error!\n", __FUNCTION__);
@@ -332,6 +337,16 @@ int AribB24Parser::aribB24DecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *src
     if (caption.text) {
         str = caption.text;
         LOGD(" %s aribcc_decoder_decode() str:%s\n", __FUNCTION__, str.c_str());
+        // Remove leading spaces
+        str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](unsigned char ch) {
+            return !std::isspace(ch);
+        }));
+
+        // Remove trailing spaces
+        str.erase(std::find_if(str.rbegin(), str.rend(), [](unsigned char ch) {
+            return !std::isspace(ch);
+        }).base(), str.end());
+
         spu->buffer_size = str.length();
         if (caption.wait_duration == ARIBCC_DURATION_INDEFINITE) {
             //p_spu->b_ephemer = true;

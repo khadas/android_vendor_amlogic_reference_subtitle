@@ -43,6 +43,11 @@
 #define LOGI(...) printf(__VA_ARGS__)
 #define LOGE(...) printf(__VA_ARGS__)
 #endif
+
+#ifdef CUSTOM_SPECIAL_DATA_CONVERSION
+#define INTERPRET_0X1D21_AS_A_MUSICAL_NOTE
+#endif
+
 namespace aribcaption::internal {
 
 DecoderImpl::DecoderImpl(Context& context) : log_(GetContextLogger(context)) {}
@@ -545,7 +550,16 @@ bool DecoderImpl::ParseStatementBody(const uint8_t* data, size_t length) {
 
         if (active_encoding_ == EncodingScheme::kARIB_STD_B24_UTF8) {
             if (ch <= 0x1F) {
-                ret = HandleC0(data + offset, length - offset, &bytes_processed);
+                #ifdef INTERPRET_0X1D21_AS_A_MUSICAL_NOTE
+                if (ch == 0x1d && (data + offset)[1]== 0X21) {
+                    LOGE("ParseStatementBody HandleSpecial 1 offset:%d active_encoding_:%d ch:0x%x", offset, active_encoding_, ch);
+                    ret = HandleSpecial(data + offset, length - offset, &bytes_processed);
+                } else {
+                #endif
+                    ret = HandleC0(data + offset, length - offset, &bytes_processed);
+                #ifdef INTERPRET_0X1D21_AS_A_MUSICAL_NOTE
+                }
+                #endif
             } else if (ch == 0x7F) {
                 ret = HandleC1(data + offset, length - offset, &bytes_processed);
             } else if (ch == 0xC2) {
@@ -560,7 +574,16 @@ bool DecoderImpl::ParseStatementBody(const uint8_t* data, size_t length) {
             }
         } else {
             if (ch <= 0x20) {
-                ret = HandleC0(data + offset, length - offset, &bytes_processed);
+                #ifdef INTERPRET_0X1D21_AS_A_MUSICAL_NOTE
+                if (ch == 0x1d && (data + offset)[1]== 0X21) {
+                    LOGE("ParseStatementBody HandleSpecial 2 offset:%d active_encoding_:%d ch:0x%x", offset, active_encoding_, ch);
+                    ret = HandleSpecial(data + offset, length - offset, &bytes_processed);
+                } else {
+                #endif
+                    ret = HandleC0(data + offset, length - offset, &bytes_processed);
+                #ifdef INTERPRET_0X1D21_AS_A_MUSICAL_NOTE
+                }
+                #endif
             } else if (ch < 0x7F) {
                 ret = HandleGLGR(data + offset, length - offset, &bytes_processed, GL_);
             } else if (ch <= 0xA0) {
@@ -759,7 +782,7 @@ bool DecoderImpl::HandleC0(const uint8_t* data, size_t remain_bytes, size_t* byt
             uint8_t y = data[1] & 0b00111111;
             uint8_t x = data[2] & 0b00111111;
             SetAbsoluteActivePos(static_cast<int>(x), static_cast<int>(y));
-            if (!(caption_->text.empty())) caption_->text = caption_->text + '\n';  // Encountered segment flags add line breaks.
+            if (!(caption_->text.empty())) utf::UTF8AppendCodePoint(caption_->text, 0x000A);  // Encountered segment flags add line breaks.
             bytes = 3;
             break;
         }
@@ -1303,6 +1326,16 @@ bool DecoderImpl::HandleUTF8(const uint8_t* data, size_t remain_bytes, size_t* b
 
     MoveRelativeActivePos(1, 0);
 
+    return true;
+}
+
+bool DecoderImpl::HandleSpecial(const uint8_t* data, size_t remain_bytes, size_t* bytes_processed) {
+    uint8_t ch = data[0];
+    uint32_t index = (uint32_t)ch - 0xd;
+    uint32_t ucs4 = kLatinSpecialTable[index];
+    PushCharacter(ucs4);
+    MoveRelativeActivePos(1, 0);
+    *bytes_processed = 2;
     return true;
 }
 

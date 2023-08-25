@@ -82,6 +82,7 @@ cc_library_static {
         "-DARIBCC_USE_FONTCONFIG",
         "-DARIBCC_USE_FREETYPE",
         "-DARIBCC_IS_ANDROID",
+        "-DCUSTOM_SPECIAL_DATA_CONVERSION",
     ],
 
     arch: {
