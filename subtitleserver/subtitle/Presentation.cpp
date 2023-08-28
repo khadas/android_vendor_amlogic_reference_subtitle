@@ -494,7 +494,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                         spu->m_delay, spu->m_delay/DVB_TIME_MULTI,
                         spu->spu_data, spu->spu_data,
                         spu->subtitle_type, timestamp);
-                if (TYPE_SUBTITLE_CLOSED_CAPTION == spu->subtitle_type || timestamp != 0) {
+                if (TYPE_SUBTITLE_CLOSED_CAPTION == spu->subtitle_type || (timestamp != 0 || (timestamp == 0 && spu->pts == 0))) {
                     mPresent->mEmittedShowingSpu.push_back(spu);
                     mPresent->mEmittedShowingSpu.sort(cmpSpu);
                 }
