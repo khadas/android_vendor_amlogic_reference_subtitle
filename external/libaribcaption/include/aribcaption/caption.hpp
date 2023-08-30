@@ -142,6 +142,27 @@ struct CaptionChar {
     float char_horizontal_scale = 0.0f;
     float char_vertical_scale = 0.0f;
 
+    /**
+     *FLC Flashing control
+     *Specifies the beginning and the end of flashing and the differences of the normal phase and the reverse phase by the parameter P1 (1 byte).
+     *FLC 04/0: Start normal phase flashing
+     *(This indicates the flashing which first starts in the same screen.)
+     *FLC 04/7: Start inverted phase flashing
+     *(This indicates the flashing of bright and dark phases are inverted to the normal phase flashing.)
+     *FLC 04/15: Stop flashing
+     */
+    bool char_flash = false; //FLC
+
+    /**
+     *RPC Repeat Character
+     *The repeat code RPC with one parameter P1 (1 byte) causes a displayable character or mosaic that immediately follows the code, to be displayed a number of times specified by the parameter P1.
+     *The byte should be from columns 04/0 through 07/15. The repeat count is given by the binary number, comprising bits b6 through b1. (b7 and b8 are not used.)
+     *RPC 04/0 has a special meaning that repeat to the end of line. Without changing the character field, active position down is made, moving to the first position of the same line.
+     *The displayed character or mosaic means that the characters after when composition of non-spacing characters, non-spacing mosaic or composition by composition command is made.
+     *Codes and characters displayed repeatedly and codes which can be used between mosaics should be as shown in table 7-10.
+     */
+    int char_repeat_display_times = 1; //RPC
+
     ColorRGBA text_color;    ///< Color of the text (foreground)
     ColorRGBA back_color;    ///< Color of the background
     ColorRGBA stroke_color;  ///< Color of the storke text
@@ -260,6 +281,27 @@ struct Caption {
      * Will be PTS_NOPTS if passed as PTS_NOPTS into decoder, otherwise in milliseconds.
      */
     int64_t pts = 0;
+
+    /**
+     * Caption't Writing Format
+     *
+     * *Decimal numbers specifying format are as follows.
+     * *0: horizontal writing form in standard density
+     * *1: vertical writing form in standard density
+     * *2: horizontal writing form in high density
+     * *3: vertical writing form in high density
+     * *4: horizontal writing form in Western language
+     * *5: horizontal writing form in   1920 x 1080
+     * *6: vertical writing form in 1920 x 1080
+     * *7: horizontal writing form in 960 x 540
+     * *8: vertical writing form in 960 x 540
+     * *9: horizontal writing form in 720 x 480
+     * *10: vertical writing form in 720 x 480
+     * *11: horizontal writing form in 1280 x 720
+     * *12: vertical writing form in 1280 x 720
+     * * The default value is horizontal writing form in 960 x 540.
+     */
+    int64_t swf = 7;
 
     /**
      * Caption's duration, in milliseconds

@@ -213,6 +213,7 @@ DecodeStatus DecoderImpl::Decode(const uint8_t* pes_data, size_t length, int64_t
         caption_->builtin_sound_id = builtin_sound_id_;
 
         caption_->pts = pts_;
+        caption_->swf = swf_;
 
         if (caption_->wait_duration == 0) {
             caption_->wait_duration = DURATION_INDEFINITE;
@@ -365,6 +366,8 @@ void DecoderImpl::ResetInternalState() {
         char_vertical_scale_ = 1.0f;
     }
 
+    char_repeat_display_times_ = 1;
+    char_flash_ = false;
     has_underline_ = false;
     has_bold_ = false;
     has_italic_ = false;
@@ -986,6 +989,8 @@ bool DecoderImpl::HandleC1(const uint8_t* data, size_t remain_bytes, size_t* byt
             break;
         case C1::FLC:  // Flashing control
             bytes = 2;
+            char_flash_ = !char_flash_;
+            //LOGI("HandleC1 C1::FLC Flashing control");
             break;
         case C1::CDC:  // Conceal Display Controls
             if (remain_bytes < 2)
@@ -1024,6 +1029,8 @@ bool DecoderImpl::HandleC1(const uint8_t* data, size_t remain_bytes, size_t* byt
             // TODO
             if (remain_bytes < 2)
                 return false;
+            //LOGI("HandleC1 C1::RPC Repeat Character:0x%x Character repeat display times:%d",  data[2], data[1] & 0x0F);
+            char_repeat_display_times_ = data[1] & 0x0F;
             bytes = 2;
             break;
         case C1::STL:  // Start Lining
@@ -1399,8 +1406,10 @@ void DecoderImpl::ApplyCaptionCharCommonProperties(CaptionChar& caption_char) {
     caption_char.char_vertical_spacing = char_vertical_spacing_;
     caption_char.char_horizontal_scale = char_horizontal_scale_;
     caption_char.char_vertical_scale = char_vertical_scale_;
-    caption_char.text_color = text_color_;
     caption_char.back_color = back_color_;
+    caption_char.text_color = text_color_;
+    caption_char.char_flash = char_flash_;
+    caption_char.char_repeat_display_times = char_repeat_display_times_;
 
     if (has_underline_)
         caption_char.style = static_cast<CharStyle>(caption_char.style | CharStyle::kCharStyleUnderline);

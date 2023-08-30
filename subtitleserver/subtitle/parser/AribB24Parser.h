@@ -17,6 +17,11 @@
 
 #include <aribcaption/aribcaption.h>
 #include <aribcaption/decoder.h>
+#include <aribcaption/caption.h>
+#include <aribcaption/context.hpp>
+#include <aribcaption/caption.hpp>
+#include <aribcaption/decoder.hpp>
+
 
 #define AV_NOPTS_VALUE          INT64_C(0x8000000000000000)
 #define AV_TIME_BASE            1000000
@@ -71,15 +76,12 @@ typedef struct
     //int margin_right = 0;
     //int margin_bottom = 0;
 
-    aribcc_profile_t         i_profile;
-    aribcc_context_t         *p_context;
-    aribcc_decoder_t         *p_decoder;
-    //aribcc_renderer_t        *p_renderer;
-    //aribcc_render_result_t   render_result;
+
 } AribB24Context;
 
 class AribB24Parser: public Parser {
 public:
+    explicit AribB24Parser() : aribcaptionDecoder(aribcaptionContext){};
     AribB24Parser(std::shared_ptr<DataSource> source);
     virtual ~AribB24Parser();
     virtual int parse();
@@ -110,6 +112,9 @@ private:
     std::condition_variable mCv;
     int mPendingAction;
     std::shared_ptr<std::thread> mTimeoutThread;
+    aribcaption::Decoder      aribcaptionDecoder;
+    aribcaption::Context      aribcaptionContext;
+    aribcaption::DecodeResult aribcaptionResult;
 };
 
 

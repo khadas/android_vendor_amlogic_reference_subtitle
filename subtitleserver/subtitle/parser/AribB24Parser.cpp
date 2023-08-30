@@ -43,8 +43,10 @@
 #define LOGE ALOGE
 
 #define MAX_BUFFERED_PAGES 25
-#define BITMAP_CHAR_WIDTH  12
-#define BITMAP_CHAR_HEIGHT 10
+#define SCALE_FACTOR       2
+#define STROKE_WIDTH       3
+#define FORCE_STROKE_TEXT  1
+
 #define OSD_HALF_SIZE (1920*1280/8)
 
 #define HIGH_32_BIT_PTS 0xFFFFFFFF
@@ -66,49 +68,14 @@ bool static inline isMore32Bit(int64_t pts) {
     return false;
 }
 
-static void save2BitmapFile(const char *filename, uint32_t *bitmap, int w, int h)
-{
-    LOGI("png_save2:%s\n",filename);
-    FILE *f;
-    char fname[40];
-
-    snprintf(fname, sizeof(fname), "%s.bmp", filename);
-    f = fopen(fname, "w");
-    if (!f) {
-        ALOGE("Error cannot open file %s!", fname);
-        return;
-    }
-    fprintf(f, "P6\n%d %d\n%d\n", w, h, 255);
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-            int v = bitmap[y * w + x];
-            putc((v >> 16) & 0xff, f);
-            putc((v >> 8) & 0xff, f);
-            putc((v >> 0) & 0xff, f);
-        }
-    }
-    fclose(f);
+std::string colorToString(const aribcaption::ColorRGBA& color) {
+    return "rgba("+std::to_string(color.r) + ", " +
+           std::to_string(color.g) + ", " +
+           std::to_string(color.b) + ", " +
+           std::to_string(color.a) + ")";
 }
 
-/* Draw a page as bitmap */
-static int genSubBitmap(AribB24Context *ctx, AVSubtitleRect *subRect, vbi_page *page, int chopTop)
-{
-    int resx = page->columns * BITMAP_CHAR_WIDTH;
-    int resy;
-    int height;
-
-    uint8_t ci;
-    subRect->type = SUBTITLE_BITMAP;
-    return 0;
-}
-
-// This is callback function registered to arib24.
-// arib24 callback from: arib b24DecodeFrame, so should not add lock in this
-static void messages_callback_handler(void *arib_b24_opaque, const char *arib_b24_message) {
-    LOGI("[messages_callback_handler]\n");
-}
-
-AribB24Parser::AribB24Parser(std::shared_ptr<DataSource> source) {
+AribB24Parser::AribB24Parser(std::shared_ptr<DataSource> source) : aribcaptionDecoder(aribcaptionContext){
     mDataSource = source;
     mParseType = TYPE_SUBTITLE_ARIB_B24;
     mIndex = 0;
@@ -135,14 +102,6 @@ AribB24Parser::~AribB24Parser() {
     // mContext need protect. accessed by other api or the ttThread.
     mMutex.lock();
     if (mContext != nullptr) {
-        //if(!mContext->p_arib_b24)arib_instance_destroy(mContext->p_arib_b24);
-        //mContext->p_arib_b24 = nullptr;
-            //if (mContext->p_renderer)
-                //aribcc_renderer_free(mContext->p_renderer);
-            if (mContext->p_decoder)
-                aribcc_decoder_free(mContext->p_decoder);
-            if (mContext->p_context)
-                aribcc_context_free(mContext->p_context);
         mContext->pts = AV_NOPTS_VALUE;
         delete mContext;
         mContext = nullptr;
@@ -201,83 +160,11 @@ bool AribB24Parser::updateParameter(int type, void *data) {
 
 int AribB24Parser::initContext() {
     std::unique_lock<std::mutex> autolock(mMutex);
+    aribcaptionDecoder.Initialize();
     mContext = new AribB24Context();
     if (!mContext) {
         LOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
     }
-    mContext->formatId = 0;
-    mContext->languageCode = ARIB_B24_POR;
-    mContext->pts = AV_NOPTS_VALUE;
-    mContext->i_cfg_rendering_backend = 0;
-    mContext->psz_cfg_font_name = "sans-serif";
-    mContext->b_cfg_replace_drcs = false;
-    mContext->b_cfg_force_stroke_text = false;
-    mContext->b_cfg_ignore_background = false;
-    mContext->b_cfg_ignore_ruby = false;
-    mContext->b_cfg_fadeout = false;
-    mContext->f_cfg_stroke_width = 0.0;
-
-    /* Create libaribcaption context */
-    mContext->p_context = aribcc_context_alloc();
-    if (!mContext->p_context) {
-        LOGE("[%s::%d] libaribcaption context allocation failed!\n", __FUNCTION__, __LINE__);
-        return ARIB_B24_FAILURE;
-    }
-
-    /* Create the decoder */
-    mContext->p_decoder = aribcc_decoder_alloc(mContext->p_context);
-    if (!mContext->p_decoder) {
-        LOGE("[%s::%d] libaribcaption decoder creation failed!\n", __FUNCTION__, __LINE__);
-        return ARIB_B24_FAILURE;
-    }
-
-    mContext->i_profile = ARIBCC_PROFILE_A;
-
-    bool b_succ = aribcc_decoder_initialize(mContext->p_decoder,
-                                            ARIBCC_ENCODING_SCHEME_AUTO,
-                                            ARIBCC_CAPTIONTYPE_CAPTION,
-                                            mContext->i_profile,
-                                            ARIBCC_LANGUAGEID_FIRST);
-    if (!b_succ) {
-        LOGE("[%s::%d] libaribcaption decoder initialization failed!\n", __FUNCTION__, __LINE__);
-        return ARIB_B24_FAILURE;
-    }
-
-    //Since the underlying rendering of arib b24 subtitles is a picture,
-    //font files need to be built in the vendor partition,
-    //so first comment out the relevant code and give up the picture rendering
-    /* Create the renderer */
-    /*mContext->p_renderer = aribcc_renderer_alloc(mContext->p_context);
-    if (!mContext->p_renderer) {
-        LOGE("[%s::%d] libaribcaption renderer creation failed!\n", __FUNCTION__, __LINE__);
-        return ARIB_B24_FAILURE;
-    }
-
-    b_succ = aribcc_renderer_initialize(mContext->p_renderer,
-                                        ARIBCC_CAPTIONTYPE_CAPTION,
-                                        ARIBCC_FONTPROVIDER_TYPE_ANDROID,
-                                        ARIBCC_TEXTRENDERER_TYPE_FREETYPE);
-    if (!b_succ) {
-        LOGE("[%s::%d] libaribcaption renderer initialization failed!\n", __FUNCTION__, __LINE__);
-        return ARIB_B24_FAILURE;
-    }
-
-    //aribcc_renderer_set_storage_policy(mContext->p_renderer, ARIBCC_CAPTION_STORAGE_POLICY_MINIMUM, 0);
-    //aribcc_renderer_set_replace_drcs(mContext->p_renderer, mContext->b_cfg_replace_drcs);
-    //aribcc_renderer_set_force_stroke_text(mContext->p_renderer, mContext->b_cfg_force_stroke_text);
-    //aribcc_renderer_set_force_no_background(mContext->p_renderer, mContext->b_cfg_ignore_background);
-    //aribcc_renderer_set_force_no_ruby(mContext->p_renderer, mContext->b_cfg_ignore_ruby);
-    //aribcc_renderer_set_stroke_width(mContext->p_renderer, mContext->f_cfg_stroke_width);
-
-    aribcc_renderer_set_storage_policy(mContext->p_renderer, ARIBCC_CAPTION_STORAGE_POLICY_MINIMUM, 0);
-    aribcc_renderer_set_frame_size(mContext->p_renderer, mContext->frame_area_width, mContext->frame_area_height);
-    aribcc_renderer_set_margins(mContext->p_renderer, mContext->margin_top, mContext->margin_bottom, mContext->margin_left, mContext->margin_right);
-    aribcc_renderer_set_force_stroke_text(mContext->p_renderer, true);
-
-    if (mContext->psz_cfg_font_name && strlen(mContext->psz_cfg_font_name) > 0) {
-        const char* font_families[] = { mContext->psz_cfg_font_name };
-        aribcc_renderer_set_default_font_family(mContext->p_renderer, font_families, 1, true);
-    }*/
     return ARIB_B24_SUCCESS;
 }
 
@@ -294,13 +181,10 @@ int AribB24Parser::aribB24DecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *src
     const uint8_t *buf = (uint8_t *)srcData;
     int bufSize = srcLen;
     const uint8_t *p, *pEnd;
-    char filename[64] = {0};
-    char filenamepng[64] = {0};
-    std::string str;
-    uint32_t *pbuf = NULL;
-
+    std::string stringJson;
     int width = 0;
     int height = 0;
+
     spu->spu_width = 0;
     spu->spu_height = 0;
     spu->spu_start_x = 0;
@@ -312,120 +196,143 @@ int AribB24Parser::aribB24DecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *src
     //spu->spu_origin_display_w = 720;
     //spu->spu_origin_display_h = 576;
     spu->isSimpleText = true;
-    aribcc_caption_t caption;
     if (mDumpSub) {
         for (int i = 0; i < bufSize; i++) {
             LOGE("0x%x ", buf[i]);
         }
     }
-    aribcc_decode_status_t status = aribcc_decoder_decode(mContext->p_decoder, buf, bufSize, spu->pts, &caption);
-    if (status == ARIBCC_DECODE_STATUS_ERROR) {
-         LOGE(" %s aribcc_decoder_decode() returned with error!\n", __FUNCTION__);
-         return ARIB_B24_FAILURE;
-    }
+    auto status = aribcaptionDecoder.Decode(buf, bufSize, spu->pts, aribcaptionResult);
+    if (status == aribcaption::DecodeStatus::kError) {
+        LOGE("%s Decoder::Decode() returned error", __FUNCTION__);
+        return -1;
+    } else if (status == aribcaption::DecodeStatus::kNoCaption) {
+        LOGE("%s kDecodeStatusNoCaption", __FUNCTION__);
+        return 0;
+    } else if (status == aribcaption::DecodeStatus::kGotCaption) {
+        #ifdef NEED_ARIB_CLOSED_CAPTION_STYLE
+        stringJson = "{\"type\":\"aribCaption\",\"plane_width\":" + std::to_string(aribcaptionResult.caption->plane_width) +
+                                    ",\"plane_height\":" + std::to_string(aribcaptionResult.caption->plane_height)+
+                                    ",\"swf\":" + std::to_string(aribcaptionResult.caption->swf)+", \"chars\":[";
+        /**
+         * Caption't Writing Format
+         *
+         * *Decimal numbers specifying format are as follows.
+         * *0: horizontal writing form in standard density
+         * *1: vertical writing form in standard density
+         * *2: horizontal writing form in high density
+         * *3: vertical writing form in high density
+         * *4: horizontal writing form in Western language
+         * *5: horizontal writing form in   1920 x 1080
+         * *6: vertical writing form in 1920 x 1080
+         * *7: horizontal writing form in 960 x 540
+         * *8: vertical writing form in 960 x 540
+         * *9: horizontal writing form in 720 x 480
+         * *10: vertical writing form in 720 x 480
+         * *11: horizontal writing form in 1280 x 720
+         * *12: vertical writing form in 1280 x 720
+         */
+        for (size_t i = 0; i < aribcaptionResult.caption->regions.size(); i++) {
+            aribcaption::CaptionRegion& region = aribcaptionResult.caption->regions[i];
+            if (i != 0) stringJson = stringJson +",";
+            stringJson = stringJson +"{\"new_line\":"+std::to_string(i)+"},";
+            int j = 0;
+            for (aribcaption::CaptionChar& ch : region.chars) {
+                // background
+                aribcaption::CharStyle style = ch.style;
+                aribcaption::ColorRGBA stroke_color = ch.stroke_color;
+                aribcaption::EnclosureStyle enclosure_style = ch.enclosure_style;
+                int stroke_width = 0;
 
-    if (status == ARIBCC_DECODE_STATUS_NO_CAPTION) {
-        LOGE(" %s aribcc_decoder_decode() returned with no caption!\n", __FUNCTION__);
-        return ARIB_B24_FAILURE;
-    }
+                if (style & aribcaption::CharStyle::kCharStyleStroke) {
+                    stroke_width = STROKE_WIDTH;
+                }
 
-    if (status == ARIBCC_DECODE_STATUS_GOT_CAPTION) {
-        if (mContext->languageCode == ARIB_B24_POR) caption.iso6392_language_code = ARIBCC_MAKE_LANG('p', 'o', 'r');
-        LOGD(" %s aribcc_decoder_decode() returned with caption! caption.text:%s caption.iso6392_language_code:0x%x\n", __FUNCTION__, caption.text, caption.iso6392_language_code);
-    }
+                if (ch.type == aribcaption::CaptionCharType::kDRCS
+                    || ch.type == aribcaption::CaptionCharType::kDRCSReplaced) {
+                    aribcaption::DRCS& drcs = aribcaptionResult.caption->drcs_map[ch.drcs_code];
+                    LOGE("%s CaptionCharType::kDRCS or CaptionCharType::kDRCSReplaced, haven't dealt with this yet.", __FUNCTION__);
+                }
 
-    if (caption.text) {
-        str = caption.text;
-        LOGD(" %s aribcc_decoder_decode() str:%s\n", __FUNCTION__, str.c_str());
+                if (mDumpSub) {
+                    LOGI("%s x:%d y:%d char_width:%d char_height:%d char_horizontal_spacing:%d char_vertical_spacing:%d ch.char_horizontal_scale:%f ch.char_vertical_scale:%f text_color:0x%x back_color:0x%x stroke_color:0x%x stroke_width:%d style:%d enclosure_style:%d u8str:%s char_flash:%d char_repeat_display_times:%d section_width:%d section_height:%d codepoint:0x%x pua_codepoint:0x%x drcs_code:0x%x",
+                        __FUNCTION__, ch.x, ch.y, ch.char_width, ch.char_height, ch.char_horizontal_spacing, ch.char_vertical_spacing, ch.char_horizontal_scale, ch.char_vertical_scale,
+                            ch.text_color, ch.back_color, stroke_color, stroke_width, style, enclosure_style, ch.u8str,
+                            ch.char_flash, ch.char_repeat_display_times, ch.section_width(), ch.section_height(), ch.codepoint, ch.pua_codepoint, ch.drcs_code);
+                }
+                if (j != 0) {
+                    stringJson = stringJson + ",";
+                }
+                stringJson = stringJson + "{\"x\":"+std::to_string(ch.x)+
+                                                ",\"y\":"+std::to_string(ch.y)+
+                                                ",\"char_width\":"+std::to_string(ch.char_width)+
+                                                ",\"char_height\":"+std::to_string(ch.char_height)+
+                                                ",\"char_horizontal_spacing\":"+std::to_string(ch.char_horizontal_spacing)+
+                                                ",\"char_vertical_spacing\":"+std::to_string(ch.char_vertical_spacing)+
+                                                ",\"char_horizontal_scale\":"+std::to_string(ch.char_horizontal_scale)+
+                                                ",\"char_vertical_scale\":"+std::to_string(ch.char_vertical_scale)+
+                                                ",\"text_color\":\""+colorToString(ch.text_color)+"\""+
+                                                ",\"back_color\":\""+colorToString(ch.back_color)+"\""+
+                                                ",\"stroke_color\":\""+colorToString(stroke_color)+"\""+
+                                                ",\"stroke_width\":"+std::to_string(stroke_width)+
+                                                ",\"char_style\":"+std::to_string(style)+
+                                                ",\"enclosure_style\":"+std::to_string(enclosure_style)+
+                                                ",\"u8str\":\""+ch.u8str+"\""+
+                                                ",\"char_flash\":"+std::to_string(ch.char_flash)+
+                                                ",\"char_repeat_display_times\":"+std::to_string(ch.char_repeat_display_times)+
+                                                ",\"section_width\":"+std::to_string(ch.section_width())+
+                                                ",\"section_height\":"+std::to_string(ch.section_height())+
+                                                ",\"codepoint\":"+std::to_string(ch.codepoint)+
+                                                ",\"pua_codepoint\":"+std::to_string(ch.pua_codepoint)+
+                                                ",\"drcs_code\":"+std::to_string(ch.drcs_code)+
+                                                "}";
+                j++;
+
+            }
+        }
+        stringJson = stringJson + "]}";
+        if (mDumpSub && stringJson.length() > 0) {
+            int startPos = 0;
+            int chunkSize = 1000;
+            int remaining = stringJson.length();
+            while (remaining > 0) {
+                std::string chunk = stringJson.substr(startPos, chunkSize);
+                LOGI("%s startPos:%d stringJson:%s", __FUNCTION__, startPos, chunk.c_str());
+                startPos += chunkSize;
+                remaining -= chunk.size();
+            }
+        }
+
+        #else
+        stringJson = aribcaptionResult.caption->text;
+        LOGD(" %s aribcc_decoder_decode() stringJson:%s\n", __FUNCTION__, stringJson.c_str());
         // Remove leading spaces
-        str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](unsigned char ch) {
+        stringJson.erase(stringJson.begin(), std::find_if(stringJson.begin(), stringJson.end(), [](unsigned char ch) {
             return !std::isspace(ch);
         }));
 
         // Remove trailing spaces
-        str.erase(std::find_if(str.rbegin(), str.rend(), [](unsigned char ch) {
+        stringJson.erase(std::find_if(stringJson.rbegin(), stringJson.rend(), [](unsigned char ch) {
             return !std::isspace(ch);
-        }).base(), str.end());
+        }).base(), stringJson.end());
+        #endif
 
-        spu->buffer_size = str.length();
-        if (caption.wait_duration == ARIBCC_DURATION_INDEFINITE) {
+        spu->buffer_size = stringJson.length();
+        if (aribcaptionResult.caption->wait_duration == ARIBCC_DURATION_INDEFINITE) {
             //p_spu->b_ephemer = true;
             spu->isImmediatePresent = true;
         } else {
-            spu->m_delay = spu->pts + ARIB_B24_TICK_FROM_MS(caption.wait_duration);
+            spu->m_delay = spu->pts + ARIB_B24_TICK_FROM_MS(aribcaptionResult.caption->wait_duration);
         }
-        pbuf = (uint32_t *)malloc(str.length());
-        LOGI("@@[%s::%d]malloc ptr=%p, size=%d spu->m_delay:%lld caption.pts:%lld caption.wait_duration:%lld\n", __FUNCTION__, __LINE__, pbuf, spu->buffer_size, spu->m_delay, caption.pts, caption.wait_duration);
-        if (!pbuf) {
-            LOGE("%s fail \n", __FUNCTION__);
-            free(pbuf);
-            return ARIB_B24_FAILURE;
-        }
-        memset(pbuf, 0, spu->buffer_size);
         if (spu->spu_data) free(spu->spu_data);
         spu->spu_data = (unsigned char *)malloc(spu->buffer_size+1);
         if (!spu->spu_data) {
-            LOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
+            LOGE("[%s::%d] malloc error!", __FUNCTION__, __LINE__);
             return ARIB_B24_FAILURE;
         }
-        memset(spu->spu_data, 0, spu->buffer_size+1);
-        memcpy(spu->spu_data, str.c_str(), spu->buffer_size);
+        memset(spu->spu_data, 0, stringJson.length()+1);
+        memcpy(spu->spu_data, stringJson.c_str(), stringJson.length());
+
     }
-
-    //Since the underlying rendering of arib b24 subtitles is a picture,
-    //font files need to be built in the vendor partition,
-    //so first comment out the relevant code and give up the picture rendering
-    /*aribcc_renderer_append_caption(mContext->p_renderer, &caption);
-    aribcc_caption_cleanup(&caption);
-    //spu->m_delay = spu->pts + caption.wait_duration;
-    aribcc_render_result_t render_result = {0};
-    aribcc_render_status_t render_status = aribcc_renderer_render(mContext->p_renderer, spu->pts, &render_result);
-
-    if (render_status == ARIBCC_RENDER_STATUS_ERROR) {
-        LOGE(" %s aribcc_renderer_render() failed!\n", __FUNCTION__);
-        return ARIB_B24_FAILURE;
-    } else if (render_status == ARIBCC_RENDER_STATUS_NO_IMAGE) {
-        LOGE(" %s aribcc_renderer_render() returned with no image\n", __FUNCTION__);
-        return ARIB_B24_FAILURE;
-    } else if (render_status == ARIBCC_RENDER_STATUS_GOT_IMAGE ||
-               render_status == ARIBCC_RENDER_STATUS_GOT_IMAGE_UNCHANGED) {
-        LOGD(" %s aribcc_renderer_render() ImageCount: %u\n", __FUNCTION__, render_result.image_count);
-    }
-
-        for (uint32_t i = 0; i < render_result.image_count; i++) {
-            aribcc_image_t* image = &render_result.images[i];
-            spu->buffer_size = image->bitmap_size;
-            spu->spu_width = image->width;
-            spu->spu_height = image->height;
-            pbuf = (uint32_t *)malloc(image->bitmap_size);
-            LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, pbuf, spu->buffer_size);
-            if (!pbuf) {
-                LOGE("%s fail, image->width=%d, image->height=%d \n", __FUNCTION__, image->width, image->height);
-                free(pbuf);
-                return ARIB_B24_FAILURE;
-            }
-            memset(pbuf, 0, spu->buffer_size);
-            if (spu->spu_data) free(spu->spu_data);
-            spu->spu_data = (unsigned char *)malloc(spu->buffer_size);
-            if (!spu->spu_data) {
-                LOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
-                return ARIB_B24_FAILURE;
-            }
-            memset(spu->spu_data, 0, spu->buffer_size);
-            memcpy(spu->spu_data, image->bitmap, spu->buffer_size);
-            if (mDumpSub) {
-                snprintf(filename, sizeof(filename), "./data/subtitleDump/arib_b24_%d", mIndex);
-                LOGD(" %s aribcc_renderer_render() mIndex:%d image->width:%d image->height:%d\n", __FUNCTION__, mIndex, image->width, image->height);
-                save2BitmapFile(filename, (uint32_t *)spu->spu_data, image->width, image->height);
-            }
-            if (mDumpSub) {
-                snprintf(filenamepng, sizeof(filenamepng), "./data/subtitleDump/arib_b24_%d.png", mIndex);
-                LOGD(" %s aribcc_renderer_render() mIndex:%d image->width:%d image->height:%d\n", __FUNCTION__, mIndex, image->width, image->height);
-                png_writer_write_image_c(filenamepng, image);
-            }
-            ++mIndex;
-        }*/
-    free(pbuf);
     return ARIB_B24_SUCCESS;
 
 }

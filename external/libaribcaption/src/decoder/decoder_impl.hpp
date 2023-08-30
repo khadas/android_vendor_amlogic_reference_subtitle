@@ -145,6 +145,8 @@ private:
     int char_vertical_spacing_ = 24;   // indicated by SVS
     float char_horizontal_scale_ = 1.0f;
     float char_vertical_scale_ = 1.0f;
+    bool char_flash_ = false;  // FLC
+    int char_repeat_display_times_ = 1;  // RPC
 
     bool has_underline_ = false;  // STL / SPL
     bool has_bold_ = false;       // MDF
