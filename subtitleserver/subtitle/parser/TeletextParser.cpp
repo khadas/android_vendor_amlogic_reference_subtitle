@@ -49,7 +49,7 @@
 #define TELETEXT_WARN_PAGE_2 0x548000
 #define TELETEXT_WARN_PAGE_3 0xb18081
 
-#define C4_ERASE_PAG        0x000080
+#define C4_ERASE_PAGE       0x000080
 #define C5_NEWSFLASH        0x004000
 #define C6_SUBTITLE         0x008000
 #define C7_SUPPRESS_HEADER  0x010000
@@ -483,7 +483,7 @@ static int genSubBitmap(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_page 
     }
 
     if (vc >= vcend) {
-        if (ctx->isSubtitle && ctx->subtitleMode == TT2_GRAPHICS_MODE) {
+        if (ctx->isSubtitle && (ctx->subtitleMode == TT2_GRAPHICS_MODE  || ctx->pageType & C4_ERASE_PAGE)) {
             LOGI("Currently request show null subtitle data, so draw it will clear screen.");
             // if this page is subtitle, and nothing need to draw.
             // then request to draw, draw an empty clear screen.
