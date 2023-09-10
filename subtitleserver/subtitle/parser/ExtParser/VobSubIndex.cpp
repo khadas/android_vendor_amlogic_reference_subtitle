@@ -126,7 +126,7 @@ static mpeg_t *mpeg_open(int fd) {
  * cannot free (stream) here, which will cause sub and idx not to be displayed.
  * The stream will call mpeg_free in close_subtitle() to release
  */
-/* coverity[resource_leak] */
+/* coverity[leaked_storage:SUPPRESS] */
 
     return err ? NULL : res;
 }

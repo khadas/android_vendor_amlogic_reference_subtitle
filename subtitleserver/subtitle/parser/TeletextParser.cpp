@@ -2371,6 +2371,7 @@ int TeletextParser::initContext() {
     mContext->pageState = TT2_DISPLAY_STATE;
     mContext->searchDir = 1;
     mContext->gotoPage = 100;
+    mContext->pageNum = -1;
     //1:transparent 0:black default transparent
     mContext->transparentBackground = 0;
     //display backGround, page not full Green, need add prop define non-page display backGround
@@ -2642,6 +2643,7 @@ int TeletextParser::gotoBackPageLocked()
     TeletextCachedPageT forwardTtCachePage;
     forwardTtCachePage.pageNo = mContext->gotoPage;
     forwardTtCachePage.subPageNo = mContext->subPageNum;
+    forwardTtCachePage.pageType = -1;
     mForwardPageStk.push(forwardTtCachePage);
     LOGI("%s enter forward stack, page: %d\n", __FUNCTION__, mContext->gotoPage);
 
@@ -2683,6 +2685,7 @@ int TeletextParser::gotoForwardPageLocked()
     TeletextCachedPageT backTtCachePage;
     backTtCachePage.pageNo = mContext->gotoPage;
     backTtCachePage.subPageNo = mContext->subPageNum;
+    backTtCachePage.pageType = -1;
     mBackPageStk.push(backTtCachePage);
     LOGI("%s enter back stack, page: %d\n", __FUNCTION__, mContext->gotoPage);
 
@@ -2717,6 +2720,7 @@ void TeletextParser::tt2AddForwardCachePageLocked(int pgno, int subPgno)
     TeletextCachedPageT ttCachePage;
     ttCachePage.pageNo = pgno;
     ttCachePage.subPageNo = subPgno;
+    ttCachePage.pageType = -1;
     mForwardPageStk.push(ttCachePage);
     LOGI("%s add forward cache success!\n", __FUNCTION__);
 }
@@ -2728,6 +2732,7 @@ void TeletextParser::tt2AddBackCachePageLocked(int pgno, int subPgno)
     TeletextCachedPageT ttCachePage;
     ttCachePage.pageNo = pgno;
     ttCachePage.subPageNo = subPgno;
+    ttCachePage.pageType = -1;
     mBackPageStk.push(ttCachePage);
 }
 

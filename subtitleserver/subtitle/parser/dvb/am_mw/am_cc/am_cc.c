@@ -415,7 +415,6 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data)
 {
 	AM_CC_Decoder_t *cc = (AM_CC_Decoder_t*)user_data;
 	int pgno, subno;
-	int ret = -1;
 	char* json_buffer;
 	AM_CC_JsonChain_t* node, *json_chain_head;
 	static int count = 0;
@@ -465,6 +464,12 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data)
 				return;
 			}
 			/* Convert to json attributes */
+
+/*
+ * If the limit vbi_pgno < 6 will cause the excess to not be displayed.
+ */
+/* coverity[overrun-call:SUPPRESS] */
+			int ret;
 			ret = tvcc_to_json (&cc->decoder, cc->vbi_pgno, json_buffer, JSON_STRING_LENGTH);
 			if (ret == -1)
 			{
