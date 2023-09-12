@@ -29,6 +29,7 @@ std::shared_ptr<ExtSubItem> SubViewer::decodedItem() {
         item->end = b1 * 360000 + b2 * 6000 + b3 * 100 + b4 / 10;
 
         bool isNewLine = false;
+        bool isValid = false;
         do {
             if (!mReader->getLine(line)) {
                 break;
@@ -37,10 +38,12 @@ std::shared_ptr<ExtSubItem> SubViewer::decodedItem() {
             isNewLine = isEmptyLine(line);
             if (!isNewLine) {
                 item->lines.push_back(std::string(line));
+                isValid = true;
             }
         } while (!isNewLine);
-
-        return item;
+        if (isValid) {
+            return item;
+        }
     }
     return nullptr;
 }
