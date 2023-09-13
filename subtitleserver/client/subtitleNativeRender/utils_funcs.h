@@ -26,16 +26,21 @@ static inline int convertCcColor(int color) {
 
 
 static inline std::string getApplicationPath() {
+    char procName[128] = {0};
     int fd = open("/proc/self/cmdline", O_RDONLY | O_CLOEXEC);
-    char procName[128];
-    memset(procName, 0, sizeof(procName));
-    read(fd, procName, sizeof(procName) - 1);
 
-    if (strlen(procName) != 0) {
-        if (access((std::string("/data/user/0/") + procName).c_str(), R_OK) == 0) {
-            return std::string("/data/user/0/") + procName;
+    do {
+        if (fd > 0) {
+            read(fd, procName, sizeof(procName) - 1);
+            close(fd);
+
+            if (strlen(procName) != 0) {
+                if (access((std::string("/data/user/0/") + procName).c_str(), R_OK) == 0) {
+                    return std::string("/data/user/0/") + procName;
+                }
+            }
         }
-    }
+    } while (0);
 
     return std::string("/data/user/0/android");
 }
