@@ -99,6 +99,40 @@ typedef enum aribcc_chartype_t {
 } aribcc_chartype_t;
 
 /**
+ * Writing format the type of CaptionChar.
+ *
+ * 0: Standard density horizontal writing format
+ * 1: Standard density vertical writing format
+ * 2: High-density horizontal writing format
+ * 3: High-density vertical writing format
+ * 4: Spanish horizontal writing format
+ * 5: 1920 x 1080 horizontal writing format
+ * 6: 1920 x 1080 vertical writing format
+ * 7: 960 x 540 horizontal writing format
+ * 8: 960 x 540 vertical writing format
+ * 9: 720 x 480 horizontal writing format
+ * 10: 720 x 480 vertical writing format
+ * 11: 1280 x 720 horizontal writing format
+ * 12: 1280 x 720 vertical writing format
+ */
+typedef enum aribcc_writing_format_t {
+    WRITING_FORMAT_STANDARD_DENSITY_HORIZONTAL = 0,
+    WRITING_FORMAT_STANDARD_DENSITY_VERTICAL,
+    WRITING_FORMAT_HIGH_DENSITY_HORIZONTAL,
+    WRITING_FORMAT_HIGH_DENSITY_VERTICAL,
+    WRITING_FORMAT_SPANISH_HORIZONTAL,
+    WRITING_FORMAT_HORIZONTAL_1920X1080,
+    WRITING_FORMAT_VERTICAL_1920X1080,
+    WRITING_FORMAT_HORIZONTAL_960X540,
+    WRITING_FORMAT_VERTICAL_960X540,
+    WRITING_FORMAT_HORIZONTAL_720_X_480,
+    WRITING_FORMAT_VERTICAL_720X480,
+    WRITING_FORMAT_HORIZONTAL_1280X720,
+    WRITING_FORMAT_VERTICAL_1280X720,
+    WRITING_FORMAT_DEFAULT = WRITING_FORMAT_HORIZONTAL_720_X_480
+} aribcc_writing_format_t;
+
+/**
  * Represents a caption character.
  */
 typedef struct aribcc_caption_char_t {

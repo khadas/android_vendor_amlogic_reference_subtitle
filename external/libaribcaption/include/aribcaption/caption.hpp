@@ -90,7 +90,6 @@ enum class CaptionType : uint8_t {
     kDefault = kCaption
 };
 
-
 /**
  * Represents the type of CaptionChar.
  *
@@ -101,6 +100,40 @@ enum class CaptionCharType {
     kDRCS,
     kDRCSReplaced,    ///< DRCS has been replaced into Unicode codepoint
     kDefault = kText
+};
+
+/**
+ * Writing format the type of CaptionChar.
+ *
+ * 0: Standard density horizontal writing format
+ * 1: Standard density vertical writing format
+ * 2: High-density horizontal writing format
+ * 3: High-density vertical writing format
+ * 4: Spanish horizontal writing format
+ * 5: 1920 x 1080 horizontal writing format
+ * 6: 1920 x 1080 vertical writing format
+ * 7: 960 x 540 horizontal writing format
+ * 8: 960 x 540 vertical writing format
+ * 9: 720 x 480 horizontal writing format
+ * 10: 720 x 480 vertical writing format
+ * 11: 1280 x 720 horizontal writing format
+ * 12: 1280 x 720 vertical writing format
+ */
+enum CaptionCharWritingFormatType {
+    WritingFormatStandardDensityHorizontal = 0,
+    WritingFormatStandardDensityVertical,
+    WritingFormatHighDensityHorizontal,
+    WritingFormatHighDensityVertical,
+    WritingFormatSpanishHorizontal,
+    WritingFormatHorizontal_1920x1080,
+    WritingFormatVertical_1920x1080,
+    WritingFormatHorizontal_960x540,
+    WritingFormatVertical_960x540,
+    WritingFormatHorizontal_720X480,
+    WritingFormatVertical_720x480,
+    WritingFormatHorizontal_1280x720,
+    WritingFormatVertical_1280x720,
+    WritingFormatDefault = WritingFormatVertical_720x480
 };
 
 /**

@@ -1126,8 +1126,21 @@ bool DecoderImpl::HandleCSI(const uint8_t* data, size_t remain_bytes, size_t* by
         case CSI::CCC:  // Composite Character Composition
             break;
         case CSI::SDF:  // Set Display Format
-            display_area_width_ = static_cast<int>(param1);
-            display_area_height_ = static_cast<int>(param2);
+            switch (swf_) {
+                case CaptionCharWritingFormatType::WritingFormatStandardDensityVertical:
+                case CaptionCharWritingFormatType::WritingFormatHighDensityVertical:
+                case CaptionCharWritingFormatType::WritingFormatVertical_1920x1080:
+                case CaptionCharWritingFormatType::WritingFormatVertical_960x540:
+                case CaptionCharWritingFormatType::WritingFormatVertical_720x480:
+                case CaptionCharWritingFormatType::WritingFormatVertical_1280x720:
+                    display_area_width_ = static_cast<int>(param2);
+                    display_area_height_ = static_cast<int>(param1);
+                break;
+            default:
+                    display_area_width_ = static_cast<int>(param1);
+                    display_area_height_ = static_cast<int>(param2);
+                break;
+            }
             break;
         case CSI::SSM:  // Character composition dot designation
             char_width_ = static_cast<int>(param1);
