@@ -201,6 +201,30 @@ int AribB24Parser::aribB24DecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *src
             LOGE("0x%x ", buf[i]);
         }
     }
+    if (mDumpSub) {
+        LOGI("%s languageCode:%d", __FUNCTION__, mContext->languageCode);
+    }
+
+    switch (mContext->languageCode) {
+        case ARIB_B24_POR:
+            aribcaptionDecoder.SetEncodingScheme(aribcaption::EncodingScheme::kABNT_NBR_15606_1_Latin);
+        break;
+        case ARIB_B24_JPN:
+            aribcaptionDecoder.SetEncodingScheme(aribcaption::EncodingScheme::kARIB_STD_B24_JIS);
+        break;
+        case ARIB_B24_SPA:
+            aribcaptionDecoder.SetEncodingScheme(aribcaption::EncodingScheme::kABNT_NBR_15606_1_Latin);
+        break;
+        case ARIB_B24_ENG:
+            aribcaptionDecoder.SetEncodingScheme(aribcaption::EncodingScheme::kARIB_STD_B24_UTF8);
+        break;
+        case ARIB_B24_TGL:
+            aribcaptionDecoder.SetEncodingScheme(aribcaption::EncodingScheme::kARIB_STD_B24_UTF8);
+        break;
+        default:
+        break;
+    }
+
     auto status = aribcaptionDecoder.Decode(buf, bufSize, spu->pts, aribcaptionResult);
     if (status == aribcaption::DecodeStatus::kError) {
         LOGE("%s Decoder::Decode() returned error", __FUNCTION__);
