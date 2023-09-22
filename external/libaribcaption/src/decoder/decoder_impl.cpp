@@ -50,7 +50,7 @@
 
 namespace aribcaption::internal {
 
-DecoderImpl::DecoderImpl(Context& context) : log_(GetContextLogger(context)) {}
+DecoderImpl::DecoderImpl(Context& context){}
 
 DecoderImpl::~DecoderImpl() = default;
 

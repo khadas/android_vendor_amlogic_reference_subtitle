@@ -52,20 +52,8 @@ public:
     ARIBCC_API Context(Context&&) noexcept;
     ARIBCC_API Context& operator=(Context&&) noexcept;
 public:
-    /**
-     * Indicate a callback function for receiving logcat messages.
-     * To clear the callback, pass nullptr for logcat_cb.
-     *
-     * @param logcat_cb See @LogcatCB
-     */
-    ARIBCC_API void SetLogcatCallback(const LogcatCB& logcat_cb);
-public:
     Context(const Context&) = delete;
     Context& operator=(const Context&) = delete;
-private:
-    std::shared_ptr<Logger> logger_;
-private:
-    friend std::shared_ptr<Logger> GetContextLogger(Context& context);
 };
 
 }  // namespace aribcaption

@@ -21,20 +21,12 @@
 
 namespace aribcaption {
 
-Context::Context() : logger_(std::make_shared<Logger>()) {}
+Context::Context(){}
 
 Context::~Context() = default;
 
 Context::Context(Context&&) noexcept = default;
 
 Context& Context::operator=(Context&&) noexcept = default;
-
-void Context::SetLogcatCallback(const LogcatCB& logcat_cb) {
-    logger_->SetCallback(logcat_cb);
-}
-
-std::shared_ptr<Logger> GetContextLogger(Context& context) {
-    return context.logger_;
-}
 
 }  // namespace aribcaption
