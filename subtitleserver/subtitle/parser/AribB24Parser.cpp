@@ -85,19 +85,12 @@ AribB24Parser::AribB24Parser(std::shared_ptr<DataSource> source) : aribcaptionDe
 
     initContext();
     checkDebug();
-    sInstance = this;
-}
-
-AribB24Parser *AribB24Parser::sInstance = nullptr;
-
-AribB24Parser *AribB24Parser::getCurrentInstance() {
-    return AribB24Parser::sInstance;
 }
 
 AribB24Parser::~AribB24Parser() {
     LOGI("%s", __func__);
+    mState = SUB_STOP;
     stopParser();
-    sInstance = nullptr;
 
     // mContext need protect. accessed by other api or the ttThread.
     mMutex.lock();
@@ -151,6 +144,7 @@ static inline int generateNormalDisplay(AVSubtitleRect *subRect, unsigned char *
  *  This function main for this. the control interface.not called in parser thread, need protect.
  */
 bool AribB24Parser::updateParameter(int type, void *data) {
+    std::unique_lock<std::mutex> autolock(mMutex);
     if (TYPE_SUBTITLE_ARIB_B24 == type) {
         DtvKitArib24Param *pAribParam = (DtvKitArib24Param* )data;
         mContext->languageCode = pAribParam->languageCodeId;
@@ -165,6 +159,7 @@ int AribB24Parser::initContext() {
     if (!mContext) {
         LOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
     }
+    mContext->languageCode = 0;
     return ARIB_B24_SUCCESS;
 }
 
@@ -178,6 +173,7 @@ void AribB24Parser::checkDebug() {
 }
 
 int AribB24Parser::aribB24DecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, int srcLen) {
+    std::unique_lock<std::mutex> autolock(mMutex);
     const uint8_t *buf = (uint8_t *)srcData;
     int bufSize = srcLen;
     const uint8_t *p, *pEnd;

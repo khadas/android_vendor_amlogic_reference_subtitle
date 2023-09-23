@@ -61,13 +61,6 @@ Subtitle::~Subtitle() {
     ALOGD("%s", __func__);
     //android::CallStack(LOG_TAG);
 
-    mExitRequested = true;
-    mCv.notify_all();
-    if (mThread != nullptr) {
-
-        mThread->join();
-    }
-
     if (mDataSource != nullptr) {
         mDataSource->stop();
     }
@@ -77,6 +70,14 @@ Subtitle::~Subtitle() {
         mPresentation->stopPresent();
         mParser = nullptr;
     }
+
+    mExitRequested = true;
+    mCv.notify_all();
+    if (mThread != nullptr) {
+
+        mThread->join();
+    }
+    ALOGD("%s end", __func__);
 }
 
 void Subtitle::attachDataSource(std::shared_ptr<DataSource> source, std::shared_ptr<InfoChangeListener>listener) {
@@ -303,16 +304,6 @@ void Subtitle::run() {
             break;
             case ACTION_SUBTITLE_RECEIVED_SUBTYPE: {
                 ALOGD("ACTION_SUBTITLE_RECEIVED_SUBTYPE, type:%d", mSubPrams->subType);
-                if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CAPTION || mSubPrams->subType == TYPE_SUBTITLE_INVALID) {
-                    ALOGD("CC type or invalid type, break, do nothings!");
-                    break;
-                } else if (mSubPrams->subType == TYPE_SUBTITLE_DVB_TELETEXT && mParser != nullptr && mParser->getParseType() == TYPE_SUBTITLE_DVB_TELETEXT) {
-                    ALOGD("Already create TeletextParser,break do nothing");
-                    break;
-                } else if (mSubPrams->subType == TYPE_SUBTITLE_DVB && mParser != nullptr && mParser->getParseType() == TYPE_SUBTITLE_DVB) {
-                    ALOGD("Already create DvbParser,break do nothing");
-                    break;
-                 }
                 if (mParser != nullptr) {
                     mParser->stopParser();
                     mPresentation->stopPresent();
@@ -337,6 +328,8 @@ void Subtitle::run() {
                         mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_ARIB_B24, &mSubPrams->dtvkitArib24Param);
                     } else if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_TTML) {
                         mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_TTML, &mSubPrams->dtvkitTtmlParam);
+                    } else if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CAPTION) {
+                        mParser->updateParameter(TYPE_SUBTITLE_CLOSED_CAPTION, &mSubPrams->ccParam);
                     }
                 }
             }
@@ -360,7 +353,7 @@ void Subtitle::run() {
         mPendingAction = -1;
 
         // wait100ms, still no parser, then start default CC
-        if (mParser == nullptr) {
+        /*if (mParser == nullptr) {
             ALOGD("No parser found, create default!");
             // start default parser, normally, this is CC
             mParser = ParserFactory::create(mSubPrams, mDataSource);
@@ -374,7 +367,7 @@ void Subtitle::run() {
             if (mPresentation != nullptr) {
                 ret = mPresentation->startPresent(mParser);
             }
-        }
+        }*/
 
     }
 }
