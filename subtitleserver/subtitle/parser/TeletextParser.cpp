@@ -99,8 +99,15 @@
 #define VBI_B(rgba)   (((rgba) >> 16) & 0xFF)
 #define VBI_A(rgba)   (((rgba) >> 24) & 0xFF)
 #define MAX_BUFFERED_PAGES 25
-#define BITMAP_CHAR_WIDTH  12
-#define BITMAP_CHAR_HEIGHT 10
+
+#ifdef NEED_TELETEXT_USES_VECTOR_FONTS
+#define MULTIPLE 5
+#else
+#define MULTIPLE 1
+#endif
+
+#define BITMAP_CHAR_WIDTH  (12 * MULTIPLE)
+#define BITMAP_CHAR_HEIGHT (10 * MULTIPLE)
 
 #define TELETEXT_LIVETV_DEFAULT_SUBPAGE   0
 #define TELETEXT_INVALID_SUBPAGE_NUMBER_1 -1
@@ -111,10 +118,10 @@
 #define DOUBLE_HEIGHT_SCROLL_SECTION 6
 #define DOUBLE_HEIGHT_SCROLL_SECTION_PLUS DOUBLE_HEIGHT_SCROLL_SECTION+1  //+1 for sub page row
 
-#define TELETEXT_HEAD_HEIGHT 10
-#define TELETEXT_TEXT_HEIGHT 230
-#define TELETEXT_BAR_HEIGHT 20
-#define TELETEXT_GRAPHIC_WIDTH 492
+#define TELETEXT_HEAD_HEIGHT (10 * MULTIPLE)
+#define TELETEXT_TEXT_HEIGHT (230 * MULTIPLE)
+#define TELETEXT_BAR_HEIGHT (20 * MULTIPLE)
+#define TELETEXT_GRAPHIC_WIDTH (492 * MULTIPLE)
 
 
 #define DOUBLE_BITMAP_CHAR_HEIGHT BITMAP_CHAR_HEIGHT/2
@@ -392,7 +399,7 @@ static void fixTransparency(TeletextContext *ctx, AVSubtitleRect *subRect, vbi_p
                     for (; pixel < pixelnext; pixel++) {
                         if (*pixel == vc->background) {
                             #ifdef UNREMOVED_MIX_VIDEO_MODE_FOUR_COLOR_KEY_BACKGROUND
-                            if (!(ctx->isSubtitle) && ((iy >= 240) && (iy <= 248)) && vc->background) break;
+                            if (!(ctx->isSubtitle) && ((iy >= 24 * BITMAP_CHAR_HEIGHT) && (iy <= 25 * BITMAP_CHAR_HEIGHT)) && vc->background) break;
                             #endif
                             *pixel = VBI_TRANSPARENT_BLACK;
                         }
