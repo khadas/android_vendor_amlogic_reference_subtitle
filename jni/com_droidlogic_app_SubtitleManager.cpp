@@ -119,14 +119,19 @@ struct JniContext {
             ALOGE("invalid parameter width=%d height=%d size=%d", width, height, size);
             return;
         }
-
+        ALOGE("callJava_showBitmapData width=%d height=%d size=%d", width, height, size);
         JNIEnv *env = getJniEnv(&needDetach);
+        int *jintData = (int *)malloc(width*height * sizeof(int));
+        for (int i=0; i<width*height; i++) {
+            jintData[i] = static_cast<int>(data[i]);;
+        }
         jintArray array = env->NewIntArray(width*height);
-        env->SetIntArrayRegion(array, 0, width*height, (jint *)data);
+        env->SetIntArrayRegion(array, 0, width*height, (jint *)jintData);
         env->CallVoidMethod(mSubtitleManagerObject, mNotifySubtitleEvent, array, nullptr,
                 uiType, x, y, width, height, videoWidth, videoHeight, !(cmd==0), objectSegmentId);
 
         env->DeleteLocalRef(array);
+        free(jintData);
         if (needDetach) DetachJniEnv();
     }
 
