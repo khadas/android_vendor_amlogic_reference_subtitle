@@ -5,15 +5,16 @@
 #include <string.h>
 #include <utils/CallStack.h>
 #include <utils/Log.h>
-
 #include <chrono>
 #include <thread>
+
+#include <utils/CallStack.h>
+#include <utils/Log.h>
 
 #include "Subtitle.h"
 #include "Parser.h"
 #include "ParserFactory.h"
 
-//#include "BitmapDisplay.h"
 
 Subtitle::Subtitle() :
     mSubtitleTracks(-1),

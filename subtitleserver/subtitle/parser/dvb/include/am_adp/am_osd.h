@@ -35,17 +35,17 @@ extern "C"
 /**\brief OSD模块错误代码*/
 enum AM_OSD_ErrorCode
 {
-	AM_OSD_ERROR_BASE=AM_ERROR_BASE(AM_MOD_OSD),
-	AM_OSD_ERR_NO_MEM,                   /**< 内存不足*/
-	AM_OSD_ERR_BUSY,                     /**< 设备已经打开*/
-	AM_OSD_ERR_INVALID_DEV_NO,           /**< 无效的设备号*/
-	AM_OSD_ERR_NOT_OPENNED,              /**< 设备还没有打开*/
-	AM_OSD_ERR_CANNOT_CREATE_THREAD,     /**< 无法创建线程*/
-	AM_OSD_ERR_NOT_SUPPORTED,            /**< 设备不支持此功能*/
-	AM_OSD_ERR_CANNOT_OPEN,              /**< 无法打开设备*/
-	AM_OSD_ERR_ILLEGAL_PIXEL,            /**< 无效的像素值*/
-	AM_OSD_ERR_SYS,                      /**< 系统错误*/
-	AM_OSD_ERR_END
+    AM_OSD_ERROR_BASE=AM_ERROR_BASE(AM_MOD_OSD),
+    AM_OSD_ERR_NO_MEM,                   /**< 内存不足*/
+    AM_OSD_ERR_BUSY,                     /**< 设备已经打开*/
+    AM_OSD_ERR_INVALID_DEV_NO,           /**< 无效的设备号*/
+    AM_OSD_ERR_NOT_OPENED,              /**< 设备还没有打开*/
+    AM_OSD_ERR_CANNOT_CREATE_THREAD,     /**< 无法创建线程*/
+    AM_OSD_ERR_NOT_SUPPORTED,            /**< 设备不支持此功能*/
+    AM_OSD_ERR_CANNOT_OPEN,              /**< 无法打开设备*/
+    AM_OSD_ERR_ILLEGAL_PIXEL,            /**< 无效的像素值*/
+    AM_OSD_ERR_SYS,                      /**< 系统错误*/
+    AM_OSD_ERR_END
 };
 
 /****************************************************************************
@@ -59,23 +59,23 @@ enum AM_OSD_ErrorCode
 /**\brief 图形模式类型*/
 typedef enum
 {
-	AM_OSD_FMT_PALETTE_256,      /**< 256色调色板模式*/
-	AM_OSD_FMT_COLOR_ARGB_4444,  /**< 真彩a:4 r:4 g:4 b:4*/
-	AM_OSD_FMT_COLOR_BGRA_4444,  /**< 真彩b:4 g:4 r:4 a:4*/
-	AM_OSD_FMT_COLOR_ARGB_1555,  /**< 真彩a:1 r:5 g:5 b:5*/
-	AM_OSD_FMT_COLOR_BGRA_5551,  /**< 真彩b:5 g:5 r:5 a:1*/
-	AM_OSD_FMT_COLOR_RGB_565,    /**< 真彩r:5 g:6 b:5*/
-	AM_OSD_FMT_COLOR_BGR_565,    /**< 真彩b:5 g:6 r:5*/
-	AM_OSD_FMT_COLOR_RGB_888,    /**< 真彩r:8 g:8 b:8*/
-	AM_OSD_FMT_COLOR_BGR_888,    /**< 真彩b:8 g:8 r:8*/
-	AM_OSD_FMT_COLOR_ARGB_8888,  /**< 真彩a:8 r:8 g:8 b:8*/
-	AM_OSD_FMT_COLOR_BGRA_8888,  /**< 真彩a:8 r:8 g:8 b:8*/
-	AM_OSD_FMT_COLOR_RGBA_8888,  /**< 真彩a:8 r:8 g:8 b:8*/
-	AM_OSD_FMT_COLOR_ABGR_8888,  /**< 真彩a:8 r:8 g:8 b:8*/
-	AM_OSD_FMT_YUV_420,          /**< YUV4:2:0模式*/
-	AM_OSD_FMT_YUV_422,          /**< YUV4:2:2模式*/
-	AM_OSD_FMT_YUV_444,          /**< YUV4:4:4模式*/
-	AM_OSD_FMT_COUNT
+    AM_OSD_FMT_PALETTE_256,      /**< 256色调色板模式*/
+    AM_OSD_FMT_COLOR_ARGB_4444,  /**< 真彩a:4 r:4 g:4 b:4*/
+    AM_OSD_FMT_COLOR_BGRA_4444,  /**< 真彩b:4 g:4 r:4 a:4*/
+    AM_OSD_FMT_COLOR_ARGB_1555,  /**< 真彩a:1 r:5 g:5 b:5*/
+    AM_OSD_FMT_COLOR_BGRA_5551,  /**< 真彩b:5 g:5 r:5 a:1*/
+    AM_OSD_FMT_COLOR_RGB_565,    /**< 真彩r:5 g:6 b:5*/
+    AM_OSD_FMT_COLOR_BGR_565,    /**< 真彩b:5 g:6 r:5*/
+    AM_OSD_FMT_COLOR_RGB_888,    /**< 真彩r:8 g:8 b:8*/
+    AM_OSD_FMT_COLOR_BGR_888,    /**< 真彩b:8 g:8 r:8*/
+    AM_OSD_FMT_COLOR_ARGB_8888,  /**< 真彩a:8 r:8 g:8 b:8*/
+    AM_OSD_FMT_COLOR_BGRA_8888,  /**< 真彩a:8 r:8 g:8 b:8*/
+    AM_OSD_FMT_COLOR_RGBA_8888,  /**< 真彩a:8 r:8 g:8 b:8*/
+    AM_OSD_FMT_COLOR_ABGR_8888,  /**< 真彩a:8 r:8 g:8 b:8*/
+    AM_OSD_FMT_YUV_420,          /**< YUV4:2:0模式*/
+    AM_OSD_FMT_YUV_422,          /**< YUV4:2:2模式*/
+    AM_OSD_FMT_YUV_444,          /**< YUV4:4:4模式*/
+    AM_OSD_FMT_COUNT
 } AM_OSD_PixelFormatType_t;
 
 /**\brief 真彩a:4 r:4 g:4 b:4*/
@@ -98,109 +98,109 @@ typedef enum
 /**\brief 颜色*/
 typedef struct
 {
-	uint8_t r; /**< 红*/
-	uint8_t g; /**< 绿*/
-	uint8_t b; /**< 蓝*/
-	uint8_t a; /**< alpha*/
+    uint8_t r; /**< 红*/
+    uint8_t g; /**< 绿*/
+    uint8_t b; /**< 蓝*/
+    uint8_t a; /**< alpha*/
 } AM_OSD_Color_t;
 
 /**\brief 调色板*/
 typedef struct
 {
-	int             color_count; /**< 调色板中的颜色数*/
-	AM_OSD_Color_t *colors;      /**< 颜色缓冲区*/
+    int             color_count; /**< 调色板中的颜色数*/
+    AM_OSD_Color_t *colors;      /**< 颜色缓冲区*/
 } AM_OSD_Palette_t;
 
 /**\brief 图形模式*/
 typedef struct
 {
-	AM_OSD_PixelFormatType_t type;            /**< 显示模式类型*/
-	int                      bits_per_pixel;  /**< 每个像素占用的位数*/
-	int                      bytes_per_pixel; /**< 每个像素占用的字节数*/
-	int                      planes;          /**< 像素缓冲区数目*/
-	uint32_t                 a_mask;          /**< 像素中alpha值掩码*/
-	uint32_t                 r_mask;          /**< 像素中红色值掩码*/
-	uint32_t                 g_mask;          /**< 像素中绿色值掩码*/
-	uint32_t                 b_mask;          /**< 像素中蓝色值掩码*/
-	uint8_t                  a_offset;        /**< 像素中alpha值的偏移*/
-	uint8_t                  r_offset;        /**< 像素中红色值的偏移*/
-	uint8_t                  g_offset;        /**< 像素中绿色值的偏移*/
-	uint8_t                  b_offset;        /**< 像素中蓝色值的偏移*/
-	uint8_t                  a_shift;         /**< 像素中alpha值移位(255最大)*/
-	uint8_t                  r_shift;         /**< 像素中红色值的移位(255最大)*/
-	uint8_t                  g_shift;         /**< 像素中绿色值的移位(255最大)*/
-	uint8_t                  b_shift;         /**< 像素中蓝色值的移位(255最大)*/
-	AM_OSD_Palette_t         palette;         /**< 调色板*/
+    AM_OSD_PixelFormatType_t type;            /**< 显示模式类型*/
+    int                      bits_per_pixel;  /**< 每个像素占用的位数*/
+    int                      bytes_per_pixel; /**< 每个像素占用的字节数*/
+    int                      planes;          /**< 像素缓冲区数目*/
+    uint32_t                 a_mask;          /**< 像素中alpha值掩码*/
+    uint32_t                 r_mask;          /**< 像素中红色值掩码*/
+    uint32_t                 g_mask;          /**< 像素中绿色值掩码*/
+    uint32_t                 b_mask;          /**< 像素中蓝色值掩码*/
+    uint8_t                  a_offset;        /**< 像素中alpha值的偏移*/
+    uint8_t                  r_offset;        /**< 像素中红色值的偏移*/
+    uint8_t                  g_offset;        /**< 像素中绿色值的偏移*/
+    uint8_t                  b_offset;        /**< 像素中蓝色值的偏移*/
+    uint8_t                  a_shift;         /**< 像素中alpha值移位(255最大)*/
+    uint8_t                  r_shift;         /**< 像素中红色值的移位(255最大)*/
+    uint8_t                  g_shift;         /**< 像素中绿色值的移位(255最大)*/
+    uint8_t                  b_shift;         /**< 像素中蓝色值的移位(255最大)*/
+    AM_OSD_Palette_t         palette;         /**< 调色板*/
 } AM_OSD_PixelFormat_t;
 
 /**\brief OSD设备开启参数*/
 typedef struct
 {
-	AM_OSD_PixelFormatType_t format;          /**< 显示模式*/
-	int                      width;           /**< 宽度像素数*/
-	int                      height;          /**< 高度像素数*/
-	int                      output_width;    /**< 视频输出宽度*/
-	int                      output_height;   /**< 视频输出高度*/
-	AM_Bool_t                enable_double_buffer; /**< 是否支持双缓冲*/
-	int                      vout_dev_no;     /**< OSD对应的视频输出设备ID*/
+    AM_OSD_PixelFormatType_t format;          /**< 显示模式*/
+    int                      width;           /**< 宽度像素数*/
+    int                      height;          /**< 高度像素数*/
+    int                      output_width;    /**< 视频输出宽度*/
+    int                      output_height;   /**< 视频输出高度*/
+    AM_Bool_t                enable_double_buffer; /**< 是否支持双缓冲*/
+    int                      vout_dev_no;     /**< OSD对应的视频输出设备ID*/
 } AM_OSD_OpenPara_t;
 
 /**\brief 矩形*/
 typedef struct
 {
-	int x;  /**< X坐标*/
-	int y;  /**< Y坐标*/
-	int w;  /**< 宽度*/
-	int h;  /**< 高度*/
+    int x;  /**< X坐标*/
+    int y;  /**< Y坐标*/
+    int w;  /**< 宽度*/
+    int h;  /**< 高度*/
 } AM_OSD_Rect_t;
 
 /**\brief 绘图表面*/
 typedef struct
 {
-	uint32_t   flags;       /**< 绘图表面功能标志*/
-	AM_OSD_PixelFormat_t    *format; /**< 图形模式*/
-	AM_OSD_Rect_t            clip;   /**< 剪切区域*/
-	int        width;       /**< 宽度*/
-	int        height;      /**< 高度*/
-	int        pitch;       /**< 每行所占字节数*/
-	uint32_t   color_key;   /**< Color key值*/
-	uint8_t    alpha;       /**< 全局Alpha值*/
-	uint8_t   *buffer;      /**< 像素缓冲区*/
-	void      *drv_data;    /**< 驱动私有数据*/
-	void      *hw_data;     /**< 硬件绘图相关数据*/
+    uint32_t   flags;       /**< 绘图表面功能标志*/
+    AM_OSD_PixelFormat_t    *format; /**< 图形模式*/
+    AM_OSD_Rect_t            clip;   /**< 剪切区域*/
+    int        width;       /**< 宽度*/
+    int        height;      /**< 高度*/
+    int        pitch;       /**< 每行所占字节数*/
+    uint32_t   color_key;   /**< Color key值*/
+    uint8_t    alpha;       /**< 全局Alpha值*/
+    uint8_t   *buffer;      /**< 像素缓冲区*/
+    void      *drv_data;    /**< 驱动私有数据*/
+    void      *hw_data;     /**< 硬件绘图相关数据*/
 } AM_OSD_Surface_t;
 
 /**\brief Blit操作模式*/
 typedef enum
 {
-	AM_OSD_BLIT_OP_CLEAR,         /**< =0*/
-	AM_OSD_BLIT_OP_COPY,          /**< =s*/
-	AM_OSD_BLIT_OP_NOOP,          /**< =d*/
-	AM_OSD_BLIT_OP_SET,           /**< =1*/
-	AM_OSD_BLIT_OP_COPY_INVERT,   /**< =~s*/
-	AM_OSD_BLIT_OP_INVERT,        /**< =~d*/
-	AM_OSD_BLIT_OP_AND_REVERSE,   /**< =s&~d*/
-	AM_OSD_BLIT_OP_OR_REVERSE,    /**< =s|~d*/
-	AM_OSD_BLIT_OP_AND,           /**< =s&d*/
-	AM_OSD_BLIT_OP_OR,            /**< =s|d*/
-	AM_OSD_BLIT_OP_NAND,          /**< =~(s&d)*/
-	AM_OSD_BLIT_OP_NOR,           /**< =~(s|d)*/
-	AM_OSD_BLIT_OP_XOR,           /**< =s^d*/
-	AM_OSD_BLIT_OP_EQUIV,         /**< =~(s^d)*/
-	AM_OSD_BLIT_OP_AND_INVERTED,  /**< =~s&d*/
-	AM_OSD_BLIT_OP_OR_INVERTED    /**< =~s|d*/
+    AM_OSD_BLIT_OP_CLEAR,         /**< =0*/
+    AM_OSD_BLIT_OP_COPY,          /**< =s*/
+    AM_OSD_BLIT_OP_NOOP,          /**< =d*/
+    AM_OSD_BLIT_OP_SET,           /**< =1*/
+    AM_OSD_BLIT_OP_COPY_INVERT,   /**< =~s*/
+    AM_OSD_BLIT_OP_INVERT,        /**< =~d*/
+    AM_OSD_BLIT_OP_AND_REVERSE,   /**< =s&~d*/
+    AM_OSD_BLIT_OP_OR_REVERSE,    /**< =s|~d*/
+    AM_OSD_BLIT_OP_AND,           /**< =s&d*/
+    AM_OSD_BLIT_OP_OR,            /**< =s|d*/
+    AM_OSD_BLIT_OP_NAND,          /**< =~(s&d)*/
+    AM_OSD_BLIT_OP_NOR,           /**< =~(s|d)*/
+    AM_OSD_BLIT_OP_XOR,           /**< =s^d*/
+    AM_OSD_BLIT_OP_EQUIV,         /**< =~(s^d)*/
+    AM_OSD_BLIT_OP_AND_INVERTED,  /**< =~s&d*/
+    AM_OSD_BLIT_OP_OR_INVERTED    /**< =~s|d*/
 } AM_OSD_BlitMode_t;
 
 /**\brief Blit 操作参数*/
 typedef struct
 {
-	AM_Bool_t  enable_alpha;       /**< 是否进行alpha blending*/
-	AM_Bool_t  enable_global_alpha;/**< 是否使用全局alpha值*/
-	AM_Bool_t  enable_key;   /**< 是否支持color key*/
-	AM_Bool_t  enable_op;    /**< 是否设置Blit模式*/
-	uint32_t   key;          /**< Color Key值*/
-	uint8_t    alpha;        /**< 全局Alpha值*/
-	AM_OSD_BlitMode_t op;    /**< Blit模式*/
+    AM_Bool_t  enable_alpha;       /**< 是否进行alpha blending*/
+    AM_Bool_t  enable_global_alpha;/**< 是否使用全局alpha值*/
+    AM_Bool_t  enable_key;   /**< 是否支持color key*/
+    AM_Bool_t  enable_op;    /**< 是否设置Blit模式*/
+    uint32_t   key;          /**< Color Key值*/
+    uint8_t    alpha;        /**< 全局Alpha值*/
+    AM_OSD_BlitMode_t op;    /**< Blit模式*/
 } AM_OSD_BlitPara_t;
 
 /**\brief 绘图表面支持硬件加速*/
@@ -377,7 +377,7 @@ extern AM_ErrorCode_t AM_OSD_CreateSurface(AM_OSD_PixelFormatType_t type, int w,
  *   - 其他值 错误代码(见am_osd.h)
  */
 extern AM_ErrorCode_t AM_OSD_CreateSurfaceFromBuffer(AM_OSD_PixelFormatType_t type, int w, int h, int pitch,
-		uint8_t *buffer, uint32_t flags, AM_OSD_Surface_t **s);
+        uint8_t *buffer, uint32_t flags, AM_OSD_Surface_t **s);
 
 /**\brief 销毁一个绘图表面
  * \param[in,out] s 要销毁的绘图表面

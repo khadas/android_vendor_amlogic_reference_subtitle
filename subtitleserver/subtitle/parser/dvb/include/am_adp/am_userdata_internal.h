@@ -41,36 +41,36 @@ typedef struct AM_USERDATA_Device AM_USERDATA_Device_t;
 
 typedef struct
 {
-	uint8_t           *data;
-	ssize_t           size;
-	ssize_t           pread;
-	ssize_t           pwrite;
-	int               error;
+    uint8_t           *data;
+    ssize_t           size;
+    ssize_t           pread;
+    ssize_t           pwrite;
+    int               error;
 
-	pthread_cond_t	  cond;
+    pthread_cond_t    cond;
 }AM_USERDATA_RingBuffer_t;
 
 /**\brief USERDATA devicedriver*/
 typedef struct
 {
-	AM_ErrorCode_t (*open)(AM_USERDATA_Device_t *dev, const AM_USERDATA_OpenPara_t *para);
-	AM_ErrorCode_t (*close)(AM_USERDATA_Device_t *dev);
-	AM_ErrorCode_t (*set_mode)(AM_USERDATA_Device_t *dev, int mode);
-	AM_ErrorCode_t (*get_mode)(AM_USERDATA_Device_t *dev, int *mode);
-	AM_ErrorCode_t (*set_param)(AM_USERDATA_Device_t *dev, int para);
+    AM_ErrorCode_t (*open)(AM_USERDATA_Device_t *dev, const AM_USERDATA_OpenPara_t *para);
+    AM_ErrorCode_t (*close)(AM_USERDATA_Device_t *dev);
+    AM_ErrorCode_t (*set_mode)(AM_USERDATA_Device_t *dev, int mode);
+    AM_ErrorCode_t (*get_mode)(AM_USERDATA_Device_t *dev, int *mode);
+    AM_ErrorCode_t (*set_param)(AM_USERDATA_Device_t *dev, int para);
 } AM_USERDATA_Driver_t;
 
 /**\brief USERDATA device*/
 struct AM_USERDATA_Device
 {
-	int                 dev_no;  /**< 设备号*/
-	const AM_USERDATA_Driver_t *drv;  /**< 设备driver*/
-	void               *drv_data;/**< driver private data*/
-	int                 open_cnt;   /**< 设备打开计数*/
-	pthread_mutex_t     lock;    /**< 设备保护互斥体*/
-	AM_USERDATA_RingBuffer_t pkg_buf;
+    int                 dev_no;  /**< 设备号*/
+    const AM_USERDATA_Driver_t *drv;  /**< 设备driver*/
+    void               *drv_data;/**< driver private data*/
+    int                 open_cnt;   /**< 设备打开计数*/
+    pthread_mutex_t     lock;    /**< 设备保护互斥体*/
+    AM_USERDATA_RingBuffer_t pkg_buf;
 
-	int (*write_package)(AM_USERDATA_Device_t *dev, const uint8_t *buf, size_t size);
+    int (*write_package)(AM_USERDATA_Device_t *dev, const uint8_t *buf, size_t size);
 
 };
 

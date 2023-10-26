@@ -3,8 +3,6 @@
 #include "Pjs.h"
 #include <utils/Log.h>
 
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 Pjs::Pjs(std::shared_ptr<DataSource> source): TextSubtitle(source) {
     mPtsRate = 15;
@@ -23,12 +21,12 @@ Pjs::~Pjs() {
 std::shared_ptr<ExtSubItem> Pjs::decodedItem() {
     char *line = (char *)MALLOC(LINE_LEN+1);
     if (!line) {
-        LOGE("[%s::%d] line malloc error!\n", __FUNCTION__, __LINE__);
+        ALOGE("[%s::%d] line malloc error!\n", __FUNCTION__, __LINE__);
         return nullptr;
     }
     char *text = (char *)MALLOC(LINE_LEN+1);
     if (!text) {
-        LOGE("[%s::%d] text malloc error!\n", __FUNCTION__, __LINE__);
+        ALOGE("[%s::%d] text malloc error!\n", __FUNCTION__, __LINE__);
         free(line);
         return nullptr;
     }

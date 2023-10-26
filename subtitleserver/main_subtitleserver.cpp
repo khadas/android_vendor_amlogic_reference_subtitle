@@ -16,7 +16,6 @@
 */
 
 #define LOG_TAG "subtitleserver"
-#define LOG_NDEBUG 0
 
 #include <fcntl.h>
 #include <sys/prctl.h>
@@ -25,8 +24,9 @@
 #include <binder/ProcessState.h>
 #include <binder/IServiceManager.h>
 #include <cutils/properties.h>
-#include <utils/Log.h>
 #include <hidl/HidlTransportSupport.h>
+
+#include <utils/Log.h>
 
 #include "SubtitleServer.h"
 

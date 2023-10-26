@@ -1,11 +1,12 @@
-
 // TODO: implement
 #define LOG_TAG "SubtitleService"
 
 #include <list>
 #include <memory>
 #include <mutex>
+
 #include <utils/Log.h>
+
 #include "Segment.h"
 
 

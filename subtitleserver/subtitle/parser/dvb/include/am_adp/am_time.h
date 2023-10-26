@@ -27,7 +27,7 @@ extern "C"
 /****************************************************************************
  * Macro definitions
  ***************************************************************************/
-#ifdef ANDROID
+#ifdef NEED_MIN_DVB
 /*extern int  __pthread_cond_timedwait(pthread_cond_t*,
                                      pthread_mutex_t*,
                                      const struct timespec*,

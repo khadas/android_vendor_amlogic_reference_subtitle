@@ -7,7 +7,6 @@
 #include "ExternalDataSource.h"
 #include "DemuxSource.h"
 #include "VbiSource.h"
-
 #include "DataSourceFactory.h"
 
 std::shared_ptr<DataSource> DataSourceFactory::create(SubtitleIOType type) {

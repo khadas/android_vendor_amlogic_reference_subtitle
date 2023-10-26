@@ -1,6 +1,9 @@
 #define LOG_TAG "SubtitleServerClientSDK"
-#include <android-base/logging.h>
 #include <fcntl.h>
+
+#include <utils/Log.h>
+#include <utils/CallStack.h>
+
 #include "SubtitleServerClient.h"
 
 using android::Mutex;
@@ -16,7 +19,7 @@ namespace amlogic {
 
 void SubtitleServerClient::SubtitleDeathRecipient::serviceDied(
     uint64_t, const android::wp<::android::hidl::base::V1_0::IBase>&) {
-    LOG(ERROR) << "SubtitleServer died. Cleanup instance!";
+    ALOGE("SubtitleServer died. Cleanup instance!");
     // delete Instance
 
     sp<SubtitleServerClient> owner = mOwner.promote();
@@ -162,9 +165,7 @@ Return<void> SubtitleServerClient::SubtitleCallback::uiCommandCallback(const Sub
 
 
 SubtitleServerClient::SubtitleServerClient(bool isFallback, sp<SubtitleListener> listener, OpenType openType) {
-    android::base::SetMinimumLogSeverity(android::base::VERBOSE);
-
-    LOG(ERROR) <<"SubtitleServerHidlClient getSubtitleService ...";
+    ALOGE("SubtitleServerHidlClient getSubtitleService ...");
     Mutex::Autolock _l(mLock);
     mIsFallback = isFallback;
     mListener = listener;
@@ -180,7 +181,7 @@ void SubtitleServerClient::initRemoteLocked() {
         usleep(200*1000);//sleep 200ms
         mLock.lock();
         mRemote = ISubtitleServer::tryGetService();
-        LOG(ERROR) <<"tryGet ISubtitleServer daemon Service" << ISubtitleServer::descriptor;
+        ALOGE("tryGet ISubtitleServer daemon Service ISubtitleServer::descriptor");
     }
 
     mCallback = new SubtitleCallback(mListener);
@@ -197,11 +198,11 @@ void SubtitleServerClient::initRemoteLocked() {
 
     Return<bool> linked = mRemote->linkToDeath(mDeathRecipient, /*cookie*/ 0XABDADA);
     if (!linked.isOk()) {
-        LOG(ERROR) << "Transaction error in linking to system service death:%s"<<linked.description();
+        ALOGE("Transaction error in linking to system service death");
     } else if (!linked) {
-        LOG(ERROR) << "Unable to link to death notifications";
+        ALOGE("Unable to link to death notifications");
     } else {
-        LOG(ERROR) << "Link to service death notification successful";
+        ALOGE("Link to service death notification successful");
     }
 
     bool result;
@@ -215,11 +216,11 @@ void SubtitleServerClient::initRemoteLocked() {
         });
 
     if (!result) {
-        LOG(ERROR) << "Cannot open connections!";
+        ALOGE("Cannot open connections!");
         return;
     }
 
-    LOG(INFO) << "Created open session: " << mSessionId;
+    ALOGI("Created open session: 0x%x", mSessionId);
 }
 
 template<typename T>
@@ -232,7 +233,7 @@ void SubtitleServerClient::checkRemoteResultLocked(Return<T> &r) {
 
 SubtitleServerClient::~SubtitleServerClient() {
     Mutex::Autolock _l(mLock);
-    LOG(INFO) << "~SubtitleServerClient " << mSessionId;
+    ALOGI("~SubtitleServerClient 0x%x", mSessionId);
     if (mRemote != nullptr && mDeathRecipient != nullptr) {
         auto g = mRemote->removeCallback(mCallback);
         checkRemoteResultLocked(g);
@@ -255,7 +256,7 @@ bool SubtitleServerClient::open(int fd, int fdData, int trackId, int ioType) {
         return open(-1, ioType);
 
     Mutex::Autolock _l(mLock);
-    LOG(INFO) << "open session:" << mSessionId << " ioType="<<ioType;
+    ALOGI("open session:0x%x  ioType=%d", mSessionId, ioType);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
@@ -264,10 +265,10 @@ bool SubtitleServerClient::open(int fd, int fdData, int trackId, int ioType) {
 
     ::lseek(fd, 0, SEEK_SET);
     ::lseek(fd, 0, SEEK_SET);
-    LOG(INFO) << "open session:" << mSessionId << " fd:" << fd << " fdData:" << fdData;
+    ALOGI("open session:0x%x fd:%d fdData:%d", mSessionId, fd, fdData);
     nativeHandle = native_handle_create(2, 1);
     if (nativeHandle == nullptr) {
-        LOG(ERROR) << "Creat native handle failed!";
+        ALOGE("Creat native handle failed!");
         return false;
     }
     nativeHandle->data[0] = fd;
@@ -286,7 +287,7 @@ bool SubtitleServerClient::open(int fd, int fdData, int trackId, int ioType) {
 
 bool SubtitleServerClient::open(int fd, int ioType) {
     Mutex::Autolock _l(mLock);
-    LOG(INFO) << "open session:" << mSessionId << " ioType="<<ioType;
+    ALOGI("open session:0x%x ioType:%d", mSessionId, ioType);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
@@ -295,7 +296,7 @@ bool SubtitleServerClient::open(int fd, int ioType) {
 
     if (fd > 0) {
         ::lseek(fd, 0, SEEK_SET);
-        LOG(INFO) << "open session:" << mSessionId << " fd:" << fd;
+        ALOGI("open session:0x%x fd:%d", mSessionId, fd);
         nativeHandle = native_handle_create(1, 0);
         if (nativeHandle != nullptr) nativeHandle->data[0] = fd;
     } else {
@@ -329,9 +330,9 @@ bool SubtitleServerClient::open(const char *path, int ioType) {
 
 
 bool SubtitleServerClient::close() {
-    LOG(INFO) << "close session: " << mSessionId;
+    ALOGI("close session:0x%x", mSessionId);
     if (this == nullptr) {
-        LOG(ERROR) << "maybe not exist!";
+        ALOGE("maybe not exist!");
         return false;
     }
     Mutex::Autolock _l(mLock);
@@ -364,7 +365,7 @@ int SubtitleServerClient::totalTracks() {
     auto r = mRemote->getTotalTracks(mSessionId, [&] (const Result &ret, const int& v) {
             if (ret == Result::OK) {
                 track = v;
-                LOG(INFO) << "Get Total tracks:" << track;
+                ALOGI("Get Total tracks:%d", track);
             }
         });
     checkRemoteResultLocked(r);
@@ -380,7 +381,7 @@ std::string SubtitleServerClient::getSubLanguage(int idx) {
     auto r = mRemote->getLanguage(mSessionId, [&] (const Result &ret, const std::string& language) {
             if (ret == Result::OK) {
                 subLanguage = language;
-                LOG(INFO) << "Get subLanguage:" << subLanguage;
+                ALOGI("Get subLanguage:%s", subLanguage.c_str());
             }
         });
     checkRemoteResultLocked(r);
@@ -407,7 +408,7 @@ int SubtitleServerClient::getSubType() {
     auto r = mRemote->getType(mSessionId, [&] (const Result &ret, const int& v) {
             if (ret == Result::OK) {
                 subType = v;
-                LOG(INFO) << "Get subType:" << subType;
+                ALOGI("Get subType:%d", subType);
             }
         });
     checkRemoteResultLocked(r);
@@ -470,14 +471,14 @@ bool SubtitleServerClient::setSecureLevel(int flag) {
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
-    LOG(INFO) << "setSecureLevel select session:" << mSessionId << ",flag=" << flag;
+    ALOGI("select session:0x%x flag:%d", mSessionId, flag);
     auto r = mRemote->setSecureLevel(mSessionId, flag);
     checkRemoteResultLocked(r);
     return r.isOk();
 }
 
 bool SubtitleServerClient::setClosedCaptionLang(const char *lang) {
-    LOG(INFO) << "select session:" << mSessionId << ",lang=" << lang;
+    ALOGI("select session:0x%x lang:%d", mSessionId, lang);
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
@@ -491,7 +492,7 @@ bool SubtitleServerClient::setClosedCaptionLang(const char *lang) {
 
 bool SubtitleServerClient::selectCcChannel(int ch, const char *lang) {
     Mutex::Autolock _l(mLock);
-    LOG(INFO) << "select session:" << mSessionId << ",channel="<< ch << ",lang=" << lang;
+    ALOGI("select session:0x%x  channel:%d lang:%d", mSessionId, ch, lang);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
@@ -592,7 +593,7 @@ bool SubtitleServerClient::userDataOpen() {
 
 bool SubtitleServerClient::userDataClose() {
     if (this == nullptr) {
-        LOG(ERROR) << "maybe not exist!";
+        ALOGE("maybe not exist!");
         return false;
     }
     Mutex::Autolock _l(mLock);
@@ -700,7 +701,7 @@ bool SubtitleServerClient::uiGetSubDimension(int *pWidth, int *pHeight) {
             if (ret == Result::OK) {
                 *pWidth = width;
                 *pHeight = height;
-                LOG(INFO) << "Get getSubDimension:" << width << "x" <<height;
+                ALOGI("Get getSubDimension width:%d height:%d", width, height);
             }
         });
     checkRemoteResultLocked(r);

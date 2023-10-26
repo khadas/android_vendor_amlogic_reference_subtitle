@@ -1,7 +1,9 @@
 #define LOG_TAG "FmqReceiver"
+
+#include <utils/CallStack.h>
+
 #include "FmqReceiver.h"
 #include "ringbuffer.h"
-#include <utils/CallStack.h>
 
 
 using ::android::CallStack;

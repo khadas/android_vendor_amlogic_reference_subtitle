@@ -34,39 +34,39 @@ extern "C"
 /**\brief Error code of close caption parser*/
 enum AM_CC_ErrorCode
 {
-	AM_CC_ERROR_BASE=AM_ERROR_BASE(AM_MOD_CC),
-	AM_CC_ERR_INVALID_PARAM,   	/**< Invalid parameter*/
-	AM_CC_ERR_SYS,                  /**< System error*/
-	AM_CC_ERR_NO_MEM,               /**< Not enough memory*/
-	AM_CC_ERR_LIBZVBI,              /**< libzvbi error*/
-	AM_CC_ERR_BUSY,                 /**< Device is busy*/
-	AM_CC_ERR_END
+    AM_CC_ERROR_BASE=AM_ERROR_BASE(AM_MOD_CC),
+    AM_CC_ERR_INVALID_PARAM,    /**< Invalid parameter*/
+    AM_CC_ERR_SYS,                  /**< System error*/
+    AM_CC_ERR_NO_MEM,               /**< Not enough memory*/
+    AM_CC_ERR_LIBZVBI,              /**< libzvbi error*/
+    AM_CC_ERR_BUSY,                 /**< Device is busy*/
+    AM_CC_ERR_END
 };
 
 /**\brief caption mode*/
 typedef enum
 {
-	AM_CC_CAPTION_NONE = -1,
-	AM_CC_CAPTION_DEFAULT,
-	/*NTSC CC channels*/
-	AM_CC_CAPTION_CC1,
-	AM_CC_CAPTION_CC2,
-	AM_CC_CAPTION_CC3,
-	AM_CC_CAPTION_CC4,
-	AM_CC_CAPTION_TEXT1,
-	AM_CC_CAPTION_TEXT2,
-	AM_CC_CAPTION_TEXT3,
-	AM_CC_CAPTION_TEXT4,
-	/*DTVCC services*/
-	AM_CC_CAPTION_SERVICE1,
-	AM_CC_CAPTION_SERVICE2,
-	AM_CC_CAPTION_SERVICE3,
-	AM_CC_CAPTION_SERVICE4,
-	AM_CC_CAPTION_SERVICE5,
-	AM_CC_CAPTION_SERVICE6,
-	AM_CC_CAPTION_XDS,
-	AM_CC_CAPTION_DATA,
-	AM_CC_CAPTION_MAX
+    AM_CC_CAPTION_NONE = -1,
+    AM_CC_CAPTION_DEFAULT,
+    /*NTSC CC channels*/
+    AM_CC_CAPTION_CC1,
+    AM_CC_CAPTION_CC2,
+    AM_CC_CAPTION_CC3,
+    AM_CC_CAPTION_CC4,
+    AM_CC_CAPTION_TEXT1,
+    AM_CC_CAPTION_TEXT2,
+    AM_CC_CAPTION_TEXT3,
+    AM_CC_CAPTION_TEXT4,
+    /*DTVCC services*/
+    AM_CC_CAPTION_SERVICE1,
+    AM_CC_CAPTION_SERVICE2,
+    AM_CC_CAPTION_SERVICE3,
+    AM_CC_CAPTION_SERVICE4,
+    AM_CC_CAPTION_SERVICE5,
+    AM_CC_CAPTION_SERVICE6,
+    AM_CC_CAPTION_XDS,
+    AM_CC_CAPTION_DATA,
+    AM_CC_CAPTION_MAX
 }AM_CC_CaptionMode_t;
 
 /****************************************************************************
@@ -133,8 +133,8 @@ typedef enum {
     CMD_CC_SET_VBIDATA   = 0x7001,
     CMD_CC_SET_USERDATA ,
 
-	CMD_CC_SET_CHAN_NUM = 0x8001,
-	CMD_VCHIP_RST_CHGSTAT = 0x9001,
+    CMD_CC_SET_CHAN_NUM = 0x8001,
+    CMD_VCHIP_RST_CHGSTAT = 0x9001,
 
     CMD_CC_MAX
 } AM_CLOSECAPTION_cmd_t;
@@ -143,121 +143,121 @@ typedef enum {
 /**\brief Font size, see details in CEA-708**/
 typedef enum
 {
-	AM_CC_FONTSIZE_DEFAULT,
-	AM_CC_FONTSIZE_SMALL,
-	AM_CC_FONTSIZE_STANDARD,
-	AM_CC_FONTSIZE_BIG,
-	AM_CC_FONTSIZE_MAX
+    AM_CC_FONTSIZE_DEFAULT,
+    AM_CC_FONTSIZE_SMALL,
+    AM_CC_FONTSIZE_STANDARD,
+    AM_CC_FONTSIZE_BIG,
+    AM_CC_FONTSIZE_MAX
 }AM_CC_FontSize_t;
 
 /**\brief Font style, see details in CEA-708*/
 typedef enum
 {
-	AM_CC_FONTSTYLE_DEFAULT,
-	AM_CC_FONTSTYLE_MONO_SERIF,
-	AM_CC_FONTSTYLE_PROP_SERIF,
-	AM_CC_FONTSTYLE_MONO_NO_SERIF,
-	AM_CC_FONTSTYLE_PROP_NO_SERIF,
-	AM_CC_FONTSTYLE_CASUAL,
-	AM_CC_FONTSTYLE_CURSIVE,
-	AM_CC_FONTSTYLE_SMALL_CAPITALS,
-	AM_CC_FONTSTYLE_MAX
+    AM_CC_FONTSTYLE_DEFAULT,
+    AM_CC_FONTSTYLE_MONO_SERIF,
+    AM_CC_FONTSTYLE_PROP_SERIF,
+    AM_CC_FONTSTYLE_MONO_NO_SERIF,
+    AM_CC_FONTSTYLE_PROP_NO_SERIF,
+    AM_CC_FONTSTYLE_CASUAL,
+    AM_CC_FONTSTYLE_CURSIVE,
+    AM_CC_FONTSTYLE_SMALL_CAPITALS,
+    AM_CC_FONTSTYLE_MAX
 }AM_CC_FontStyle_t;
 
 /**\brief Color opacity, see details in CEA-708**/
 typedef enum
 {
-	AM_CC_OPACITY_DEFAULT,
-	AM_CC_OPACITY_TRANSPARENT,
-	AM_CC_OPACITY_TRANSLUCENT,
-	AM_CC_OPACITY_SOLID,
-	AM_CC_OPACITY_FLASH,
-	AM_CC_OPACITY_MAX
+    AM_CC_OPACITY_DEFAULT,
+    AM_CC_OPACITY_TRANSPARENT,
+    AM_CC_OPACITY_TRANSLUCENT,
+    AM_CC_OPACITY_SOLID,
+    AM_CC_OPACITY_FLASH,
+    AM_CC_OPACITY_MAX
 }AM_CC_Opacity_t;
 
 /**\brief Color, see details in CEA-708-D**/
 typedef enum
 {
-	AM_CC_COLOR_DEFAULT,
-	AM_CC_COLOR_WHITE,
-	AM_CC_COLOR_BLACK,
-	AM_CC_COLOR_RED,
-	AM_CC_COLOR_GREEN,
-	AM_CC_COLOR_BLUE,
-	AM_CC_COLOR_YELLOW,
-	AM_CC_COLOR_MAGENTA,
-	AM_CC_COLOR_CYAN,
-	AM_CC_COLOR_MAX
+    AM_CC_COLOR_DEFAULT,
+    AM_CC_COLOR_WHITE,
+    AM_CC_COLOR_BLACK,
+    AM_CC_COLOR_RED,
+    AM_CC_COLOR_GREEN,
+    AM_CC_COLOR_BLUE,
+    AM_CC_COLOR_YELLOW,
+    AM_CC_COLOR_MAGENTA,
+    AM_CC_COLOR_CYAN,
+    AM_CC_COLOR_MAX
 }AM_CC_Color_t;
 
 /**Close caption drawing parameters*/
 struct AM_CC_DrawPara
 {
-	int caption_width;   /**< Width of the caption*/
-	int caption_height;  /**< Height of the caption*/
+    int caption_width;   /**< Width of the caption*/
+    int caption_height;  /**< Height of the caption*/
 };
 
 /**\brief User options of close caption*/
 typedef struct
 {
-	AM_CC_FontSize_t        font_size;	/**< Font size*/
-	AM_CC_FontStyle_t       font_style;	/**< Font style*/
-	AM_CC_Color_t           fg_color;	/**< Frontground color*/
-	AM_CC_Opacity_t         fg_opacity;	/**< Frontground opacity*/
-	AM_CC_Color_t           bg_color;	/**< Background color*/
-	AM_CC_Opacity_t         bg_opacity;	/**< Background opacity*/
+    AM_CC_FontSize_t        font_size;  /**< Font size*/
+    AM_CC_FontStyle_t       font_style; /**< Font style*/
+    AM_CC_Color_t           fg_color;   /**< Frontground color*/
+    AM_CC_Opacity_t         fg_opacity; /**< Frontground opacity*/
+    AM_CC_Color_t           bg_color;   /**< Background color*/
+    AM_CC_Opacity_t         bg_opacity; /**< Background opacity*/
 }AM_CC_UserOptions_t;
 
 /**\brief Close caption's input.*/
 typedef enum {
-	AM_CC_INPUT_USERDATA, /**< Input from MPEG userdata.*/
-	AM_CC_INPUT_VBI       /**< Input from VBI.*/
+    AM_CC_INPUT_USERDATA, /**< Input from MPEG userdata.*/
+    AM_CC_INPUT_VBI       /**< Input from VBI.*/
 }AM_CC_Input_t;
 
 enum AM_CC_Decoder_Error
 {
-	AM_CC_Decoder_Error_LoseData,
-	AM_CC_Decoder_Error_InvalidData,
-	AM_CC_Decoder_Error_TimeError,
-	AM_CC_Decoder_Error_END
+    AM_CC_Decoder_Error_LoseData,
+    AM_CC_Decoder_Error_InvalidData,
+    AM_CC_Decoder_Error_TimeError,
+    AM_CC_Decoder_Error_END
 };
 
 
 /**\brief Close caption parser create parameters*/
 typedef struct
 {
-	uint8_t            *bmp_buffer;    /**< Drawing buffer*/
-	int                 pitch;         /**< Line pitch of the drawing buffer*/
-	int                 bypass_cc_enable; /**< Bypass CC data flag*/
-	int                 data_timeout;  /**< Data timeout value in ms*/
-	int                 switch_timeout;/**< Caption 1/2 switch timeout in ms.*/
-	unsigned int       decoder_param;
-	void               *user_data;     /**< User defined data*/
-	char                lang[10];
-	AM_CC_Input_t       input;         /**< Input type.*/
-	AM_CC_VBIProgInfoCb_t pinfo_cb;    /**< VBI program information callback.*/
-	AM_CC_VBINetworkCb_t  network_cb;  /**< VBI network callback.*/
-	AM_CC_VBIRatingCb_t   rating_cb;   /**< VBI rating callback.*/
-	AM_CC_DataCb_t      data_cb;       /**< Received data callback.*/
-	AM_CC_DrawBegin_t   draw_begin;    /**< Drawing beginning callback*/
-	AM_CC_DrawEnd_t     draw_end;      /**< Drawing end callback*/
-	AM_CC_UpdataJson_t json_update;
-	AM_CC_ReportError report;
-	AM_CC_Q_Tone_DataCb_t q_tone_cb;
-	char *json_buffer;
-	AM_Bool_t auto_detect_play;
+    uint8_t            *bmp_buffer;    /**< Drawing buffer*/
+    int                 pitch;         /**< Line pitch of the drawing buffer*/
+    int                 bypass_cc_enable; /**< Bypass CC data flag*/
+    int                 data_timeout;  /**< Data timeout value in ms*/
+    int                 switch_timeout;/**< Caption 1/2 switch timeout in ms.*/
+    unsigned int       decoder_param;
+    void               *user_data;     /**< User defined data*/
+    char                lang[10];
+    AM_CC_Input_t       input;         /**< Input type.*/
+    AM_CC_VBIProgInfoCb_t pinfo_cb;    /**< VBI program information callback.*/
+    AM_CC_VBINetworkCb_t  network_cb;  /**< VBI network callback.*/
+    AM_CC_VBIRatingCb_t   rating_cb;   /**< VBI rating callback.*/
+    AM_CC_DataCb_t      data_cb;       /**< Received data callback.*/
+    AM_CC_DrawBegin_t   draw_begin;    /**< Drawing beginning callback*/
+    AM_CC_DrawEnd_t     draw_end;      /**< Drawing end callback*/
+    AM_CC_UpdataJson_t json_update;
+    AM_CC_ReportError report;
+    AM_CC_Q_Tone_DataCb_t q_tone_cb;
+    char *json_buffer;
+    AM_Bool_t auto_detect_play;
 }AM_CC_CreatePara_t;
 
 /**\brief Close caption parser start parameter*/
 typedef struct
 {
-	int 				vfmt;
-	int                      player_id;
-	int                      mediaysnc_id;
-	AM_CC_CaptionMode_t    caption1;     /**< Mode 1*/
-	AM_CC_CaptionMode_t    caption2;     /**< Mode 2.*/
-	AM_CC_UserOptions_t    user_options; /**< User options*/
-	AM_Bool_t 	       auto_detect_play;
+    int                 vfmt;
+    int                      player_id;
+    int                      mediaysnc_id;
+    AM_CC_CaptionMode_t    caption1;     /**< Mode 1*/
+    AM_CC_CaptionMode_t    caption2;     /**< Mode 2.*/
+    AM_CC_UserOptions_t    user_options; /**< User options*/
+    AM_Bool_t          auto_detect_play;
 }AM_CC_StartPara_t;
 
 

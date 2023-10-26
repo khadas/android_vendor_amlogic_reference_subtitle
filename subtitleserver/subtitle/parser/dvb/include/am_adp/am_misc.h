@@ -52,8 +52,8 @@ typedef void (*AM_Write_Sysfs_Cb)(const char *name, const char *cmd);
 /**\brief 注册读写sysfs的回调函数
  * \param[in] fun 回调
  * \return
- *	 - AM_SUCCESS 成功
- *	 - 其他值 错误代码
+ *   - AM_SUCCESS 成功
+ *   - 其他值 错误代码
  */
 extern void AM_RegisterRWSysfsFun(AM_Read_Sysfs_Cb RCb, AM_Write_Sysfs_Cb WCb);
 
@@ -78,8 +78,8 @@ typedef void (*AM_Write_Prop_Cb)(const char *name, const char *cmd);
 /**\brief 注册读写sysfs的回调函数
  * \param[in] fun 回调
  * \return
- *	 - AM_SUCCESS 成功
- *	 - 其他值 错误代码
+ *   - AM_SUCCESS 成功
+ *   - 其他值 错误代码
  */
 extern void AM_RegisterRWPropFun(AM_Read_Prop_Cb RCb, AM_Write_Prop_Cb WCb);
 

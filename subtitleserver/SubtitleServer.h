@@ -3,7 +3,6 @@
 #pragma once
 
 #include <map>
-#include <vendor/amlogic/hardware/subtitleserver/1.0/ISubtitleServer.h>
 
 #include <fmq/EventFlag.h>
 #include <fmq/MessageQueue.h>
@@ -11,8 +10,9 @@
 #include <hidl/Status.h>
 #include <hidl/HidlTransportSupport.h>
 #include <utils/Mutex.h>
-#include "SubtitleService.h"
 
+#include <vendor/amlogic/hardware/subtitleserver/1.0/ISubtitleServer.h>
+#include "SubtitleService.h"
 #include "AndroidCallbackMessageQueue.h"
 // register a callback, for send to remote process and showing.
 using ::amlogic::AndroidCallbackHandler;

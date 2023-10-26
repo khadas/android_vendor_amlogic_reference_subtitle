@@ -46,20 +46,20 @@ extern "C"
 /**\brief Error code of the demux module*/
 enum AM_DMX_ErrorCode
 {
-	AM_DMX_ERROR_BASE=AM_ERROR_BASE(AM_MOD_DMX),
-	AM_DMX_ERR_INVALID_DEV_NO,          /**< Invalid device number*/
-	AM_DMX_ERR_INVALID_ID,              /**< Invalid filer handle*/
-	AM_DMX_ERR_BUSY,                    /**< The device has already been openned*/
-	AM_DMX_ERR_NOT_ALLOCATED,           /**< The device has not been allocated*/
-	AM_DMX_ERR_CANNOT_CREATE_THREAD,    /**< Cannot create new thread*/
-	AM_DMX_ERR_CANNOT_OPEN_DEV,         /**< Cannot open device*/
-	AM_DMX_ERR_NOT_SUPPORTED,           /**< Not supported*/
-	AM_DMX_ERR_NO_FREE_FILTER,          /**< No free filter*/
-	AM_DMX_ERR_NO_MEM,                  /**< Not enough memory*/
-	AM_DMX_ERR_TIMEOUT,                 /**< Timeout*/
-	AM_DMX_ERR_SYS,                     /**< System error*/
-	AM_DMX_ERR_NO_DATA,                 /**< No data received*/
-	AM_DMX_ERR_END
+    AM_DMX_ERROR_BASE=AM_ERROR_BASE(AM_MOD_DMX),
+    AM_DMX_ERR_INVALID_DEV_NO,          /**< Invalid device number*/
+    AM_DMX_ERR_INVALID_ID,              /**< Invalid filer handle*/
+    AM_DMX_ERR_BUSY,                    /**< The device has already been opened*/
+    AM_DMX_ERR_NOT_ALLOCATED,           /**< The device has not been allocated*/
+    AM_DMX_ERR_CANNOT_CREATE_THREAD,    /**< Cannot create new thread*/
+    AM_DMX_ERR_CANNOT_OPEN_DEV,         /**< Cannot open device*/
+    AM_DMX_ERR_NOT_SUPPORTED,           /**< Not supported*/
+    AM_DMX_ERR_NO_FREE_FILTER,          /**< No free filter*/
+    AM_DMX_ERR_NO_MEM,                  /**< Not enough memory*/
+    AM_DMX_ERR_TIMEOUT,                 /**< Timeout*/
+    AM_DMX_ERR_SYS,                     /**< System error*/
+    AM_DMX_ERR_NO_DATA,                 /**< No data received*/
+    AM_DMX_ERR_END
 };
 
 /****************************************************************************
@@ -69,20 +69,20 @@ enum AM_DMX_ErrorCode
 /**\brief Input source of the demux*/
 typedef enum
 {
-	AM_DMX_SRC_TS0,                    /**< TS input port 0*/
-	AM_DMX_SRC_TS1,                    /**< TS input port 1*/
-	AM_DMX_SRC_TS2,                    /**< TS input port 2*/
-	AM_DMX_SRC_TS3,                    /**< TS input port 3*/
-	AM_DMX_SRC_HIU,                     /**< HIU input (memory)*/
-	AM_DMX_SRC_HIU1
+    AM_DMX_SRC_TS0,                    /**< TS input port 0*/
+    AM_DMX_SRC_TS1,                    /**< TS input port 1*/
+    AM_DMX_SRC_TS2,                    /**< TS input port 2*/
+    AM_DMX_SRC_TS3,                    /**< TS input port 3*/
+    AM_DMX_SRC_HIU,                     /**< HIU input (memory)*/
+    AM_DMX_SRC_HIU1
 } AM_DMX_Source_t;
 
 /**\brief Demux device open parameters*/
 typedef struct
 {
-	AM_Bool_t use_sw_filter;           /**< M_TRUE to use DVR software filters.*/
-	int       dvr_fifo_no;             /**< Async fifo number if use software filters.*/
-	int       dvr_buf_size;            /**< Async fifo buffer size if use software filters.*/
+    AM_Bool_t use_sw_filter;           /**< M_TRUE to use DVR software filters.*/
+    int       dvr_fifo_no;             /**< Async fifo number if use software filters.*/
+    int       dvr_buf_size;            /**< Async fifo buffer size if use software filters.*/
 } AM_DMX_OpenPara_t;
 
 /**\brief Filter received data callback function

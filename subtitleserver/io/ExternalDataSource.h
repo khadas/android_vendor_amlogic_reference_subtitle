@@ -1,17 +1,14 @@
 #ifndef __SUBTITLE_EXTERNAL_SOURCE_H__
 #define __SUBTITLE_EXTERNAL_SOURCE_H__
 
-
 #include <string>
 #include <memory>
 #include <mutex>
 #include <utils/Thread.h>
 #include <thread>
+
 #include "Segment.h"
-
-
 #include "DataSource.h"
-
 
 
 class ExternalDataSource : public DataSource {

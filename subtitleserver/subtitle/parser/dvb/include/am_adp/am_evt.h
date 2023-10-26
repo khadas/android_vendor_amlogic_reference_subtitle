@@ -39,10 +39,10 @@ extern "C"
 /**\brief Error code of the event module*/
 enum AM_EVT_ErrorCode
 {
-	AM_EVT_ERROR_BASE=AM_ERROR_BASE(AM_MOD_EVT),
-	AM_EVT_ERR_NO_MEM,                  /**< Not enough memory*/
-	AM_EVT_ERR_NOT_SUBSCRIBED,          /**< The event is not subscribed*/
-	AM_EVT_ERR_END
+    AM_EVT_ERROR_BASE=AM_ERROR_BASE(AM_MOD_EVT),
+    AM_EVT_ERR_NO_MEM,                  /**< Not enough memory*/
+    AM_EVT_ERR_NOT_SUBSCRIBED,          /**< The event is not subscribed*/
+    AM_EVT_ERR_END
 };
 
 /****************************************************************************

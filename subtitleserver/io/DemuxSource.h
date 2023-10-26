@@ -1,17 +1,16 @@
 #ifndef __SUBTITLE_DEMUXDEVICE_SOURCE_H__
 #define __SUBTITLE_DEMUXDEVICE_SOURCE_H__
 
-
 #include <string>
 #include <memory>
 #include <mutex>
 #include <utils/Thread.h>
 #include <thread>
+
 #include "Segment.h"
 #include "sub_types2.h"
-
-
 #include "DataSource.h"
+
 #define DEMUX_SOURCE_ID 0//0
 
 class DemuxSource : public DataSource {

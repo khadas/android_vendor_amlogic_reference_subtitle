@@ -1,4 +1,3 @@
-#define LOG_NDEBUG  0
 #define LOG_TAG "SubtitleServer"
 #include <thread>
 #include "AndroidCallbackMessageQueue.h"

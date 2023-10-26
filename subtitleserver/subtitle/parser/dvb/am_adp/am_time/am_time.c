@@ -1,6 +1,4 @@
-#ifdef _FORTIFY_SOURCE
-#undef _FORTIFY_SOURCE
-#endif
+
 /***************************************************************************
  * Copyright (c) 2014 Amlogic, Inc. All rights reserved.
  *
@@ -10,27 +8,35 @@
  * Description:
  */
 /**\file
- * \brief 时钟、时间相关函数
+ * \brief Clock, time related functions
  *
  * \author Gong Ke <ke.gong@amlogic.com>
  * \date 2010-05-21: create the document
  ***************************************************************************/
+#ifdef _FORTIFY_SOURCE
+#undef _FORTIFY_SOURCE
+#endif
 
-#define AM_DEBUG_LEVEL 5
-
-#include <am_debug.h>
-#include <am_time.h>
-//#include <am_mem.h>
+#define  LOG_TAG "AM_TIME"
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
-#include <assert.h>
+#include <utils/Log.h>
+
+#include <am_time.h>
+
 
 /****************************************************************************
  * Macro definitions
  ***************************************************************************/
-#ifdef ANDROID
+#ifdef NEED_MIN_DVB
 //#undef CLOCK_REALTIME
-//#define CLOCK_REALTIME	CLOCK_MONOTONIC
+//#define CLOCK_REALTIME    CLOCK_MONOTONIC
 #endif
 
 /****************************************************************************
@@ -45,16 +51,16 @@
  */
 AM_ErrorCode_t AM_TIME_GetClock(int *clock)
 {
-	struct timespec ts;
-	int ms;
+    struct timespec ts;
+    int ms;
 
-	assert(clock);
+    assert(clock);
 
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	ms = ts.tv_sec*1000+ts.tv_nsec/1000000;
-	*clock = ms;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    ms = ts.tv_sec*1000+ts.tv_nsec/1000000;
+    *clock = ms;
 
-	return AM_SUCCESS;
+    return AM_SUCCESS;
 }
 
 /**\brief 得到开机到当前系统运行的时间，格式为struct timespec
@@ -65,11 +71,11 @@ AM_ErrorCode_t AM_TIME_GetClock(int *clock)
  */
 AM_ErrorCode_t AM_TIME_GetTimeSpec(struct timespec *ts)
 {
-	assert(ts);
+    assert(ts);
 
-	clock_gettime(CLOCK_MONOTONIC, ts);
+    clock_gettime(CLOCK_MONOTONIC, ts);
 
-	return AM_SUCCESS;
+    return AM_SUCCESS;
 }
 
 /**\brief 得到若干毫秒后的timespec值
@@ -82,30 +88,30 @@ AM_ErrorCode_t AM_TIME_GetTimeSpec(struct timespec *ts)
  */
 AM_ErrorCode_t AM_TIME_GetTimeSpecTimeout(int timeout, struct timespec *ts)
 {
-	struct timespec ots;
-	int left, diff;
+    struct timespec ots;
+    int left, diff;
 
-	assert(ts);
+    assert(ts);
 
-	clock_gettime(CLOCK_MONOTONIC, &ots);
+    clock_gettime(CLOCK_MONOTONIC, &ots);
 
-	ts->tv_sec  = ots.tv_sec + timeout/1000;
-	ts->tv_nsec = ots.tv_nsec;
+    ts->tv_sec  = ots.tv_sec + timeout/1000;
+    ts->tv_nsec = ots.tv_nsec;
 
-	left = timeout % 1000;
-	left *= 1000000;
-	diff = 1000000000-ots.tv_nsec;
+    left = timeout % 1000;
+    left *= 1000000;
+    diff = 1000000000-ots.tv_nsec;
 
-	if (diff <= left)
-	{
-		ts->tv_sec++;
-		ts->tv_nsec = left-diff;
-	}
-	else
-	{
-		ts->tv_nsec += left;
-	}
+    if (diff <= left)
+    {
+        ts->tv_sec++;
+        ts->tv_nsec = left-diff;
+    }
+    else
+    {
+        ts->tv_nsec += left;
+    }
 
-	return AM_SUCCESS;
+    return AM_SUCCESS;
 }
 

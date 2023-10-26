@@ -1,15 +1,17 @@
-#define LOG_NDEBUG 0
 #define LOG_TAG "SocketAPI"
-#include <utils/Log.h>
-#include <utils/CallStack.h>
+
 #include <mutex>
 #include <utils/RefBase.h>
-
 #include <fmq/EventFlag.h>
 #include <fmq/MessageQueue.h>
-#include <vendor/amlogic/hardware/subtitleserver/1.0/ISubtitleServer.h>
 
+#include <utils/Log.h>
+#include <utils/CallStack.h>
+
+#include <vendor/amlogic/hardware/subtitleserver/1.0/ISubtitleServer.h>
 #include "SubtitleReportAPI.h"
+
+
 //namespace android {
 using ::android::CallStack;
 using ::android::sp;
@@ -91,7 +93,7 @@ static bool prepareWritingQueueLocked(SubtitleContext *ctx) {
                     tempDataMQ.reset(new DataMQ(dataMQ));
                 }
             });
-    if (LOGIT) ALOGD("prepareWritingQueueLocked");
+    ALOGD("prepareWritingQueueLocked");
 
     if (!ret.isOk() || retval != Result::OK) {
         ALOGE("Error! prepare message Queue failed!");
@@ -109,7 +111,7 @@ static bool prepareWritingQueueLocked(SubtitleContext *ctx) {
 static bool fmqSendDataLocked(SubtitleContext *ctx, const char *data, size_t size) {
     size_t wrote = 0;
     size_t remainSize = size;
-    //if (LOGIT) ALOGD("fmqSendDataLocked %p %d", ctx->mDataMQ.get(), size);
+    //ALOGD("fmqSendDataLocked %p %d", ctx->mDataMQ.get(), size);
     if (data != nullptr) {
         while (wrote < size) {
             size_t availableToWrite = ctx->mDataMQ->availableToWrite();
@@ -135,7 +137,7 @@ static bool fmqSendDataLocked(SubtitleContext *ctx, const char *data, size_t siz
 SubSourceHandle SubSource_Create(int sId) {
     SubtitleContext *ctx = new SubtitleContext();
     if (ctx == nullptr) return nullptr;
-    if (LOGIT) ALOGD("SubSource Create %d", sId);
+    ALOGD("SubSource Create %d", sId);
     ctx->mLock.lock();
     sp<ISubtitleServer> service =  ISubtitleServer::tryGetService();
     int retry = 0;
@@ -170,7 +172,7 @@ SubSourceStatus SubSource_Destroy(SubSourceHandle handle) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    if (LOGIT) ALOGD("SubSource destroy %d", ctx->sId);
+    ALOGD("SubSource destroy %d", ctx->sId);
 
     ctx->mLock.lock();
     ctx->mRemote = nullptr;
@@ -186,7 +188,7 @@ SubSourceStatus SubSource_Reset(SubSourceHandle handle) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    if (LOGIT) ALOGD("SubSource reset %d", ctx->sId);
+    ALOGD("SubSource reset %d", ctx->sId);
 
     std::lock_guard<std::mutex> guard(ctx->mLock);
 
@@ -207,7 +209,7 @@ SubSourceStatus SubSource_Stop(SubSourceHandle handle) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    if (LOGIT) ALOGD("SubSource destroy %d", ctx->sId);
+    ALOGD("SubSource destroy %d", ctx->sId);
     std::lock_guard<std::mutex> guard(ctx->mLock);
     char buffer[64];
     memset(buffer, 0, 64);
@@ -223,7 +225,7 @@ SubSourceStatus SubSource_ReportRenderTime(SubSourceHandle handle, int64_t timeU
     static int count = 0;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    if (LOGIT) {
+    {
         if (count++ %1000 == 0) ALOGD("SubSource ReportRenderTime %d 0x%llx", ctx->sId, timeUs);
     }
 
@@ -239,7 +241,7 @@ SubSourceStatus SubSource_ReportStartPts(SubSourceHandle handle, int64_t pts) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    if (LOGIT) ALOGD("SubSource ReportStartPts %d 0x%llx", ctx->sId, pts);
+    ALOGD("SubSource ReportStartPts %d 0x%llx", ctx->sId, pts);
 
     std::lock_guard<std::mutex> guard(ctx->mLock);
     char buffer[64];
@@ -254,7 +256,7 @@ SubSourceStatus SubSource_ReportTotalTracks(SubSourceHandle handle, int trackNum
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    if (LOGIT) ALOGD("SubSource ReportTotalTracks %d 0x%x", ctx->sId, trackNum);
+    ALOGD("SubSource ReportTotalTracks %d 0x%x", ctx->sId, trackNum);
 
     std::lock_guard<std::mutex> guard(ctx->mLock);
     char buffer[64];
@@ -270,7 +272,7 @@ SubSourceStatus SubSource_ReportType(SubSourceHandle handle, int type) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    if (LOGIT) ALOGD("SubSource ReportType %d 0x%x", ctx->sId, type);
+    ALOGD("SubSource ReportType %d 0x%x", ctx->sId, type);
 
     std::lock_guard<std::mutex> guard(ctx->mLock);
     char buffer[64];
@@ -290,7 +292,7 @@ SubSourceStatus SubSource_ReportSubTypeString(SubSourceHandle handle, const char
     char *buffer = new char[strlen(type)+1+HEADER_SIZE]();
     if (buffer == nullptr) return SUB_STAT_INV;
 
-    if (LOGIT) ALOGD("SubSource ReportTypeString %d %s", ctx->sId, type);
+    ALOGD("SubSource ReportTypeString %d %s", ctx->sId, type);
 
     makeHeader(buffer, ctx->sId, SUBTITLE_TYPE_STRING, strlen(type)+1);
     memcpy(buffer+HEADER_SIZE, type, strlen(type));
@@ -303,7 +305,7 @@ SubSourceStatus SubSource_ReportLanguageString(SubSourceHandle handle, const cha
     SubtitleContext *ctx = (SubtitleContext *)handle;
     std::lock_guard<std::mutex> guard(ctx->mLock);
     if (ctx == nullptr) return SUB_STAT_INV;
-    if (LOGIT) ALOGD("SubSource ReportLangString %d %s", ctx->sId, lang);
+    ALOGD("SubSource ReportLangString %d %s", ctx->sId, lang);
 
     char *buffer = new char[strlen(lang)+1+HEADER_SIZE]();
     if (buffer == nullptr) return SUB_STAT_INV;
@@ -320,14 +322,14 @@ SubSourceStatus SubSource_ReportLanguageString(SubSourceHandle handle, const cha
 SubSourceStatus SubSource_SendData(SubSourceHandle handle, const char *data, int size) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
-    if (LOGIT) ALOGD("SubSource SubSource_SendData %d %d", ctx->sId, size);
+    ALOGD("SubSource SubSource_SendData %d %d", ctx->sId, size);
 
     std::lock_guard<std::mutex> guard(ctx->mLock);
     char buffer[64];
     makeHeader(buffer, ctx->sId, SUBTITLE_SUB_DATA, size);
     fmqSendDataLocked(ctx, buffer, HEADER_SIZE);
     fmqSendDataLocked(ctx, data, size);
-    if (LOGIT) ALOGD("SubSource SubSource_SendData end %d %d", ctx->sId, size);
+    ALOGD("SubSource SubSource_SendData end %d %d", ctx->sId, size);
 
     return SUB_STAT_OK;
 }

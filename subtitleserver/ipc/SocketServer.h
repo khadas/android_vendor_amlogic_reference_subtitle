@@ -2,15 +2,15 @@
 // TODO: impl with std lib, make it portable
 #ifndef __SUBTITLE_SOCKETSERVER_H__
 #define __SUBTITLE_SOCKETSERVER_H__
-#include <utils/Log.h>
-#include <utils/Thread.h>
 #include <mutex>
 #include <thread>
 #include<vector>
 
+#include <utils/Log.h>
+#include <utils/Thread.h>
+
 #include "IpcDataTypes.h"
 #include "DataSource.h"
-
 #include "ringbuffer.h"
 
 // TODO: use portable impl

@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <cmath>
 #include "base/floating_helper.hpp"
+#include "base/log_aribcaption_android.hpp"
 #include "base/scoped_holder.hpp"
 #include "base/unicode_helper.hpp"
 #include "base/utf_helper.hpp"
@@ -31,18 +32,6 @@
 #include FT_SFNT_NAMES_H
 #include FT_TRUETYPE_IDS_H
 
-#ifdef ANDROID
-#include <android/log.h>
-#endif
-
-#define LOG_TAG    "libaribcaption"
-#ifdef ANDROID
-#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-#else
-#define LOGI(...) printf(__VA_ARGS__)
-#define LOGE(...) printf(__VA_ARGS__)
-#endif
 
 namespace aribcaption {
 
@@ -55,7 +44,7 @@ bool TextRendererFreetype::Initialize() {
     FT_Library library;
     FT_Error error = FT_Init_FreeType(&library);
     if (error) {
-        LOGE("Freetype: FT_Init_FreeType() failed");
+        ALOGE("Freetype: FT_Init_FreeType() failed");
         library_ = nullptr;
         return false;
     }
@@ -116,7 +105,7 @@ auto TextRendererFreetype::DrawChar(TextRenderContext& render_ctx, int target_x,
         // We don't care about the codepoint (ucs4) now
         auto result = LoadFontFace(false);
         if (result.is_err()) {
-            LOGE("Freetype: Cannot find valid font");
+            ALOGE("Freetype: Cannot find valid font");
             return FontProviderErrorToStatus(result.error());
         }
         std::pair<FT_Face, size_t>& pair = result.value();
@@ -128,7 +117,7 @@ auto TextRendererFreetype::DrawChar(TextRenderContext& render_ctx, int target_x,
     FT_UInt glyph_index = FT_Get_Char_Index(face, ucs4);
 
     if (glyph_index == 0) {
-        LOGI("Freetype: Main font %s doesn't contain U+%04X", face->family_name, ucs4);
+        ALOGI("Freetype: Main font %s doesn't contain U+%04X", face->family_name, ucs4);
 
         if (fallback_policy == TextRenderFallbackPolicy::kFailOnCodePointNotFound) {
             return TextRenderStatus::kCodePointNotFound;
@@ -145,7 +134,7 @@ auto TextRendererFreetype::DrawChar(TextRenderContext& render_ctx, int target_x,
             // Load next fallback font face by specific codepoint
             auto result = LoadFontFace(true, ucs4, main_face_index_ + 1);
             if (result.is_err()) {
-                LOGE("Freetype: Cannot find available fallback font for U+%04X", ucs4);
+                ALOGE("Freetype: Cannot find available fallback font for U+%04X", ucs4);
                 return FontProviderErrorToStatus(result.error());
             }
             std::pair<FT_Face, size_t>& pair = result.value();
@@ -155,7 +144,7 @@ auto TextRendererFreetype::DrawChar(TextRenderContext& render_ctx, int target_x,
             face = fallback_face_;
             glyph_index = FT_Get_Char_Index(face, ucs4);
             if (glyph_index == 0) {
-                LOGE("Freetype: Got glyph_index == 0 for U+%04X in fallback font", ucs4);
+                ALOGE("Freetype: Got glyph_index == 0 for U+%04X in fallback font", ucs4);
                 return TextRenderStatus::kCodePointNotFound;
             }
         }
@@ -169,7 +158,7 @@ auto TextRendererFreetype::DrawChar(TextRenderContext& render_ctx, int target_x,
     }
 
     if (FT_Set_Pixel_Sizes(face, static_cast<FT_UInt>(char_width), static_cast<FT_UInt>(char_height))) {
-        LOGE("Freetype: FT_Set_Pixel_Sizes failed");
+        ALOGE("Freetype: FT_Set_Pixel_Sizes failed");
         return TextRenderStatus::kOtherError;
     }
 
@@ -183,19 +172,19 @@ auto TextRendererFreetype::DrawChar(TextRenderContext& render_ctx, int target_x,
     int em_adjust_y = (char_height - em_height) / 2;
 
     if (FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP)) {
-        LOGE("Freetype: FT_Load_Glyph failed");
+        ALOGE("Freetype: FT_Load_Glyph failed");
         return TextRenderStatus::kOtherError;
     }
 
     // Generate glyph bitmap for filling
     ScopedHolder<FT_Glyph> glyph_image(nullptr, FT_Done_Glyph);
     if (FT_Get_Glyph(face->glyph, &glyph_image)) {
-        LOGE("Freetype: FT_Get_Glyph failed");
+        ALOGE("Freetype: FT_Get_Glyph failed");
         return TextRenderStatus::kOtherError;
     }
 
     if (FT_Glyph_To_Bitmap(&glyph_image, FT_RENDER_MODE_NORMAL, nullptr, true)) {
-        LOGE("Freetype: FT_Glyph_To_Bitmap failed");
+        ALOGE("Freetype: FT_Glyph_To_Bitmap failed");
         return TextRenderStatus::kOtherError;
     }
 
@@ -206,7 +195,7 @@ auto TextRendererFreetype::DrawChar(TextRenderContext& render_ctx, int target_x,
         // Generate glyph bitmap for stroke border
         ScopedHolder<FT_Glyph> stroke_glyph(nullptr, FT_Done_Glyph);
         if (FT_Get_Glyph(face->glyph, &stroke_glyph)) {
-            LOGE("Freetype: FT_Get_Glyph failed");
+            ALOGE("Freetype: FT_Get_Glyph failed");
             return TextRenderStatus::kOtherError;
         }
 
@@ -221,7 +210,7 @@ auto TextRendererFreetype::DrawChar(TextRenderContext& render_ctx, int target_x,
         FT_Glyph_StrokeBorder(&stroke_glyph, stroker, false, true);
 
         if (FT_Glyph_To_Bitmap(&stroke_glyph, FT_RENDER_MODE_NORMAL, nullptr, true)) {
-            LOGE("Freetype: FT_Glyph_To_Bitmap failed");
+            ALOGE("Freetype: FT_Glyph_To_Bitmap failed");
             return TextRenderStatus::kOtherError;
         }
 
@@ -377,7 +366,7 @@ auto TextRendererFreetype::LoadFontFace(bool is_fallback,
         // face_index is negative, e.g. -1, means face index is unknown
         // Find exact font face by PostScript name or Family name
         if (info.family_name.empty() && info.postscript_name.empty()) {
-            LOGE("Freetype: Missing Family name / PostScript name for cases that face_index < 0");
+            ALOGE("Freetype: Missing Family name / PostScript name for cases that face_index < 0");
             return Err(FontProviderError::kOtherError);
         }
 

@@ -4,13 +4,14 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <errno.h>
-
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "VideoInfo.h"
+
 #include <utils/Log.h>
+
+#include "VideoInfo.h"
 #include "ParserFactory.h"
 
 #define VIDEO_VDEC_CORE "/sys/class/vdec/core"

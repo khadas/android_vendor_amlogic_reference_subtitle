@@ -15,14 +15,11 @@
 #include "ParserFactory.h"
 #include "VideoInfo.h"
 
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define MAX_EPOCH_PALETTES 8 // Max 8 allowed per PGS epoch
+#define MAX_EPOCH_OBJECTS 64 // Max 64 allowed per PGS epoch
+#define MAX_OBJECT_REFS 2    // Max objects per display set
 
-#define MAX_EPOCH_PALETTES 8   // Max 8 allowed per PGS epoch
-#define MAX_EPOCH_OBJECTS  64  // Max 64 allowed per PGS epoch
-#define MAX_OBJECT_REFS    2   // Max objects per display set
-
-#define DEFAULT_DELAY_TIME 2 //second
+#define DEFAULT_DELAY_TIME 2 // second
 #define DEFAULT_DVB_TIME_MULTI 90
 
 
@@ -177,7 +174,7 @@ static inline void readSubpictureHeader(unsigned char *buf, PgsInfo *pgsInfo) {
             pgsInfo->objects[i].crop_h = (buf[0x19 + i*8] << 8) | buf[0x1A + i*8];
             cropping = 8;
         }
-        LOGI("--readSubpictureHeader--  i:%d id:%d window_id:%d composition_flag:%d x:%d y:%d crop_x:%d crop_y:%d crop_w:%d, crop_h:%d, width:%d height:%d objectCount:%d\n",
+        ALOGI("--readSubpictureHeader--  i:%d id:%d window_id:%d composition_flag:%d x:%d y:%d crop_x:%d crop_y:%d crop_w:%d, crop_h:%d, width:%d height:%d objectCount:%d\n",
             i,
             pgsInfo->objects[i].id,
             pgsInfo->objects[i].window_id,
@@ -195,7 +192,7 @@ static inline void readSubpictureHeader(unsigned char *buf, PgsInfo *pgsInfo) {
 }
 
 static inline void readWindowHeader(unsigned char *buf, PgsInfo *pgsInfo) {
-    LOGI("--readWindowHeader-- %d, %d\n", pgsInfo->imageWidth, pgsInfo->imageHeight);
+    ALOGI("--readWindowHeader-- %d, %d\n", pgsInfo->imageWidth, pgsInfo->imageHeight);
     pgsInfo->windowWidthOffset = (buf[2] << 8) | buf[3];
     pgsInfo->windowHeightOffset = (buf[4] << 8) | buf[5];
     pgsInfo->windowWidth = (buf[6] << 8) | buf[7];
@@ -204,12 +201,12 @@ static inline void readWindowHeader(unsigned char *buf, PgsInfo *pgsInfo) {
 static inline void readWindowInfo(unsigned char *buf, PgsInfo *pgsInfo) {
     pgsInfo->windowWidth = (buf[0] << 8) | buf[1];
     pgsInfo->windowHeight = (buf[2] << 8) | buf[3];
-    LOGI("readWindowInfo windowwidth:%d,windowHeight:%d",pgsInfo->windowWidth,pgsInfo->windowHeight);
+    ALOGI("readWindowInfo windowwidth:%d,windowHeight:%d",pgsInfo->windowWidth,pgsInfo->windowHeight);
 }
 
 
 static inline void readColorTable(unsigned char *buf, int size, PgsInfo *pgsInfo) {
-    LOGI("--readColorTable-- %d, %d\n", pgsInfo->imageWidth, pgsInfo->imageHeight);
+    ALOGI("--readColorTable-- %d, %d\n", pgsInfo->imageWidth, pgsInfo->imageHeight);
     for (int pos = 2; pos < size; pos += 5) {
         unsigned char y = buf[pos + 1];
         unsigned char u = buf[pos + 2];
@@ -246,7 +243,7 @@ static inline int findPalette(int id, PGSSubPalettes *palettes)
 }
 
 static inline unsigned char readBitmap(unsigned char *buf, int size, PgsInfo *pgsInfo) {
-    LOGI("--readBitmap-- %d, %d\n", pgsInfo->imageWidth, pgsInfo->imageHeight);
+    ALOGI("--readBitmap-- %d, %d\n", pgsInfo->imageWidth, pgsInfo->imageHeight);
     int rleBytes;
 
     // buf[1]: objectId, buf[2]: versionNum
@@ -259,7 +256,7 @@ static inline unsigned char readBitmap(unsigned char *buf, int size, PgsInfo *pg
         int objectSize = (buf[4] << 16) | (buf[5] << 8) | (buf[6]);
         pgsInfo->imageWidth = (buf[7] << 8) | (buf[8]);
         pgsInfo->imageHeight = (buf[9] << 8) | (buf[10]);
-        LOGI("readBitmap values are %d,%d,%d\n", objectSize, pgsInfo->imageWidth, pgsInfo->imageHeight);
+        ALOGI("readBitmap values are %d,%d,%d\n", objectSize, pgsInfo->imageWidth, pgsInfo->imageHeight);
 
         pgsInfo->rleBufSize = 0;
         pgsInfo->rleReadOff = 0;
@@ -268,7 +265,7 @@ static inline unsigned char readBitmap(unsigned char *buf, int size, PgsInfo *pg
             pgsInfo->rleBufSize = objectSize;
         } else {
             pgsInfo->rleBufSize = 0;
-            LOGI("readBitmap rleBufSize = 0 \n");
+            ALOGI("readBitmap rleBufSize = 0 \n");
             return -1;
         }
         rleBytes = size - 11;
@@ -415,7 +412,7 @@ int PgsParser::parserOnePgs(std::shared_ptr<AML_SPUVAR> spu) {
         return -1;
     mPgsEpgs->showdata.resultBuf = (unsigned char *)malloc(bufferSize);
     if (mPgsEpgs->showdata.resultBuf == NULL) {
-        LOGE("malloc pgs result buf failed \n");
+        ALOGE("malloc pgs result buf failed \n");
         return -1;
     }
     memset(mPgsEpgs->showdata.resultBuf, 0x0, bufferSize);
@@ -432,7 +429,7 @@ int PgsParser::parserOnePgs(std::shared_ptr<AML_SPUVAR> spu) {
             mPgsEpgs->showdata.resultBuf = cutBuffer;
             mPgsEpgs->showdata.imageHeight /= 4;
         } else {
-            LOGI("malloc cut buffer failed \n ");
+            ALOGI("malloc cut buffer failed \n ");
         }
     }
     spu->subtitle_type = TYPE_SUBTITLE_PGS;
@@ -464,7 +461,7 @@ int PgsParser::parserOnePgs(std::shared_ptr<AML_SPUVAR> spu) {
 
         addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
     } else {
-        LOGI("spu buffer size %d, spu->spu_data %p\n", spu->buffer_size,spu->spu_data);
+        ALOGI("spu buffer size %d, spu->spu_data %p\n", spu->buffer_size,spu->spu_data);
         free(mPgsEpgs->showdata.resultBuf);
     }
     mPgsEpgs->showdata.resultBuf = NULL;
@@ -483,7 +480,7 @@ int PgsParser::decode(std::shared_ptr<AML_SPUVAR> spu, unsigned char *buf) {
         case PRESENTATION_SEGMENT:     //subpicture header
             readSubpictureHeader(curBuf - size, pgsInfo);
             if (size == 0x13) {
-                LOGI("enter type 0x16,0x13\n");
+                ALOGI("enter type 0x16,0x13\n");
                 //readSubpictureHeader(curBuf - size, pgsInfo);
             } else if (size == 0xb) {
                 //clearSubpictureHeader
@@ -505,31 +502,31 @@ int PgsParser::decode(std::shared_ptr<AML_SPUVAR> spu, unsigned char *buf) {
             break;
         case WINDOW_SEGMENT:      //window
             if (size == 0xa) {
-                //LOGI("enter type 0x17, %d\n", read_pgs_byte);
+                //ALOGI("enter type 0x17, %d\n", read_pgs_byte);
                 //readWindowHeader(curBuf - size, pgsInfo);
             }
             break;
         case PALETTE_SEGMENT:      //color table
-            //LOGI("enter type 0x14 %d\n", read_pgs_byte);
+            //ALOGI("enter type 0x14 %d\n", read_pgs_byte);
             readColorTable(curBuf - size, size, pgsInfo);
             break;
         case OBJECT_SEGMENT:      //bitmap
-            LOGI("OBJECT_SEGMENT enter type 0x15\n");
+            ALOGI("OBJECT_SEGMENT enter type 0x15\n");
             if (readBitmap(curBuf - size, size, pgsInfo)) {
-                LOGI("nwpushuai objectId:%d", pgsInfo->objectId);
+                ALOGI("nwpushuai objectId:%d", pgsInfo->objectId);
                 int presentationSegmentObjectId = findObject(pgsInfo->objectId, pgsInfo);
 
                 if (mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].x < 0 || mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].x > mPgsEpgs->pgsInfo->width) {
-                    LOGI("fail x nwpushuai --OBJECT_SEGMENT-- y:%d height:%d imageHeight:%d \n", mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].x, mPgsEpgs->pgsInfo->width, mPgsEpgs->pgsInfo->imageWidth);
+                    ALOGI("fail x nwpushuai --OBJECT_SEGMENT-- y:%d height:%d imageHeight:%d \n", mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].x, mPgsEpgs->pgsInfo->width, mPgsEpgs->pgsInfo->imageWidth);
                     mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].x = (mPgsEpgs->pgsInfo->width - mPgsEpgs->pgsInfo->imageWidth) / 2;
                 }
 
                 if (mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].y < 0 || mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].y > mPgsEpgs->pgsInfo->height) {
-                    LOGI("fail y nwpushuai --OBJECT_SEGMENT-- y:%d height:%d imageHeight:%d \n", mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].y, mPgsEpgs->pgsInfo->height, mPgsEpgs->pgsInfo->imageHeight);
+                    ALOGI("fail y nwpushuai --OBJECT_SEGMENT-- y:%d height:%d imageHeight:%d \n", mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].y, mPgsEpgs->pgsInfo->height, mPgsEpgs->pgsInfo->imageHeight);
                     mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].y = mPgsEpgs->pgsInfo->height - mPgsEpgs->pgsInfo->imageHeight *2;
                 }
 
-                LOGI("nwpushuai success readBitmap x:%d y:%d width:%d height:%d windowWidthOffset:%d windowHeightOffset:%d windowWidth%d windowHeight:%d imageWidth:%d imageHeight:%d spu->m_delay:%lld\n",
+                ALOGI("nwpushuai success readBitmap x:%d y:%d width:%d height:%d windowWidthOffset:%d windowHeightOffset:%d windowWidth%d windowHeight:%d imageWidth:%d imageHeight:%d spu->m_delay:%lld\n",
                     mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].x,
                     mPgsEpgs->pgsInfo->objects[presentationSegmentObjectId].y,
                     mPgsEpgs->pgsInfo->width,
@@ -557,7 +554,7 @@ int PgsParser::decode(std::shared_ptr<AML_SPUVAR> spu, unsigned char *buf) {
                 mPgsEpgs->showdata.rleBuf = mPgsEpgs->pgsInfo->rleBuf;
                 mPgsEpgs->showdata.rleBufSize = mPgsEpgs->pgsInfo->rleBufSize;
                 mPgsEpgs->showdata.objectSegmentId = presentationSegmentObjectId;
-                LOGI("decoder pgs data to show\n\n");
+                ALOGI("decoder pgs data to show\n\n");
                 parserOnePgs(spu);
 
                 if (pgsInfo->rleBuf) {
@@ -569,7 +566,7 @@ int PgsParser::decode(std::shared_ptr<AML_SPUVAR> spu, unsigned char *buf) {
             }
             break;
         case DISPLAY_SEGMENT:      //trailer
-            LOGI("enter type 0x80\n");
+            ALOGI("enter type 0x80\n");
             break;
         default:
             break;
@@ -582,7 +579,7 @@ int PgsParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
     int64_t packetHeader = 0;
     //read_pgs_byte = 0;
     if (mPgsEpgs->pgsInfo == NULL) {
-        LOGI("pgsInfo is NULL \n");
+        ALOGI("pgsInfo is NULL \n");
         return 0;
     }
 
@@ -601,15 +598,15 @@ int PgsParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
             return 0;
 
         packetHeader = ((packetHeader<<8) & 0x000000ffffffffff) | tmpbuf[0];
-        LOGI("## get_dvb_spu %x, %llx,-------------\n",tmpbuf[0], packetHeader);
+        ALOGI("## get_dvb_spu %x, %llx,-------------\n",tmpbuf[0], packetHeader);
 
         if ((packetHeader & 0xffffffff) == 0x000001bd) {
-            LOGI("## 222  get_dvb_teletext_spu hardware demux dvb %x,%llx,-----------\n",
+            ALOGI("## 222  get_dvb_teletext_spu hardware demux dvb %x,%llx,-----------\n",
                     tmpbuf[0], packetHeader & 0xffffffffff);
             return hwDemuxParse(spu);
         } else if (((packetHeader & 0xffffffffff)>>8) == AML_PARSER_SYNC_WORD
                 && (((packetHeader & 0xff)== 0x77) || ((packetHeader & 0xff)==0xaa))) {
-            LOGI("## 222  get_dvb_teletext_spu soft demux dvb %x,%llx,-----------\n",
+            ALOGI("## 222  get_dvb_teletext_spu soft demux dvb %x,%llx,-----------\n",
                     tmpbuf[0], packetHeader & 0xffffffffff);
             return softDemuxParse(spu);
         } else {
@@ -641,7 +638,7 @@ int PgsParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
         dts = pts;
         spu->subtitle_type = TYPE_SUBTITLE_PGS;
         spu->pts = pts;
-        LOGI("## 4444 %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,--%d,%llx,%llx,-------------\n",
+        ALOGI("## 4444 %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,--%d,%llx,%llx,-------------\n",
                 tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3],
                 tmpbuf[4], tmpbuf[5], tmpbuf[6], tmpbuf[7],
                 tmpbuf[8], tmpbuf[9], tmpbuf[10], tmpbuf[11],
@@ -649,27 +646,27 @@ int PgsParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
         data = (char *)calloc(1, dataLen);
         int ret = mDataSource->read(data, dataLen);
 
-        LOGI("## ret=%d,dataLen=%d,%x,%x,%x,%x,%x,%x,%x,%x,---------\n",
+        ALOGI("## ret=%d,dataLen=%d,%x,%x,%x,%x,%x,%x,%x,%x,---------\n",
                 ret, dataLen, data[0], data[1], data[2], data[3],
                 data[dataLen - 4], data[dataLen - 3], data[dataLen - 2], data[dataLen - 1]);
         pdata = data;
     }
 
     while (readDataLen < dataLen) {
-        LOGI("## %x,%x,%x \n", data[0], data[1], data[2]);
+        ALOGI("## %x,%x,%x \n", data[0], data[1], data[2]);
         packetType = data[0];
         packetLen = (data[1] << 8) | data[2];
         readDataLen += 3;
-        LOGI("## read:%d, dataLen:%d, len is %d\n", readDataLen, dataLen, packetLen);
+        ALOGI("## read:%d, dataLen:%d, len is %d\n", readDataLen, dataLen, packetLen);
         if (readDataLen + packetLen > dataLen) {
-            LOGI("## data fault ! ---\n");
+            ALOGI("## data fault ! ---\n");
             break;
         }
 
         if ((pts) && (packetLen > 0)) {
             char *buf = NULL;
             if ((8 + 2 + packetLen) > (OSD_HALF_SIZE * 4)) {
-                LOGE("pgs packet is too big\n\n");
+                ALOGE("pgs packet is too big\n\n");
                 break;
             }
             /*else if ((uVobSPU.spu_decoding_start_pos + 8 + 2 + packetLen) > (OSD_HALF_SIZE * 4)) {
@@ -677,7 +674,7 @@ int PgsParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             }*/
 
             buf = (char *)malloc(8 + 2 + 3 + packetLen);
-            LOGI("packetLen is %d, %p\n", packetLen, buf);
+            ALOGI("packetLen is %d, %p\n", packetLen, buf);
             mPgsEpgs->showdata.pts = dts;
             if (mState == SUB_STOP) {
                 ret = 0;
@@ -686,7 +683,7 @@ int PgsParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             }
 
             if (buf) {
-                LOGI("## 555 get_pgs_spu ------------\n");
+                ALOGI("## 555 get_pgs_spu ------------\n");
                 memset(buf, 0x0,8 + 2 + 3 + packetLen);
                 buf[0] = 'P';
                 buf[1] = 'G';
@@ -703,7 +700,7 @@ int PgsParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                         buf[12] = packetLen & 0xff;
                 memcpy(buf + 13, data + 3,
                        packetLen);
-                LOGI("## start decode pgs subtitle %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,\n\n",
+                ALOGI("## start decode pgs subtitle %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,\n\n",
                         buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7],
                         buf[8], buf[9], buf[10], buf[11], buf[12], buf[13], buf[14]);
                 ret = decode(spu, (unsigned char *)buf);
@@ -714,7 +711,7 @@ int PgsParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             }
         }
     }
-    LOGI("## break, get_pgs_spu readDataLen=%d,dataLen=%d,spu->spu_data=%p\n",
+    ALOGI("## break, get_pgs_spu readDataLen=%d,dataLen=%d,spu->spu_data=%p\n",
             readDataLen, dataLen, spu->spu_data);
     if (pdata) free(pdata);
 
@@ -727,7 +724,7 @@ int PgsParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
     int packetLen = 0, pesHeaderLen = 0;
     bool needSkipPkt = true;
     //read_pgs_byte = 0;
-    LOGI("enter get_pgs_spu\n");
+    ALOGI("enter get_pgs_spu\n");
     int ret = 0;
 
     if (mDataSource->read(tmpbuf, 2) == 2) {
@@ -779,13 +776,13 @@ int PgsParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
         } else if ((pts) && (packetLen > 0)) {
             char *buf = NULL;
             if ((8 + 2 + packetLen) > (OSD_HALF_SIZE * 4)) {
-                LOGE("pgs packet is too big\n\n");
+                ALOGE("pgs packet is too big\n\n");
                 return -1;
             /*} else if ((uVobSPU.spu_decoding_start_pos + 8 + 2 + packetLen) > (OSD_HALF_SIZE * 4)) {
                 uVobSPU.spu_decoding_start_pos =0;*/
             }
             buf = (char *)malloc(8 + 2 + packetLen);
-            LOGI("packetLen is %d\n",packetLen);
+            ALOGI("packetLen is %d\n",packetLen);
             mPgsEpgs->showdata.pts = dts;
             if (mDataSource->availableDataSize() < packetLen || mState == SUB_STOP) {
                 ret = 0;
@@ -806,7 +803,7 @@ int PgsParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                 buf[8] = (pts >> 8) & 0xff;
                 buf[9] = pts & 0xff;
                 if (mDataSource->read(buf + 10, packetLen) == packetLen) {
-                    LOGI("start decode pgs subtitle\n\n");
+                    ALOGI("start decode pgs subtitle\n\n");
                     ret = decode(spu, (unsigned char *)buf);
                 }
                 free(buf);

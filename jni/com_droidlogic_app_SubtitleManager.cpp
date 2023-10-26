@@ -119,7 +119,7 @@ struct JniContext {
             ALOGE("invalid parameter width=%d height=%d size=%d", width, height, size);
             return;
         }
-        ALOGE("callJava_showBitmapData width=%d height=%d size=%d", width, height, size);
+        ALOGD("callJava_showBitmapData width=%d height=%d size=%d", width, height, size);
         JNIEnv *env = getJniEnv(&needDetach);
         int *jintData = (int *)malloc(width*height * sizeof(int));
         for (int i=0; i<width*height; i++) {

@@ -7,15 +7,16 @@
 #include <sys/stat.h>
 #include <sys/poll.h>
 #include <sys/ioctl.h>
-#include "sub_types2.h"
-
 #include <string>
+#include <pthread.h>
+
 #include <utils/Log.h>
 #include <utils/CallStack.h>
+
+#include "sub_types2.h"
 #include "DemuxSource.h"
 #include "ParserFactory.h"
 
-#include <pthread.h>
 
 extern "C"  {
 #include "MediaSyncInterface.h"

@@ -1,7 +1,6 @@
 #ifndef __SUBTITLE_FILESOURCE_H__
 #define __SUBTITLE_FILESOURCE_H__
 
-
 #include <string>
 
 #include "DataSource.h"

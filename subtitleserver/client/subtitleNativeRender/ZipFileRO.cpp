@@ -18,7 +18,6 @@
 // Read-only access to Zip archives, with minimal heap allocation.
 //
 #define LOG_TAG "ZipFileRO"
-//#define LOG_NDEBUG 0
 #include "ZipFileRO.h"
 #include <utils/Log.h>
 #include <utils/Compat.h>

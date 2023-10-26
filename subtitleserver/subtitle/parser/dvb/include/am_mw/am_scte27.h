@@ -32,26 +32,26 @@ extern "C"
 
 enum AM_SCTE27_ErrorCode
 {
-	AM_SCTE27_ERROR_BASE=AM_ERROR_BASE(AM_MOD_SCTE27),
-	AM_SCTE27_ERR_INVALID_PARAM,   /**< Invalid parameter*/
-	AM_SCTE27_ERR_INVALID_HANDLE,  /**< Invalid handle*/
-	AM_SCTE27_ERR_NOT_SUPPORTED,   /**< not support action*/
-	AM_SCTE27_ERR_CREATE_DECODE,   /**< open subtitle decode error*/
-	AM_SCTE27_ERR_SET_BUFFER,      /**< set pes buffer error*/
-	AM_SCTE27_ERR_NO_MEM,                  /**< out of memmey*/
-	AM_SCTE27_ERR_CANNOT_CREATE_THREAD,    /**< cannot creat thread*/
-	AM_SCTE27_ERR_NOT_RUN,            /**< thread run error*/
-	AM_SCTE27_INIT_DISPLAY_FAILED,    /**< init display error*/
-	AM_SCTE27_PACKET_INVALID,
-	AM_SCTE27_ERR_END
+    AM_SCTE27_ERROR_BASE=AM_ERROR_BASE(AM_MOD_SCTE27),
+    AM_SCTE27_ERR_INVALID_PARAM,   /**< Invalid parameter*/
+    AM_SCTE27_ERR_INVALID_HANDLE,  /**< Invalid handle*/
+    AM_SCTE27_ERR_NOT_SUPPORTED,   /**< not support action*/
+    AM_SCTE27_ERR_CREATE_DECODE,   /**< open subtitle decode error*/
+    AM_SCTE27_ERR_SET_BUFFER,      /**< set pes buffer error*/
+    AM_SCTE27_ERR_NO_MEM,                  /**< out of memmey*/
+    AM_SCTE27_ERR_CANNOT_CREATE_THREAD,    /**< cannot creat thread*/
+    AM_SCTE27_ERR_NOT_RUN,            /**< thread run error*/
+    AM_SCTE27_INIT_DISPLAY_FAILED,    /**< init display error*/
+    AM_SCTE27_PACKET_INVALID,
+    AM_SCTE27_ERR_END
 };
 
 enum AM_SCTE27_Decoder_Error
 {
-	AM_SCTE27_Decoder_Error_LoseData,
-	AM_SCTE27_Decoder_Error_InvalidData,
-	AM_SCTE27_Decoder_Error_TimeError,
-	AM_SCTE27_Decoder_Error_END
+    AM_SCTE27_Decoder_Error_LoseData,
+    AM_SCTE27_Decoder_Error_InvalidData,
+    AM_SCTE27_Decoder_Error_TimeError,
+    AM_SCTE27_Decoder_Error_END
 };
 
 
@@ -66,22 +66,22 @@ typedef void (*AM_SCTE27_UpdateSize)(AM_SCTE27_Handle_t handle, int width, int h
 
 typedef struct
 {
-	AM_SCTE27_DrawBegin_t   draw_begin;
-	AM_SCTE27_DrawEnd_t     draw_end;
-	AM_SCTE27_LangCb_t  lang_cb;
-	AM_SCTE27_ReportError report;
-	AM_SCTE27_PicAvailable report_available;
-	AM_SCTE27_UpdateSize update_size;
-	uint8_t         **bitmap;         /**< draw bitmap buffer*/
-	int              pitch;          /**< the length of draw bitmap buffer per line*/
-	int width;
-	int height;
-	int media_sync;
-	void                    *user_data;      /**< user private data*/
-	AM_Bool_t hasReportAvailable;
-	AM_Bool_t hasReportLang;
-	int lastWidth;
-	int lastHeight;
+    AM_SCTE27_DrawBegin_t   draw_begin;
+    AM_SCTE27_DrawEnd_t     draw_end;
+    AM_SCTE27_LangCb_t  lang_cb;
+    AM_SCTE27_ReportError report;
+    AM_SCTE27_PicAvailable report_available;
+    AM_SCTE27_UpdateSize update_size;
+    uint8_t         **bitmap;         /**< draw bitmap buffer*/
+    int              pitch;          /**< the length of draw bitmap buffer per line*/
+    int width;
+    int height;
+    int media_sync;
+    void                    *user_data;      /**< user private data*/
+    AM_Bool_t hasReportAvailable;
+    AM_Bool_t hasReportLang;
+    int lastWidth;
+    int lastHeight;
 }AM_SCTE27_Para_t;
 
 AM_ErrorCode_t AM_SCTE27_Create(AM_SCTE27_Handle_t *handle, AM_SCTE27_Para_t *para);

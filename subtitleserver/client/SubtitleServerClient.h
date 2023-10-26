@@ -3,15 +3,18 @@
 #include <type_traits>  // for common_type.
 #include <utils/RefBase.h>
 #include <utils/Mutex.h>
-
 #include <utils/Atomic.h>
-#include <utils/Log.h>
 #include <utils/String8.h>
+
+#include <utils/Log.h>
 
 #include <hidlmemory/mapping.h>
 #include <android/hidl/memory/1.0/IMemory.h>
+
 #include <vendor/amlogic/hardware/subtitleserver/1.0/ISubtitleServer.h>
 #include <vendor/amlogic/hardware/subtitleserver/1.0/ISubtitleCallback.h>
+
+
 using android::hardware::hidl_vec;
 using android::sp;
 using android::wp;

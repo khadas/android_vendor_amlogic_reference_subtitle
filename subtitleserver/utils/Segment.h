@@ -1,4 +1,3 @@
-
 // TODO: implement
 
 #ifndef __SUBTITLE_SEGMENT_H__
@@ -6,6 +5,7 @@
 #include <list>
 #include <memory>
 #include <mutex>
+
 #include "../subtitle/parser/Parser.h"
 
 class BufferSegment;

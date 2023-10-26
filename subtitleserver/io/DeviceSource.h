@@ -1,16 +1,15 @@
 #ifndef __SUBTITLE_DEVICE_SOURCE_H__
 #define __SUBTITLE_DEVICE_SOURCE_H__
 
-
 #include <string>
 #include <memory>
 #include <mutex>
 #include <utils/Thread.h>
 #include <thread>
+
 #include "Segment.h"
-
-
 #include "DataSource.h"
+
 
 class DeviceSource : public DataSource {
 

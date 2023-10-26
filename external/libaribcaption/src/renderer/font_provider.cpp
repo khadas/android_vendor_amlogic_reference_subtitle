@@ -18,20 +18,9 @@
 
 #include <memory>
 #include "aribcaption/aribcc_config.h"
+#include "base/log_aribcaption_android.hpp"
 #include "renderer/font_provider.hpp"
 
-#ifdef ANDROID
-#include <android/log.h>
-#endif
-
-#define LOG_TAG    "libaribcaption"
-#ifdef ANDROID
-#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-#else
-#define LOGI(...) printf(__VA_ARGS__)
-#define LOGE(...) printf(__VA_ARGS__)
-#endif
 
 #if defined(ARIBCC_USE_CORETEXT)
     #include "renderer/font_provider_coretext.hpp"

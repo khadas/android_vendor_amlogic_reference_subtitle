@@ -17,12 +17,13 @@
  *
  */
 
-#define LOG_NDEBUG  0
 #define LOG_TAG "SubtitleClient"
 
 #include <utils/Log.h>
+
 #include "SubtitleClient.h"
 #include "SubtitleClientPrivate.h"
+
 
 using namespace android;
 using namespace subtitle;

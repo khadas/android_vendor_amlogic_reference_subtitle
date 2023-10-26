@@ -9,7 +9,8 @@
 #include <SkPath.h>
 #include "SkTextBox.h"
 
-#include "MyLog.h"
+#include <utils/CallStack.h>
+#include <utils/Log.h>
 #include <cutils/properties.h>
 
 //#define CC_LEFT_ALIGNED
@@ -407,7 +408,7 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
             if (row.mPriorStrPositionForDraw == -1) {
                 row.mPriorStrPositionForDraw = (win.mWindowRight - mStringLengthOnPaint)/2;
             }
-            ALOGD_IF(gDebug, "%s mPriorStrPositionForDraw=%f winStartX:%f, strStartX:%f", __func__, row.mPriorStrPositionForDraw, win.mWindowStartX, mStrStartX);
+            ALOGD("%s mPriorStrPositionForDraw=%f winStartX:%f, strStartX:%f", __func__, row.mPriorStrPositionForDraw, win.mWindowStartX, mStrStartX);
             mStrLeft = row.mPriorStrPositionForDraw;
             mStrRight = mStrLeft + mStringLengthOnPaint;
             row.mPriorStrPositionForDraw = mStrRight;
@@ -601,7 +602,7 @@ Rows::Rows(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Value &r
     mRowArray = root["content"];
     mRowStartX = root["row_start"].asInt();
     mStrCount = mRowArray.size();
-    ALOGD_IF(gDebug, "Row: Row==> mRowStartX:%f,%s mStrCount:%d", mRowStartX, root["row_start"].asString().c_str(), mStrCount);
+    ALOGD("Row: Row==> mRowStartX:%f,%s mStrCount:%d", mRowStartX, root["row_start"].asString().c_str(), mStrCount);
 
     double singleCharWidth = (mVersion==CC_VER_CEA708) ?
             mConfig->mWindowMaxFontSize : mConfig->getScreen()->mFixedCharWidth;
@@ -669,14 +670,14 @@ Window::Window(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Valu
     mAnchorV = root["anchor_vertical"].asInt();
     mAnchorH = root["anchor_horizontal"].asInt();
     mAnchorRelative = root["anchor_relative"].asBool();
-    ALOGD_IF(gDebug, "Window: anchor_point=%d  mAnchor[%d %d] anchor_relative:%d",
+    ALOGD("Window: anchor_point=%d  mAnchor[%d %d] anchor_relative:%d",
         mAnchorPointer, mAnchorV, mAnchorH, mAnchorRelative);
 
     mRowCount = root["row_count"].asInt();
     mColCount = root["column_count"].asInt();
     mRowLock = root["row_lock"].asBool();
     mColumnLock = root["column_lock"].asBool();
-    ALOGD_IF(gDebug, "Window: Row==> row:%d (lock?%d)  column:%d (lock?%d)",
+    ALOGD("Window: Row==> row:%d (lock?%d)  column:%d (lock?%d)",
         mRowCount, mRowLock, mColCount, mColumnLock);
 
 
@@ -684,7 +685,7 @@ Window::Window(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Valu
     mPrintDirection = root["print_direction"].asString();
     mScrollDirection = root["scroll_direction"].asString();
     mWordwrap = root["wordwrap"].asBool();
-    ALOGD_IF(gDebug, "Window: justify==> %s print_dir:%s scroll_dir:%s wordwrap?%d",
+    ALOGD("Window: justify==> %s print_dir:%s scroll_dir:%s wordwrap?%d",
         mJustify.c_str(), mPrintDirection.c_str(), mScrollDirection.c_str(), mWordwrap);
 
     mDisplayEffect = root["display_effect"].asString();
@@ -700,7 +701,7 @@ Window::Window(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Valu
         }
     }
 
-    ALOGD_IF(gDebug, "Window: effect==> display:%s direction:%s speed:%d percent:%d status:%s",
+    ALOGD("Window: effect==> display:%s direction:%s speed:%d percent:%d status:%s",
         mDisplayEffect.c_str(), mEffectDirection.c_str(), mEffectSpeed, mEffectPercent, mEffectStatus.c_str());
 
     mFillOpacity = root["fill_opacity"].asString();
@@ -729,7 +730,7 @@ Window::Window(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Valu
         mFillOpcityInt = mConfig->mDefaultFillOpacity;
     }
 
-    ALOGD_IF(gDebug, "Window: fill==> mFillOpacity:%s mFillColor:%x mBorderType:%s mBorderColor:%x mFillOpcityInt:%x ",
+    ALOGD("Window: fill==> mFillOpacity:%s mFillColor:%x mBorderType:%s mBorderColor:%x mFillOpcityInt:%x ",
         mFillOpacity.c_str(), mFillColor,  mBorderType.c_str(), mBorderColor, mFillOpcityInt);
 
     // initialize window
@@ -993,7 +994,7 @@ bool CloseCaption::parserJson(const char*str) {
 
     Json::Value windowRoots = root["windows"];
 
-    ALOGD_IF(gDebug, "CloseCaption: type=%s windows[%d]", mVerString.c_str(), windowRoots.size());
+    ALOGD("CloseCaption: type=%s windows[%d]", mVerString.c_str(), windowRoots.size());
 
     for (int i=0; i<windowRoots.size(); i++) {
         Window w(mVersion, mConfig, windowRoots[i]);

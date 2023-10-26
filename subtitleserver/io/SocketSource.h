@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <string>
 #include <mutex>
+
 #include "DataSource.h"
 #include "InfoChangeListener.h"
 #include "Segment.h"
@@ -12,7 +13,6 @@
 // re-design later
 // still don't know how to impl this
 // currently, very simple wrap of previous impl
-
 
 
 class SocketSource : public DataSource {

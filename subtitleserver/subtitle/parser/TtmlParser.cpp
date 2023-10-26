@@ -20,9 +20,7 @@
 #include <time.h>
 #include <limits.h>
 #include "bprint.h"
-#include <android/log.h>
 #include <utils/CallStack.h>
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <list>
@@ -32,22 +30,14 @@
 
 #include "ParserFactory.h"
 #include "streamUtils.h"
-
 #include "VideoInfo.h"
-
 #include "TtmlParser.h"
 #include "tinyxml2.h"
 
-#define  TRACE()    LOGI("[%s::%d]\n",__FUNCTION__,__LINE__)
-
-#define LOGI ALOGI
-#define LOGD ALOGD
-#define LOGE ALOGE
-
 #define MAX_BUFFERED_PAGES 25
-#define BITMAP_CHAR_WIDTH  12
+#define BITMAP_CHAR_WIDTH 12
 #define BITMAP_CHAR_HEIGHT 10
-#define OSD_HALF_SIZE (1920*1280/8)
+#define OSD_HALF_SIZE (1920 * 1280 / 8)
 
 #define HIGH_32_BIT_PTS 0xFFFFFFFF
 #define TSYNC_32_BIT_PTS 0xFFFFFFFF
@@ -61,7 +51,7 @@ bool static inline isMore32Bit(int64_t pts) {
 
 static void save2BitmapFile(const char *filename, uint32_t *bitmap, int w, int h)
 {
-    LOGI("png_save2:%s\n",filename);
+    ALOGI("png_save2:%s\n",filename);
     FILE *f;
     char fname[40];
 
@@ -90,19 +80,19 @@ static int64_t ttml_parse_timecode(const char * beginTimeString, const char * en
             endHours = 0, endMinutes = 0, endSeconds = 0, endMilliseconds = 0,
             time = 0;
 
-  LOGI("%s begin time string: %s, end time string: %s\n",__FUNCTION__, beginTimeString, endTimeString);
+  ALOGI("%s begin time string: %s, end time string: %s\n",__FUNCTION__, beginTimeString, endTimeString);
   bool beginSuccess = sscanf(beginTimeString, "%d:%d:%d.%d", &beginHours, &beginMinutes, &beginSeconds, &beginMilliseconds) == 4;
   bool endSuccess = sscanf(endTimeString, "%d:%d:%d.%d", &endHours, &endMinutes, &endSeconds, &endMilliseconds) == 4;
   if (!beginSuccess || beginHours < 0 || beginHours > 23 || beginMinutes < 0 || beginMinutes > 59 || beginSeconds < 0 || beginSeconds > 59 || beginMilliseconds < 0 || beginMilliseconds > 999) {
-    LOGE ("%s invalid begin time string.", __FUNCTION__, beginTimeString);
+    ALOGE ("%s invalid begin time string.", __FUNCTION__, beginTimeString);
   }
 
   if (!endSuccess || endHours < 0 || endHours > 23 || endMinutes < 0 || endMinutes > 59 || endSeconds < 0 || endSeconds > 59 || endMilliseconds < 0 || endMilliseconds > 999) {
-    LOGE ("%s invalid end time string.", __FUNCTION__, endTimeString);
+    ALOGE ("%s invalid end time string.", __FUNCTION__, endTimeString);
   }
 
   time = ((endHours - beginHours) * 3600 + (endMinutes - beginMinutes) * 60 + (endSeconds - beginSeconds) ) * 1000+ (endMilliseconds - beginMilliseconds);
-  LOGI("%s time:%lld   end\n",__FUNCTION__, time);
+  ALOGI("%s time:%lld   end\n",__FUNCTION__, time);
   return time;
 }
 
@@ -138,7 +128,7 @@ TtmlParser *TtmlParser::getCurrentInstance() {
 }
 
 TtmlParser::~TtmlParser() {
-    LOGI("%s", __func__);
+    ALOGI("%s", __func__);
     stopParser();
     sInstance = nullptr;
 
@@ -159,7 +149,7 @@ TtmlParser::~TtmlParser() {
 }
 
 static inline int generateNormalDisplay(AVSubtitleRect *subRect, unsigned char *des, uint32_t *src, int width, int height) {
-    LOGE(" generateNormalDisplay width = %d, height=%d\n",width, height);
+    ALOGE(" generateNormalDisplay width = %d, height=%d\n",width, height);
     int mt =0, mb =0;
     int ret = -1;
     TtmlParser *parser = TtmlParser::getCurrentInstance();
@@ -204,7 +194,7 @@ int TtmlParser::initContext() {
     std::unique_lock<std::mutex> autolock(mMutex);
     mContext = new TtmlContext();
     if (!mContext) {
-        LOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
+        ALOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
     }
     mContext->formatId = 0;
     mContext->pts = AV_NOPTS_VALUE;
@@ -382,7 +372,7 @@ int TtmlParser::getTTMLSpu() {
     char tmpbuf[8] = {0};
     int64_t packetHeader = 0;
 
-    if (mDumpSub) LOGI("enter get_dvb_ttml_spu\n");
+    if (mDumpSub) ALOGI("enter get_dvb_ttml_spu\n");
     int ret = -1;
 
     while (mDataSource->read(tmpbuf, 1) == 1) {
@@ -394,7 +384,7 @@ int TtmlParser::getTTMLSpu() {
         spu->sync_bytes = AML_PARSER_SYNC_WORD;
 
         packetHeader = ((packetHeader<<8) & 0x000000ffffffffff) | tmpbuf[0];
-        if (mDumpSub) LOGI("## get_dvb_spu %x, %llx,-------------\n",tmpbuf[0], packetHeader);
+        if (mDumpSub) ALOGI("## get_dvb_spu %x, %llx,-------------\n",tmpbuf[0], packetHeader);
 
         if ((packetHeader & 0xffffffff) == 0x000001bd) {
             ret = hwDemuxParse(spu);
@@ -424,7 +414,7 @@ int TtmlParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             if (mDataSource->read(tmpbuf, 3) == 3) {
                 packetLen -= 3;
                 pesHeaderLen = tmpbuf[2];
-                LOGI("get_dvb_ttml spu-packetLen:%d, pesHeaderLen:%d\n", packetLen,pesHeaderLen);
+                ALOGI("get_dvb_ttml spu-packetLen:%d, pesHeaderLen:%d\n", packetLen,pesHeaderLen);
 
                 if (packetLen >= pesHeaderLen) {
                     if ((tmpbuf[1] & 0xc0) == 0x80) {
@@ -469,7 +459,7 @@ int TtmlParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
         if (needSkipData) {
             if (packetLen < 0 || packetLen > INT_MAX) {
-                LOGE("illegal packetLen!!!\n");
+                ALOGE("illegal packetLen!!!\n");
                 return false;
             }
             for (int iii = 0; iii < packetLen; iii++) {
@@ -481,7 +471,7 @@ int TtmlParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
         } else if (packetLen > 0) {
             char *buf = NULL;
             if ((packetLen) > (OSD_HALF_SIZE * 4)) {
-                LOGE("dvb packet is too big\n\n");
+                ALOGE("dvb packet is too big\n\n");
                 return -1;
             }
             spu->subtitle_type = TYPE_SUBTITLE_TTML;
@@ -492,35 +482,35 @@ int TtmlParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             }
             //If gap time is large than 9 secs, think pts skip,notify info
             if (abs(mDataSource->getSyncTime() - spu->pts) > 9*90000) {
-                LOGE("[%s::%d]pts skip,vpts:%lld, spu->pts:%lld notify time error!\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime(), spu->pts);
+                ALOGE("[%s::%d]pts skip,vpts:%lld, spu->pts:%lld notify time error!\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime(), spu->pts);
             }
 
-            LOGI("[%s::%d]pts ---------------,vpts:%lld, spu->pts:%lld\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime(), spu->pts);
+            ALOGI("[%s::%d]pts ---------------,vpts:%lld, spu->pts:%lld\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime(), spu->pts);
 
             buf = (char *)malloc(packetLen);
             if (buf) {
-                LOGI("packetLen is %d, pts is %llx, delay is %llx\n", packetLen, spu->pts, tempPts);
+                ALOGI("packetLen is %d, pts is %llx, delay is %llx\n", packetLen, spu->pts, tempPts);
             } else {
-                LOGI("packetLen buf malloc fail!!!\n");
+                ALOGI("packetLen buf malloc fail!!!\n");
             }
 
             if (buf) {
                 memset(buf, 0x0, packetLen);
                 if (mDataSource->read(buf, packetLen) == packetLen) {
                     ret = TtmlDecodeFrame(spu, buf, packetLen);
-                    LOGI(" @@@@@@@hwDemuxParse parse ret:%d", ret);
+                    ALOGI(" @@@@@@@hwDemuxParse parse ret:%d", ret);
                     if (ret != -1) {
-                        LOGI("dump-pts-hwdmx!success.\n");
+                        ALOGI("dump-pts-hwdmx!success.\n");
                         if (buf) free(buf);
                         return 0;
                     } else {
-                        LOGI("dump-pts-hwdmx!error.\n");
+                        ALOGI("dump-pts-hwdmx!error.\n");
                         if (buf) free(buf);
                         return -1;
                     }
                 }
-                LOGI("packetLen buf free=%p\n", buf);
-                LOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, buf);
+                ALOGI("packetLen buf free=%p\n", buf);
+                ALOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, buf);
                 free(buf);
             }
         }
@@ -538,7 +528,7 @@ int TtmlParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
     // read package header info
     if (mDataSource->read(tmpbuf, 19) == 19) {
-        if (mDumpSub) LOGI("## %s get_dvb_spu %x,%x,%x,  %x,%x,%x,  %x,%x,-------------\n",
+        if (mDumpSub) ALOGI("## %s get_dvb_spu %x,%x,%x,  %x,%x,%x,  %x,%x,-------------\n",
                 __FUNCTION__,
                 tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3],
                 tmpbuf[4], tmpbuf[5], tmpbuf[6], tmpbuf[7]);
@@ -549,8 +539,8 @@ int TtmlParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
         spu->subtitle_type = TYPE_SUBTITLE_TTML;
         spu->pts = dvbPts;
-        if (mDumpSub) LOGI("## %s spu-> pts:%lld,dvPts:%lld\n", __FUNCTION__, spu->pts, dvbPts);
-        if (mDumpSub) LOGI("## %s datalen=%d,pts=%llx,delay=%llx,diff=%llx, data: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
+        if (mDumpSub) ALOGI("## %s spu-> pts:%lld,dvPts:%lld\n", __FUNCTION__, spu->pts, dvbPts);
+        if (mDumpSub) ALOGI("## %s datalen=%d,pts=%llx,delay=%llx,diff=%llx, data: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
                 __FUNCTION__, dataLen, dvbPts, spu->m_delay, ptsDiff,
                 tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4],
                 tmpbuf[5], tmpbuf[6], tmpbuf[7], tmpbuf[8], tmpbuf[9],
@@ -558,26 +548,26 @@ int TtmlParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
         data = (char *)malloc(dataLen);
         if (!data) {
-            LOGE("[%s::%d]malloc error! \n", __FUNCTION__,__LINE__);
+            ALOGE("[%s::%d]malloc error! \n", __FUNCTION__,__LINE__);
             return -1;
         }
-        if (mDumpSub) LOGI("@@[%s::%d]malloc ptr=%p, size = %d\n",__FUNCTION__, __LINE__, data, dataLen);
+        if (mDumpSub) ALOGI("@@[%s::%d]malloc ptr=%p, size = %d\n",__FUNCTION__, __LINE__, data, dataLen);
         memset(data, 0x0, dataLen);
         ret = mDataSource->read(data, dataLen);
-        if (mDumpSub) LOGI("## ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
+        if (mDumpSub) ALOGI("## ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
                 ret, dataLen, data[0], data[1], data[2], data[3],
                 data[4], data[5], data[6], data[7]);
 
         ret = TtmlDecodeFrame(spu, data, dataLen);
         if (ret != -1) {
-            if (mDumpSub) LOGI("dump-pts-swdmx!success pts(%lld) mIndex:%d frame was add\n", spu->pts, mIndex);
+            if (mDumpSub) ALOGI("dump-pts-swdmx!success pts(%lld) mIndex:%d frame was add\n", spu->pts, mIndex);
             {
                 std::unique_lock<std::mutex> autolock(mMutex);
                 mPendingAction = 1;
                 mCv.notify_all();
             }
         } else {
-            if (mDumpSub) LOGI("dump-pts-swdmx!error this pts(%lld) frame was abandon\n", spu->pts);
+            if (mDumpSub) ALOGI("dump-pts-swdmx!error this pts(%lld) frame was abandon\n", spu->pts);
         }
 
         if (data) {
@@ -600,21 +590,21 @@ int TtmlParser::atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             spu->subtitle_type = TYPE_SUBTITLE_TTML;
             data = (char *)malloc(ATV_TTML_DATA_LEN);
             if (!data) {
-                LOGE("[%s::%d]malloc error! \n", __FUNCTION__,__LINE__);
+                ALOGE("[%s::%d]malloc error! \n", __FUNCTION__,__LINE__);
                 return -1;
             }
             memset(data, 0x0, ATV_TTML_DATA_LEN);
             ret = mDataSource->read(data, ATV_TTML_DATA_LEN);
-            if (mDumpSub) LOGI("[%s::%d] ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
+            if (mDumpSub) ALOGI("[%s::%d] ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
                     __FUNCTION__, __LINE__, ret, ATV_TTML_DATA_LEN, data[0], data[1], data[2], data[3],
                     data[4], data[5], data[6], data[7]);
 
             ret = TtmlDecodeFrame(spu, data, ATV_TTML_DATA_LEN);
 
             if (ret != -1 && spu->buffer_size > 0) {
-                if (mDumpSub) LOGI("[%s::%d]dump-pts-atvHwDmx!success pts(%lld) mIndex:%d frame was add\n", __FUNCTION__,__LINE__, spu->pts, ++mIndex);
+                if (mDumpSub) ALOGI("[%s::%d]dump-pts-atvHwDmx!success pts(%lld) mIndex:%d frame was add\n", __FUNCTION__,__LINE__, spu->pts, ++mIndex);
             } else {
-                if (mDumpSub) LOGI("[%s::%d]dump-pts-atvHwDmx!error this pts(%lld) frame was abandon\n", __FUNCTION__,__LINE__, spu->pts);
+                if (mDumpSub) ALOGI("[%s::%d]dump-pts-atvHwDmx!error this pts(%lld) frame was abandon\n", __FUNCTION__,__LINE__, spu->pts);
             }
 
             if (data) {

@@ -49,9 +49,9 @@ extern "C"
 
 /**\brief AM_THREAD_ENTER()和AM_THREAD_LEAVE()对中间包括函数中的各个语句*/
 #define AM_THREAD_FUNC(do)\
-	AM_THREAD_ENTER();\
-	{do;}\
-	AM_THREAD_LEAVE();
+    AM_THREAD_ENTER();\
+    {do;}\
+    AM_THREAD_LEAVE();
 
 #else /*AM_THREAD_ENABLE*/
 
@@ -77,10 +77,10 @@ extern "C"
  * \return 成功返回0，失败返回错误代码
  */
 int AM_pthread_create_name(pthread_t *thread,
-		const pthread_attr_t *attr,
-		void* (*start_routine)(void*),
-		void *arg,
-		const char *name);
+        const pthread_attr_t *attr,
+        void* (*start_routine)(void*),
+        void *arg,
+        const char *name);
 
 /**\brief 结束当前线程
  * \param[in] r 返回值

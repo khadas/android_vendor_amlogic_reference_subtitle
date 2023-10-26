@@ -441,5 +441,3 @@ void ExtSubStreamReader::backtoLastLine() {
         mFileRead = 0;
 }
 
-
-

@@ -1,7 +1,9 @@
-#define LOG_NDEBUG 0
 #define LOG_TAG "SubtitleClientPrivate"
-#include <utils/Log.h>
+
 #include <cutils/properties.h>
+
+#include <utils/Log.h>
+
 #include "SubtitleClientPrivate.h"
 
 #define RETURN_VOID_IF(mode)                                                         \

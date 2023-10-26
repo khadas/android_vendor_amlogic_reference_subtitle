@@ -1,17 +1,14 @@
 #define LOG_TAG "SubtitleDisplay"
 
-#include "BitmapDisplay.h"
-
 #include <utils/Log.h>
-
 #include <core/SkBitmap.h>
 #include <core/SkStream.h>
 #include <core/SkCanvas.h>
-
 #include <core/SkImageEncoder.h>
-
 #include <utils/Timers.h>
 #include <time.h>
+
+#include "BitmapDisplay.h"
 
 BitmapDisplay::BitmapDisplay() {
 

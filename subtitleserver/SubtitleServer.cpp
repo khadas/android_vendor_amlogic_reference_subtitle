@@ -1,7 +1,7 @@
 // FIXME: your file license if you have one
-#define LOG_NDEBUG  0
 #define LOG_TAG "SubtitleServer"
 #include <fmq/EventFlag.h>
+
 #include "SubtitleServer.h"
 #include "MemoryLeakTrackUtil.h"
 #include <utils/CallStack.h>

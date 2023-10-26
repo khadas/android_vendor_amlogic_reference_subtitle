@@ -1,6 +1,4 @@
-#define LOG_NDEBUG 0
-
-#include <fcntl.h>
+#d#include <fcntl.h>
 #include <sys/prctl.h>
 #include <sys/wait.h>
 #include <unistd.h>

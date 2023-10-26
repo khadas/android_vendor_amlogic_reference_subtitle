@@ -32,23 +32,23 @@ extern "C"
 #endif
 
 #define pthread_cond_init(c, a)\
-	({\
-		pthread_condattr_t attr;\
-		pthread_condattr_t *pattr;\
-		int r;\
-		if (a) {\
-			pattr = a;\
-		} else {\
-			pattr = &attr;\
-			pthread_condattr_init(pattr);\
-		}\
-		pthread_condattr_setclock(pattr, CLOCK_MONOTONIC);\
-		r = pthread_cond_init(c, pattr);\
-		if (pattr == &attr) {\
-			pthread_condattr_destroy(pattr);\
-		}\
-		r;\
-	 })
+    ({\
+        pthread_condattr_t attr;\
+        pthread_condattr_t *pattr;\
+        int r;\
+        if (a) {\
+            pattr = a;\
+        } else {\
+            pattr = &attr;\
+            pthread_condattr_init(pattr);\
+        }\
+        pthread_condattr_setclock(pattr, CLOCK_MONOTONIC);\
+        r = pthread_cond_init(c, pattr);\
+        if (pattr == &attr) {\
+            pthread_condattr_destroy(pattr);\
+        }\
+        r;\
+     })
 
 #ifdef __cplusplus
 }

@@ -24,23 +24,12 @@
     #include <ApplicationServices/ApplicationServices.h>
 #endif
 #include "base/cfstr_helper.hpp"
+#include "base/log_aribcaption_android.hpp"
 #include "base/scoped_cfref.hpp"
 #include "base/scoped_holder.hpp"
 #include "base/utf_helper.hpp"
 #include "renderer/font_provider_coretext.hpp"
 
-#ifdef ANDROID
-#include <android/log.h>
-#endif
-
-#define LOG_TAG    "libaribcaption"
-#ifdef ANDROID
-#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-#else
-#define LOGI(...) printf(__VA_ARGS__)
-#define LOGE(...) printf(__VA_ARGS__)
-#endif
 
 namespace aribcaption {
 
@@ -129,7 +118,7 @@ auto FontProviderCoreText::GetFontFace(const std::string& font_name,
     // Create CTFont by specified descriptor with attributes
     ScopedCFRef<CTFontRef> ct_font(CTFontCreateWithFontDescriptor(descriptor_for_find.get(), 0, nullptr));
     if (!ct_font) {
-        LOGE("CoreText: CTFontCreateWithFontDescriptor() returned with NULL");
+        ALOGE("CoreText: CTFontCreateWithFontDescriptor() returned with NULL");
         return Err(FontProviderError::kFontNotFound);
     }
 
@@ -143,7 +132,7 @@ auto FontProviderCoreText::GetFontFace(const std::string& font_name,
                                                 glyphs,
                                                 static_cast<CFIndex>(count));
         if (!ret) {
-            LOGI("CoreText: Font %s doesn't contain U+%04X", converted_font.c_str(), ucs4.value());
+            ALOGI("CoreText: Font %s doesn't contain U+%04X", converted_font.c_str(), ucs4.value());
             return Err(FontProviderError::kCodePointNotFound);
         }
     }

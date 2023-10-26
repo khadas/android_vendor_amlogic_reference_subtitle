@@ -2,8 +2,10 @@
 #define __SUBTITLE_DATASOURCE_H__
 #include <list>
 #include <mutex>
-#include "InfoChangeListener.h"
+
 #include <utils/Log.h>
+
+#include "InfoChangeListener.h"
 
 
 typedef enum {

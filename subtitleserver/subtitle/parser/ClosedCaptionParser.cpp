@@ -16,11 +16,6 @@
 #include "ParserFactory.h"
 #include "VideoInfo.h"
 
-
-
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-#define  TRACE()    LOGI("[%s::%d]\n",__FUNCTION__,__LINE__)
 #define CC_EVENT_VCHIP_AUTH -1
 #define CC_EVENT_VCHIP_FLAG -2
 #define CC_EVENT_CHANNEL_ADD 1
@@ -132,7 +127,7 @@ static void cc_data_cb(AM_CC_Handle_t handle, int mask) {
 void json_update_cb(AM_CC_Handle_t handle) {
     (void)handle;
 
-    LOGI("@@@@@@ cc json string: %s", ClosedCaptionParser::sJsonStr);
+    ALOGI("@@@@@@ cc json string: %s", ClosedCaptionParser::sJsonStr);
     int mJsonLen = strlen(ClosedCaptionParser::sJsonStr);
     std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
     spu->spu_data = (unsigned char *)malloc(mJsonLen);
@@ -177,7 +172,7 @@ ClosedCaptionParser *ClosedCaptionParser::getCurrentInstance() {
 }
 
 ClosedCaptionParser::ClosedCaptionParser(std::shared_ptr<DataSource> source) {
-    LOGI("creat ClosedCaption parser");
+    ALOGI("creat ClosedCaption parser");
     mDataSource = source;
     mParseType = TYPE_SUBTITLE_CLOSED_CAPTION;
 
@@ -187,7 +182,7 @@ ClosedCaptionParser::ClosedCaptionParser(std::shared_ptr<DataSource> source) {
 }
 
 ClosedCaptionParser::~ClosedCaptionParser() {
-    LOGI("%s", __func__);
+    ALOGI("%s", __func__);
     {
         std::unique_lock<std::mutex> autolock(gLock);
         sInstance = nullptr;
@@ -207,7 +202,7 @@ bool ClosedCaptionParser::updateParameter(int type, void *data) {
       mLang = strdup(cc_param->lang);
   }
   //mVfmt = cc_param->vfmt;
-  LOGI("@@@@@@ updateParameter mChannelId: %d, mVfmt:%d", mChannelId, mVfmt);
+  ALOGI("@@@@@@ updateParameter mChannelId: %d, mVfmt:%d", mChannelId, mVfmt);
   return true;
 }
 
@@ -237,7 +232,7 @@ int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_c
 
     setDvbDebugLogLevel();
 
-    LOGI("start cc: vfmt %d caption %d, fgc %d, bgc %d, fgo %d, bgo %d, fsize %d, fstyle %d mMediaSyncId:%d",
+    ALOGI("start cc: vfmt %d caption %d, fgc %d, bgc %d, fgo %d, bgo %d, fsize %d, fstyle %d mMediaSyncId:%d",
             vfmt, caption, fg_color, bg_color, fg_opacity, bg_opacity, font_size, font_style, mMediaSyncId);
 
     memset(&cc_para, 0, sizeof(cc_para));
@@ -287,18 +282,18 @@ int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_c
     if (ret != AM_SUCCESS) {
         goto error;
     }
-    LOGI("start cc successfully!");
+    ALOGI("start cc successfully!");
     return 0;
 error:
     if (mCcContext->cc_handle != NULL) {
         AM_CC_Destroy(mCcContext->cc_handle);
     }
-    LOGI("start cc failed!");
+    ALOGI("start cc failed!");
     return -1;
 }
 
 int ClosedCaptionParser::stopAmlCC() {
-    LOGI("stop cc");
+    ALOGI("stop cc");
     AM_CC_Destroy(mCcContext->cc_handle);
     pthread_mutex_lock(&mCcContext->lock);
     pthread_mutex_unlock(&mCcContext->lock);
@@ -321,7 +316,7 @@ int ClosedCaptionParser::startAmlCC() {
         sInstance = this;
     }
 
-    LOGI(" start cc source:%d, channel:%d, mvfmt:%d", source, channel, mVfmt);
+    ALOGI(" start cc source:%d, channel:%d, mvfmt:%d", source, channel, mVfmt);
     startAtscCc(source, mVfmt, channel, 0, 0, 0, 0, 0, 0);
 
     return 0;

@@ -18,23 +18,11 @@
 
 #include <cassert>
 #include "base/language_code.hpp"
+#include "base/log_aribcaption_android.hpp"
 #include "base/scoped_holder.hpp"
 #include "renderer/font_provider_fontconfig.hpp"
 #define FC_POSTSCRIPT_NAME  "postscriptname"
 
-
-#ifdef ANDROID
-#include <android/log.h>
-#endif
-
-#define LOG_TAG    "libaribcaption"
-#ifdef ANDROID
-#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-#else
-#define LOGI(...) printf(__VA_ARGS__)
-#define LOGE(...) printf(__VA_ARGS__)
-#endif
 
 namespace aribcaption {
 
@@ -50,7 +38,7 @@ FontProviderType FontProviderFontconfig::GetType() {
 bool FontProviderFontconfig::Initialize() {
     FcConfig* config = nullptr;
     if (!(config = FcInitLoadConfigAndFonts())) {
-        LOGE("Fontconfig: FcInitLoadConfigAndFonts() failed");
+        ALOGE("Fontconfig: FcInitLoadConfigAndFonts() failed");
         return false;
     }
     config_ = ScopedHolder<FcConfig*>(config, FcConfigDestroy);
@@ -70,7 +58,7 @@ auto FontProviderFontconfig::GetFontFace(const std::string& font_name,
         FcPatternDestroy
     );
     if (!pattern) {
-        LOGE("Fontconfig: Cannot parse font pattern string");
+        ALOGE("Fontconfig: Cannot parse font pattern string");
         return Err(FontProviderError::kFontNotFound);
     }
 
@@ -78,7 +66,7 @@ auto FontProviderFontconfig::GetFontFace(const std::string& font_name,
     FcPatternAddBool(pattern, FC_OUTLINE, FcTrue);
 
     if (FcTrue != FcConfigSubstitute(config_, pattern, FcMatchPattern)) {
-        LOGE("Fontconfig: Substitution cannot be performed");
+        ALOGE("Fontconfig: Substitution cannot be performed");
         return Err(FontProviderError::kOtherError);
     }
     FcDefaultSubstitute(pattern);
@@ -94,7 +82,7 @@ auto FontProviderFontconfig::GetFontFace(const std::string& font_name,
     FcResult result = FcResultMatch;
     FcPattern* matched = FcFontMatch(config_, pattern, &result);
     if (!matched || result != FcResultMatch) {
-        LOGI("Fontconfig: Cannot find a suitable font for %s", font_name.c_str());
+        ALOGI("Fontconfig: Cannot find a suitable font for %s", font_name.c_str());
         return Err(FontProviderError::kFontNotFound);
     }
 
@@ -102,13 +90,13 @@ auto FontProviderFontconfig::GetFontFace(const std::string& font_name,
 
     FcChar8* filename = nullptr;
     if (FcResultMatch != FcPatternGetString(best, FC_FILE, 0, &filename)) {
-        LOGE("Fontconfig: Retrieve font filename failed for %s", font_name.c_str());
+        ALOGE("Fontconfig: Retrieve font filename failed for %s", font_name.c_str());
         return Err(FontProviderError::kOtherError);
     }
 
     int fc_index = 0;
     if (FcResultMatch != FcPatternGetInteger(best, FC_INDEX, 0, &fc_index)) {
-        LOGE("Fontconfig: Retrieve font FC_INDEX failed for %s", font_name.c_str());
+        ALOGE("Fontconfig: Retrieve font FC_INDEX failed for %s", font_name.c_str());
         return Err(FontProviderError::kOtherError);
     }
 
@@ -116,25 +104,25 @@ auto FontProviderFontconfig::GetFontFace(const std::string& font_name,
         FcCharSet* charset = nullptr;
 
         if (FcResultMatch != FcPatternGetCharSet(best, FC_CHARSET, 0, &charset)) {
-            LOGE("Fontconfig: Retrieve font charset failed for %s", font_name.c_str());
+            ALOGE("Fontconfig: Retrieve font charset failed for %s", font_name.c_str());
             return Err(FontProviderError::kOtherError);
         }
 
         if (FcTrue != FcCharSetHasChar(charset, ucs4.value())) {
-            LOGI("Fontconfig: Font %s doesn't contain U+%04X", font_name.c_str(), ucs4.value());
+            ALOGI("Fontconfig: Font %s doesn't contain U+%04X", font_name.c_str(), ucs4.value());
             return Err(FontProviderError::kCodePointNotFound);
         }
     }
 
     FcChar8* fc_family_name = nullptr;
     if (FcResultMatch != FcPatternGetString(best, FC_FAMILY, 0, &fc_family_name)) {
-        LOGE("Fontconfig: Retrieve font FC_FAMILY failed for %s", font_name.c_str());
+        ALOGE("Fontconfig: Retrieve font FC_FAMILY failed for %s", font_name.c_str());
         return Err(FontProviderError::kOtherError);
     }
 
     FcChar8* fc_postscript_name = nullptr;
     if (FcResultMatch != FcPatternGetString(best, FC_POSTSCRIPT_NAME, 0, &fc_postscript_name)) {
-        LOGE("Fontconfig: Retrieve font FC_POSTSCRIPT_NAME failed for %s", font_name.c_str());
+        ALOGE("Fontconfig: Retrieve font FC_POSTSCRIPT_NAME failed for %s", font_name.c_str());
         return Err(FontProviderError::kOtherError);
     }
 

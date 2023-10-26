@@ -1,13 +1,13 @@
 #pragma once
 
-#include <utils/Log.h>
-#include <utils/Thread.h>
 #include <mutex>
 #include <thread>
 #include<vector>
 
-#include "DataSource.h"
+#include <utils/Log.h>
+#include <utils/Thread.h>
 
+#include "DataSource.h"
 #include "IpcDataTypes.h"
 #include "ringbuffer.h"
 #include "FmqReader.h"

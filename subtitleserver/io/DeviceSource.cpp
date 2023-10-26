@@ -7,13 +7,13 @@
 #include <sys/stat.h>
 #include <sys/poll.h>
 #include <sys/ioctl.h>
-
+#include <pthread.h>
 #include <string>
+
 #include <utils/Log.h>
 #include <utils/CallStack.h>
-#include "DeviceSource.h"
 
-#include <pthread.h>
+#include "DeviceSource.h"
 
 
 static const std::string SYSFS_VIDEO_PTS = "/sys/class/tsync/pts_video";

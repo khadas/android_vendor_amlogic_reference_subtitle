@@ -1,4 +1,3 @@
-
 #define LOG_TAG "SubtitleSource"
 #include <unistd.h>
 #include <fcntl.h>

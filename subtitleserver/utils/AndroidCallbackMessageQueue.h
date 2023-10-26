@@ -4,14 +4,13 @@
 #include <utils/Mutex.h>
 #include <utils/Looper.h>
 #include <utils/CallStack.h>
-
-#include "ParserEventNotifier.h"
-
 #include <android/hidl/allocator/1.0/IAllocator.h>
 #include <android/hidl/memory/1.0/IMemory.h>
 #include <hidlmemory/mapping.h>
 
 #include <vendor/amlogic/hardware/subtitleserver/1.0/types.h>
+#include "ParserEventNotifier.h"
+
 
 using ::android::CallStack;
 using ::android::hardware::HidlMemory;

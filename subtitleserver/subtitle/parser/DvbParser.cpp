@@ -173,19 +173,7 @@ struct DVBSubContext {
     }
 };
 
-
-
 #define OSD_HALF_SIZE (1920*1280/8)
-
-//#define __DEBUG
-#ifdef __DEBUG
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
-#define  TRACE()    LOGI("[%s::%d]\n", __FUNCTION__, __LINE__)
-#else
-#define  LOGI(...)
-#define  TRACE()
-#endif
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 /* define for segment type */
 #define DVBSUB_PAGE_SEGMENT                         0x10
@@ -361,7 +349,7 @@ static void deleteRegionDisplayList(DVBSubContext *ctx, DVBSubRegion *region) {
                     }
                     if (obj2) {
                         *obj2Ptr = obj2->next;
-                        LOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, obj2);
+                        ALOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, obj2);
                         free(obj2);
                         obj2 = NULL;
                     }
@@ -370,7 +358,7 @@ static void deleteRegionDisplayList(DVBSubContext *ctx, DVBSubRegion *region) {
         }
         region->displayList = display->regionListNext;
         if (display) {
-            LOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, display);
+            ALOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, display);
             free(display);
             display = NULL;
         }
@@ -407,12 +395,12 @@ static inline void deleteRegions(DVBSubContext *ctx) {
         deleteRegionDisplayList(ctx, region);
         if (region) {
             if (region->pbuf) {
-                LOGI("[%s::%d] region->p=%p, region=%p,  size=%d\n", __FUNCTION__, __LINE__, region->pbuf, region, region->bufSize);
-                LOGI("@@[%s::%d] free ptr=%p, region->id=%d\n", __FUNCTION__, __LINE__, region->pbuf, region->id);
+                ALOGI("[%s::%d] region->p=%p, region=%p,  size=%d\n", __FUNCTION__, __LINE__, region->pbuf, region, region->bufSize);
+                ALOGI("@@[%s::%d] free ptr=%p, region->id=%d\n", __FUNCTION__, __LINE__, region->pbuf, region->id);
                 free(region->pbuf);
                 region->pbuf = NULL;
             }
-            LOGI("@@[%s::%d] free ptr=%p\n", __FUNCTION__, __LINE__, region);
+            ALOGI("@@[%s::%d] free ptr=%p\n", __FUNCTION__, __LINE__, region);
             free(region);
             region = NULL;
         }
@@ -508,7 +496,7 @@ static int dvbsub_read_2bit_string(uint8_t *destbuf, int dbufLen, const uint8_t 
         }
     }
     if (get_bits(&gb, 6)) {
-        LOGI("[%s::%d] DVBSub error: line overflow\n", __FUNCTION__, __LINE__);
+        ALOGI("[%s::%d] DVBSub error: line overflow\n", __FUNCTION__, __LINE__);
     }
     (*srcbuf) += (get_bits_count(&gb) + 7) >> 3;
     return pixelsReads;
@@ -623,7 +611,7 @@ static inline int dvbsub_read_4bit_string(uint8_t *destbuf, int dbufLen,
         }
     }
     if (get_bits(&gb, 8))
-        LOGI("[%s::%d] DVBSub error: line overflow\n", __FUNCTION__,__LINE__);
+        ALOGI("[%s::%d] DVBSub error: line overflow\n", __FUNCTION__,__LINE__);
     (*srcbuf) += (get_bits_count(&gb) + 7) >> 3;
     return pixelsReads;
 }
@@ -675,7 +663,7 @@ static int dvbsub_read_8bit_string(uint8_t *destbuf, int dbufLen,
         }
     }
     if (*(*srcbuf)++)
-        LOGI("[%s::%d] DVBSub error: line overflow\n", __FUNCTION__, __LINE__);
+        ALOGI("[%s::%d] DVBSub error: line overflow\n", __FUNCTION__, __LINE__);
     return pixelsReads;
 }
 
@@ -699,7 +687,7 @@ int DvbParser::parsePixelDataBlock(DVBSubObjectDisplay *display,
                           0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff
                         };
     uint8_t *mapTable;
-    LOGI("[%s::%d] DVB pixel block size %d, %s field:\n", __FUNCTION__, __LINE__, bufSize, top_bottom ? "bottom" : "top");
+    ALOGI("[%s::%d] DVB pixel block size %d, %s field:\n", __FUNCTION__, __LINE__, bufSize, top_bottom ? "bottom" : "top");
 
     if (region == 0)
         return 0;
@@ -724,7 +712,7 @@ int DvbParser::parsePixelDataBlock(DVBSubObjectDisplay *display,
         }
 
        if (xPos > region->width || yPos > region->height || (needReads < 0)) {
-            LOGE("Invalid object location!\n");
+            ALOGE("Invalid object location!\n");
             return -1;
         }
 
@@ -743,7 +731,7 @@ int DvbParser::parsePixelDataBlock(DVBSubObjectDisplay *display,
                 break;
             case DVBSUB_DT_4BP_CODE_STRING:
                 if (region->depth < 4) {
-                   LOGE("4-bit pixel string in %d-bit region!\n", region->depth);
+                   ALOGE("4-bit pixel string in %d-bit region!\n", region->depth);
                     return 0;
                 }
                 if (region->depth == 8)
@@ -758,7 +746,7 @@ int DvbParser::parsePixelDataBlock(DVBSubObjectDisplay *display,
                 break;
             case DVBSUB_DT_8BP_CODE_STRING:
                 if (region->depth < 8) {
-                    LOGE("8-bit pixel string in %d-bit region!\n", region->depth);
+                    ALOGE("8-bit pixel string in %d-bit region!\n", region->depth);
                     return 0;
                 }
                 xPos += dvbsub_read_8bit_string(
@@ -797,7 +785,7 @@ int DvbParser::parsePixelDataBlock(DVBSubObjectDisplay *display,
                 yPos += 2;
                 break;
             default:
-                LOGI("[%s::%d] Unknown/unsupported pixel block 0x%x\n",
+                ALOGI("[%s::%d] Unknown/unsupported pixel block 0x%x\n",
                      __FUNCTION__, __LINE__, *(buf - 1));
                 //when account for unknown pixel block, don't discard current segment. SWPL-7481
                 break;
@@ -916,10 +904,10 @@ DvbParser::DvbParser(std::shared_ptr<DataSource> source) {
 }
 
 DvbParser::~DvbParser() {
-    LOGI("%s", __func__);
+    ALOGI("%s", __func__);
     mState = SUB_STOP;
     stopParser();
-    LOGI("stopParser end");
+    ALOGI("stopParser end");
     if (mContext != NULL) {
         deleteRegions(mContext);
         deleteObjects(mContext);
@@ -933,7 +921,7 @@ DvbParser::~DvbParser() {
             DVBSubRegionDisplay *display = mContext->displayList;
             if (display) {
                 mContext->displayList = display->next;
-                LOGI("[%s::%d] free ptr=%p\n", __FUNCTION__, __LINE__, display);
+                ALOGI("[%s::%d] free ptr=%p\n", __FUNCTION__, __LINE__, display);
                 free(display);
                 display = NULL;
             }
@@ -989,7 +977,7 @@ int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize) {
         buf += 2;
         if (buf + topFieldLen + bottomFieldLen > bufEnd) {
             notifySubtitleErrorInfo(ERROR_DECODER_INVALIDDATA);
-            LOGE("Field data size too large\n");
+            ALOGE("Field data size too large\n");
             return 0;
         }
         for (display = object->displayList; display;
@@ -1019,7 +1007,7 @@ int DvbParser::parseObjectSegment(const uint8_t *buf, int bufSize) {
         }
     } else {
         notifySubtitleErrorInfo(ERROR_DECODER_INVALIDDATA);
-        LOGE("Unknown object coding %d\n", codingMethod);
+        ALOGE("Unknown object coding %d\n", codingMethod);
         return -1;
     }
     return 0;
@@ -1032,7 +1020,7 @@ void DvbParser::parseClutSegment(const uint8_t *buf, int bufSize) {
     int entry_id, depth, fullRange;
     int y, cr, cb, alpha;
     int r, g, b, r_add, g_add, b_add;
-    LOGE("DVB clut packet:\n");
+    ALOGE("DVB clut packet:\n");
 
     clutId = *buf++;
     buf += 1;
@@ -1041,10 +1029,10 @@ void DvbParser::parseClutSegment(const uint8_t *buf, int bufSize) {
     if (!clut) {
         clut = (DVBSubCLUT *) malloc(sizeof(DVBSubCLUT));
         if (!clut) {
-            LOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
+            ALOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
             return;
         }
-        LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, clut, sizeof(DVBSubCLUT));
+        ALOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, clut, sizeof(DVBSubCLUT));
 
         memcpy(clut, &gDefaultClut, sizeof(DVBSubCLUT));
         clut->id = clutId;
@@ -1056,7 +1044,7 @@ void DvbParser::parseClutSegment(const uint8_t *buf, int bufSize) {
         depth = (*buf) & 0xe0;
         if (depth == 0) {
             notifySubtitleErrorInfo(ERROR_DECODER_INVALIDDATA);
-            LOGE("Invalid clut depth 0x%x!\n", *buf);
+            ALOGE("Invalid clut depth 0x%x!\n", *buf);
             return;
         }
         fullRange = (*buf++) & 1;
@@ -1079,7 +1067,7 @@ void DvbParser::parseClutSegment(const uint8_t *buf, int bufSize) {
         }
         YUV_TO_RGB1_CCIR(cb, cr);
         YUV_TO_RGB2_CCIR(r, g, b, y);
-        LOGE("clut %d := (%d,%d,%d,%d)\n", entry_id, r, g, b, alpha);
+        ALOGE("clut %d := (%d,%d,%d,%d)\n", entry_id, r, g, b, alpha);
         if (depth & 0x80)
             clut->clut4[entry_id] = RGBA(r, g, b, 255-alpha);
         if (depth & 0x40)
@@ -1105,10 +1093,10 @@ void DvbParser::parseRegionSegment(const uint8_t *buf, int bufSize) {
     if (!region) {
         region = (DVBSubRegion *)malloc(sizeof(DVBSubRegion));
         if (!region) {
-            LOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
+            ALOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
             return;
         }
-        LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, region, sizeof(DVBSubRegion));
+        ALOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, region, sizeof(DVBSubRegion));
         memset(region, 0, sizeof(DVBSubRegion));
         region->id = regionId;
         region->next = mContext->regionList;
@@ -1121,24 +1109,24 @@ void DvbParser::parseRegionSegment(const uint8_t *buf, int bufSize) {
     buf += 2;
     if (region->width * region->height != region->bufSize) {
         if (region->pbuf) {
-            LOGI("free region->buf=%p\n", region->pbuf);
-            LOGI("@@[%s::%d] free ptr=%p\n", __FUNCTION__,__LINE__, region->pbuf);
+            ALOGI("free region->buf=%p\n", region->pbuf);
+            ALOGI("@@[%s::%d] free ptr=%p\n", __FUNCTION__,__LINE__, region->pbuf);
             free(region->pbuf);
             region->pbuf = NULL;
         }
         region->bufSize = region->width * region->height;
         region->pbuf = (uint8_t *) malloc(region->bufSize);
         if (!region->pbuf) {
-            LOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
+            ALOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
             return;
         }
-        LOGI("@@[%s::%d] malloc ptr=%p, size=%d\n",__FUNCTION__, __LINE__, region->pbuf, region->bufSize);
-        LOGI("malloc region->buf=%p, size=%d\n", region->pbuf, region->bufSize);
+        ALOGI("@@[%s::%d] malloc ptr=%p, size=%d\n",__FUNCTION__, __LINE__, region->pbuf, region->bufSize);
+        ALOGI("malloc region->buf=%p, size=%d\n", region->pbuf, region->bufSize);
         fill = 1;
     }
     region->depth = 1 << (((*buf++) >> 2) & 7);
     if (region->depth < 2 || region->depth > 8) {
-        LOGI("region depth %d is invalid\n", region->depth);
+        ALOGI("region depth %d is invalid\n", region->depth);
         region->depth = 4;
     }
     region->clut = *buf++;
@@ -1154,10 +1142,10 @@ void DvbParser::parseRegionSegment(const uint8_t *buf, int bufSize) {
             region->bgcolor = (((*buf++) >> 2) & 3);
         }
     }
-    LOGI("Region %d, (%dx%d)\n", regionId, region->width, region->height);
+    ALOGI("Region %d, (%dx%d)\n", regionId, region->width, region->height);
     if (fill) {
         memset(region->pbuf, region->bgcolor, region->bufSize);
-        LOGI("Fill region (%d)\n", region->bgcolor);
+        ALOGI("Fill region (%d)\n", region->bgcolor);
     }
     deleteRegionDisplayList(mContext, region);
     while (buf + 5 < bufEnd) {
@@ -1167,10 +1155,10 @@ void DvbParser::parseRegionSegment(const uint8_t *buf, int bufSize) {
         if (!object) {
             object = (DVBSubObject *)calloc(1, sizeof(DVBSubObject));
             if (!object) {
-                LOGE("[%s::%d]DVBSubObject calloc error! \n", __FUNCTION__, __LINE__);
+                ALOGE("[%s::%d]DVBSubObject calloc error! \n", __FUNCTION__, __LINE__);
                 return;
             }
-            LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n",
+            ALOGI("@@[%s::%d]malloc ptr=%p, size=%d\n",
                     __FUNCTION__, __LINE__, object, sizeof(DVBSubObject));
             object->id = objectId;
             object->next = mContext->objectList;
@@ -1179,10 +1167,10 @@ void DvbParser::parseRegionSegment(const uint8_t *buf, int bufSize) {
         object->type = (*buf) >> 6;
         display = (DVBSubObjectDisplay *)calloc(1, sizeof(DVBSubObjectDisplay));
         if (!display) {
-            LOGE("[%s::%d]DVBSubObjectDisplay calloc error! \n", __FUNCTION__, __LINE__);
+            ALOGE("[%s::%d]DVBSubObjectDisplay calloc error! \n", __FUNCTION__, __LINE__);
             return;
         }
-        LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, display, sizeof(DVBSubObjectDisplay));
+        ALOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, display, sizeof(DVBSubObjectDisplay));
 
         display->objectId = objectId;
         display->regionId = regionId;
@@ -1218,9 +1206,9 @@ void DvbParser::parsePageSegment(const uint8_t *buf, int bufSize) {
         mContext->timeOut = DVB_TIME_OUT_ADJUST;
     }
     page_state = ((*buf++) >> 2) & 3;
-    LOGI("Page time out %ds, state %d\n", mContext->timeOut, page_state);
+    ALOGI("Page time out %ds, state %d\n", mContext->timeOut, page_state);
     if (page_state == DVBSUB_PCS_STATE_ACQUISITION || page_state == DVBSUB_PCS_STATE_MODE_CHANGE) {
-        LOGI("[%s::%d] dvbsub_parse_page_segment\n", __FUNCTION__,__LINE__);
+        ALOGI("[%s::%d] dvbsub_parse_page_segment\n", __FUNCTION__,__LINE__);
         deleteRegions(mContext);
         deleteObjects(mContext);
         deleteCluts(mContext);
@@ -1240,11 +1228,11 @@ void DvbParser::parsePageSegment(const uint8_t *buf, int bufSize) {
         if (!display) {
             display = (DVBSubRegionDisplay *)calloc(1, sizeof(DVBSubRegionDisplay));
             if (!display) {
-                LOGE("DVB SubRegion Display calloc fail!\n");
+                ALOGE("DVB SubRegion Display calloc fail!\n");
                 return;
             }
         }
-        LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, display, sizeof(DVBSubObjectDisplay));
+        ALOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, display, sizeof(DVBSubObjectDisplay));
 
         display->regionId = regionId;
         display->xPos = AV_RB16(buf);
@@ -1255,13 +1243,13 @@ void DvbParser::parsePageSegment(const uint8_t *buf, int bufSize) {
         display->next = mContext->displayList;
         mContext->displayList = display;
         mContext->displayListSize++;
-        LOGI("Region %d, (%d,%d)\n", regionId, display->xPos,display->yPos);
+        ALOGI("Region %d, (%d,%d)\n", regionId, display->xPos,display->yPos);
     }
     while (tmpDisplayList) {
         display = tmpDisplayList;
         tmpDisplayList = display->next;
         if (display) {
-            LOGI("@@[%s::%d] free ptr=%p\n", __FUNCTION__,__LINE__, display);
+            ALOGI("@@[%s::%d] free ptr=%p\n", __FUNCTION__,__LINE__, display);
             free(display);
             display = NULL;
         }
@@ -1318,16 +1306,16 @@ void DvbParser::saveResult2Spu(std::shared_ptr<AML_SPUVAR> spu) {
                 height = display->yPos + region->height - yPos;
             }
         }
-        LOGI("@@[%s::%d] xPos=%d, yPos=%d, width=%d, height=%d, region->id=%d\n", __FUNCTION__, __LINE__, xPos, yPos, width, height, region->id);
+        ALOGI("@@[%s::%d] xPos=%d, yPos=%d, width=%d, height=%d, region->id=%d\n", __FUNCTION__, __LINE__, xPos, yPos, width, height, region->id);
     }
 
     if (xPos >= 0) {
         spu->buffer_size = width * height * 4;
         pbuf = (uint32_t *)malloc(width * height * 4);
-        LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, pbuf, width * height * 4);
-        LOGI("malloc pbuf=%p, size=%d \n", region->pbuf, width * height * 4);
+        ALOGI("@@[%s::%d]malloc ptr=%p, size=%d\n", __FUNCTION__, __LINE__, pbuf, width * height * 4);
+        ALOGI("malloc pbuf=%p, size=%d \n", region->pbuf, width * height * 4);
         if (!pbuf) {
-            LOGE("save_display_set malloc fail, width=%d, height=%d \n", width, height);
+            ALOGE("save_display_set malloc fail, width=%d, height=%d \n", width, height);
             free(pbuf);
             return;
         }
@@ -1335,7 +1323,7 @@ void DvbParser::saveResult2Spu(std::shared_ptr<AML_SPUVAR> spu) {
         if (spu->spu_data) free(spu->spu_data);
         spu->spu_data = (unsigned char *)malloc(spu->buffer_size);
         if (!spu->spu_data) {
-            LOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
+            ALOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
             free(pbuf);
             return ;
         }
@@ -1377,12 +1365,12 @@ void DvbParser::saveResult2Spu(std::shared_ptr<AML_SPUVAR> spu) {
                     break;
             }
 
-            LOGI("@@[%s::%d]xOff=%d, yOff=%d, width=%d, height=%d, region->width=%d, region->height=%d\n",
+            ALOGI("@@[%s::%d]xOff=%d, yOff=%d, width=%d, height=%d, region->width=%d, region->height=%d\n",
                     __FUNCTION__, __LINE__, xOff, yOff, width, height, region->width, region->height);
 
             check_err = (region->height-1+yOff)*width*4 + (xOff+region->width-1)*4 + 3;
             if ((check_err >= DVB_SUB_SIZE) || (region->height > 1080) || (region->width > 1920)) {
-                LOGI("@@[%s::%d] sub data err!! check_err=%d\n", __FUNCTION__, __LINE__,check_err);
+                ALOGI("@@[%s::%d] sub data err!! check_err=%d\n", __FUNCTION__, __LINE__,check_err);
                 free(pbuf);
                 return;
             }
@@ -1409,12 +1397,12 @@ void DvbParser::saveResult2Spu(std::shared_ptr<AML_SPUVAR> spu) {
        }
 
         //set_subtitle_height(height);
-        LOGI("## save_display_set: %d, (%d,%d)--(%d,%d),(%d,%d)---\n",
+        ALOGI("## save_display_set: %d, (%d,%d)--(%d,%d),(%d,%d)---\n",
              filenoIndex, width, height, spu->spu_width,
              spu->spu_height, spu->spu_start_x, spu->spu_start_y);
         if (pbuf) {
-            LOGI("free pbuf=%p\n", region->pbuf);
-            LOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, pbuf);
+            ALOGI("free pbuf=%p\n", region->pbuf);
+            ALOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, pbuf);
             free(pbuf);
         }
     }
@@ -1434,12 +1422,12 @@ void DvbParser::parseDisplayDefinitionSegment(const uint8_t *buf, int bufSize) {
 
     if (displayDef == nullptr) {
         displayDef = (DVBSubDisplayDefinition *)malloc(sizeof(DVBSubDisplayDefinition));
-        LOGI("[%s::%d]malloc ptr=%p, size=%d\n",__FUNCTION__, __LINE__, displayDef, sizeof(DVBSubDisplayDefinition));
+        ALOGI("[%s::%d]malloc ptr=%p, size=%d\n",__FUNCTION__, __LINE__, displayDef, sizeof(DVBSubDisplayDefinition));
         mContext->displayDefinition = displayDef;
     }
 
     if (displayDef == nullptr) {
-        LOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
+        ALOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
         return;
     }
 
@@ -1462,7 +1450,7 @@ void DvbParser::parseDisplayDefinitionSegment(const uint8_t *buf, int bufSize) {
         displayDef->width = horizontalMax - horizontalMin + 1;
         displayDef->height = verticalMax - verticalMin +1;
     }
-    LOGI("-[%s],displayDef->width=%d,height=%d,infoByte=%d,bufSize=%d--\n",__FUNCTION__,
+    ALOGI("-[%s],displayDef->width=%d,height=%d,infoByte=%d,bufSize=%d--\n",__FUNCTION__,
         displayDef->width, displayDef->height, infoByte, bufSize);
     return;
 }
@@ -1495,7 +1483,7 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
     spu->spu_origin_display_h = 576;
 
     if (bufSize <= 6 || *buf != 0x0f) {
-        LOGI("incomplete or broken packet");
+        ALOGI("incomplete or broken packet");
         return -1;
     }
 
@@ -1514,10 +1502,10 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
         p += 2;
         if (pEnd - p < segmentLength) {
             notifySubtitleErrorInfo(ERROR_DECODER_LOSEDATA);
-            LOGI("incomplete or broken packet");
+            ALOGI("incomplete or broken packet");
             return -1;
         }
-        LOGI("## dvbsub_decode segmentType=%x, pageId=%d, cpage=%d, apage=%d",
+        ALOGI("## dvbsub_decode segmentType=%x, pageId=%d, cpage=%d, apage=%d",
             segmentType, pageId, mContext->compositionId, mContext->ancillaryId);
         if (pageId == mContext->compositionId
                 || pageId == mContext->ancillaryId
@@ -1534,7 +1522,7 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
                     totalObject++;
                     break;
                 default:
-                    LOGI("Subtitling segment type 0x%x, page id %d, length %d\n", segmentType, pageId, segmentLength);
+                    ALOGI("Subtitling segment type 0x%x, page id %d, length %d\n", segmentType, pageId, segmentLength);
                     break;
             }
         }
@@ -1556,10 +1544,10 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
         segmentLength = AV_RB16(p);
         p += 2;
         if (pEnd - p < segmentLength) {
-            LOGI("incomplete or broken packet");
+            ALOGI("incomplete or broken packet");
             return -1;
         }
-        LOGI("## dvbsub_decode segmentType=%x", segmentType);
+        ALOGI("## dvbsub_decode segmentType=%x", segmentType);
         if (pageId == mContext->compositionId
                 || pageId == mContext->ancillaryId
                 || mContext->compositionId == -1
@@ -1597,7 +1585,7 @@ int DvbParser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const
                     dataSize = displayEndSegment(spu);
                     break;
                 default:
-                    LOGI("Subtitling segment type 0x%x, page id %d, length %d\n", segmentType, pageId, segmentLength);
+                    ALOGI("Subtitling segment type 0x%x, page id %d, length %d\n", segmentType, pageId, segmentLength);
                     break;
             }
         }
@@ -1620,12 +1608,12 @@ int DvbParser::getDvbSpu() {
 
         packetHeader = ((packetHeader<<8) & 0x000000ffffffff00) | tmpbuf[0];
         if ((packetHeader & 0xffffffff) == 0x000001bd) {
-            LOGI("## [Hardware Demux]  get_dvb_teletext_spu hardware demux dvb %x,%llx,-----------\n",
+            ALOGI("## [Hardware Demux]  get_dvb_teletext_spu hardware demux dvb %x,%llx,-----------\n",
                     tmpbuf[0], packetHeader & 0xffffffffff);
             return hwDemuxParse();
         } else if (((packetHeader & 0xffffffffff)>>8) == AML_PARSER_SYNC_WORD
                 && (((packetHeader & 0xff)== 0x77) || ((packetHeader & 0xff)==0xaa))) {
-            LOGI("## 222  get_dvb_teletext_spu soft demux dvb %x,%llx,-----------\n",
+            ALOGI("## 222  get_dvb_teletext_spu soft demux dvb %x,%llx,-----------\n",
                     tmpbuf[0], packetHeader & 0xffffffffff);
             return softDemuxParse();
         }
@@ -1708,7 +1696,7 @@ int DvbParser::hwDemuxParse() {
 
         if (needSkipData) {
             if (packetLen < 0 || packetLen > INT_MAX) {
-                LOGE("illegal packetLen!!!\n");
+                ALOGE("illegal packetLen!!!\n");
                 return false;
             }
             for (int iii = 0; iii < packetLen; iii++) {
@@ -1720,7 +1708,7 @@ int DvbParser::hwDemuxParse() {
         } else if ((pts) && (packetLen > 0)) {
             char *buf = NULL;
             if ((packetLen) > (OSD_HALF_SIZE * 4)) {
-                LOGE("dvb packet is too big\n\n");
+                ALOGE("dvb packet is too big\n\n");
                 return -1;
             }
 
@@ -1733,10 +1721,10 @@ int DvbParser::hwDemuxParse() {
                 spu->pts &= TSYNC_32_BIT_PTS;
             }
 
-            LOGE("[%s::%d]synctime:%lld subpts:%lld\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime(),spu->pts);
+            ALOGE("[%s::%d]synctime:%lld subpts:%lld\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime(),spu->pts);
             //If gap time is large than 9 secs, think pts skip,notify info
             if (abs(mDataSource->getSyncTime() - spu->pts) > 9*90000) {
-                LOGE("[%s::%d]pts skip, notify time error!\n", __FUNCTION__, __LINE__);
+                ALOGE("[%s::%d]pts skip, notify time error!\n", __FUNCTION__, __LINE__);
                 notifySubtitleErrorInfo(ERROR_DECODER_TIMEERROR);
             }
             mDataSource->read(tmpbuf, 2) ;
@@ -1744,20 +1732,20 @@ int DvbParser::hwDemuxParse() {
             //tempPts = ((tmpbuf[0] << 8) | tmpbuf[1]); //for coverity
             buf = (char *)malloc(packetLen);
             if (buf) {
-                LOGI("packetLen is %d, pts is %llx, delay is %llx,\n", packetLen, spu->pts, tempPts);
+                ALOGI("packetLen is %d, pts is %llx, delay is %llx,\n", packetLen, spu->pts, tempPts);
             } else {
-                LOGI("packetLen buf malloc fail!!!,\n");
+                ALOGI("packetLen buf malloc fail!!!,\n");
             }
 
             if (buf) {
                 memset(buf, 0x0, packetLen);
                 realityPacketLen = mDataSource->read(buf, packetLen);
                 if (realityPacketLen == packetLen) {
-                    LOGI("start decode dvb subtitle\n\n");
+                    ALOGI("start decode dvb subtitle\n\n");
                     ret = decodeSubtitle(spu, buf, packetLen);
-                    LOGI("dump-pts-hwdmx parse ret:%d,width:%d, height:%d, buffer_size:%d spu->pts:%lld", ret, spu->spu_width, spu->spu_height, spu->buffer_size, spu->pts);
+                    ALOGI("dump-pts-hwdmx parse ret:%d,width:%d, height:%d, buffer_size:%d spu->pts:%lld", ret, spu->spu_width, spu->spu_height, spu->buffer_size, spu->pts);
                     if (ret != -1) {
-                        LOGI("dump-pts-hwdmx!success pts(%lld)frame was add\n", spu->pts);
+                        ALOGI("dump-pts-hwdmx!success pts(%lld)frame was add\n", spu->pts);
                         addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
                         notifySubtitleDimension(spu->spu_origin_display_w, spu->spu_origin_display_h);
                         {   // for signal notification.
@@ -1766,19 +1754,19 @@ int DvbParser::hwDemuxParse() {
                             mCv.notify_all();
                         }
                     } else {
-                        LOGI("dump-pts-hwdmx!error pts(%lld) frame was abandon\n", spu->pts);
+                        ALOGI("dump-pts-hwdmx!error pts(%lld) frame was abandon\n", spu->pts);
                         free(buf);
 
                         return -1;
                     }
                 } else if (realityPacketLen != packetLen){
-                        LOGI("realityPacketLen Error packetLen:%d reality packetLen:%d",packetLen, realityPacketLen);
+                        ALOGI("realityPacketLen Error packetLen:%d reality packetLen:%d",packetLen, realityPacketLen);
                         free(buf);
                         return 1;
                 }
 
-                LOGI("packetLen buf free=%p\n", buf);
-                LOGI("[%s::%d] free ptr=%p\n", __FUNCTION__, __LINE__, buf);
+                ALOGI("packetLen buf free=%p\n", buf);
+                ALOGI("[%s::%d] free ptr=%p\n", __FUNCTION__, __LINE__, buf);
                 free(buf);
             }
 
@@ -1798,7 +1786,7 @@ int DvbParser::softDemuxParse() {
     char *data = NULL;
     int avil = 0;
 
-    LOGI("## 333 get_dvb_spu %x,%x,%x,%x-------------\n",tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3]);
+    ALOGI("## 333 get_dvb_spu %x,%x,%x,%x-------------\n",tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3]);
     if (mDataSource->read(tmpbuf, 19) == 19) {
         dataLen = subPeekAsInt32(tmpbuf + 3);
         pts     = subPeekAsInt64(tmpbuf + 7);
@@ -1808,10 +1796,10 @@ int DvbParser::softDemuxParse() {
         std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
         spu->sync_bytes = AML_PARSER_SYNC_WORD;
         spu->subtitle_type = TYPE_SUBTITLE_DVB;
-        LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n",__FUNCTION__, __LINE__, spu->spu_data, DVB_SUB_SIZE);
+        ALOGI("@@[%s::%d]malloc ptr=%p, size=%d\n",__FUNCTION__, __LINE__, spu->spu_data, DVB_SUB_SIZE);
         spu->pts = pts;
-        LOGI("fmq send pts:%lld\n", spu->pts);
-        LOGI("## 4444 datalen=%d, pts=%llx,delay=%llx, diff=%llx, data: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x-------------\n",
+        ALOGI("fmq send pts:%lld\n", spu->pts);
+        ALOGI("## 4444 datalen=%d, pts=%llx,delay=%llx, diff=%llx, data: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x-------------\n",
                 dataLen, pts, spu->m_delay, ptsDiff,
                 tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4],
                 tmpbuf[5], tmpbuf[6], tmpbuf[7], tmpbuf[8], tmpbuf[9],
@@ -1819,17 +1807,17 @@ int DvbParser::softDemuxParse() {
 
         data = (char *)malloc(dataLen);
         if (!data) {
-            LOGI("data buf malloc fail!\n");
+            ALOGI("data buf malloc fail!\n");
             return -1;
         }
         memset(data, 0x0, dataLen);
         ret = mDataSource->read(data, dataLen);
         if (ret <= 0) {
-            LOGI("no data now\n");
+            ALOGI("no data now\n");
         }
         ret = decodeSubtitle(spu, data, dataLen);
         if (ret != -1 && spu->buffer_size > 0) {
-            LOGI("dump-pts-swdmx!success pts(%lld) frame was add\n", spu->pts);
+            ALOGI("dump-pts-swdmx!success pts(%lld) frame was add\n", spu->pts);
             addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
             notifySubtitleDimension(spu->spu_origin_display_w, spu->spu_origin_display_h);
 
@@ -1840,7 +1828,7 @@ int DvbParser::softDemuxParse() {
             }
 
         } else {
-            LOGI("dump-pts-swdmx!error this pts(%lld) frame was abandon\n", spu->pts);
+            ALOGI("dump-pts-swdmx!error this pts(%lld) frame was abandon\n", spu->pts);
         }
 
         if (data) free(data);

@@ -1,11 +1,9 @@
 // currently, we use android thread
 // TODO: impl with std lib, make it portable
 
-#define LOG_NDEBUG 0
 
 #define LOG_TAG "SubSocketServer"
 #include <fcntl.h>
-#include <utils/Log.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -17,10 +15,10 @@
 #include <stdlib.h>
 #include <sys/poll.h>
 
+#include <utils/Log.h>
 
 #include "DataSource.h"
 #include "Segment.h"
-
 #include "SocketServer.h"
 
 /**

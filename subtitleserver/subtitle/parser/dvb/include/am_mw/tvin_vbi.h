@@ -68,10 +68,10 @@ enum, used in TVIN vbi sub-module processing
 #define VBI_DATA_TYPE_WSSJ         0xdd
 
 /* vbi start line: unit is hcount value */
-#define VBI_START_CC		0x54
-#define VBI_START_WSS		0x54
-#define VBI_START_TT		0x82
-#define VBI_START_VPS		0x82
+#define VBI_START_CC        0x54
+#define VBI_START_WSS       0x54
+#define VBI_START_TT        0x82
+#define VBI_START_VPS       0x82
 
 
 /* vbi start code,TT start code is programmable by software,
@@ -112,33 +112,33 @@ output_sampling_rate = 13.5M;
 input_sampling_rate= 24M;
 vbi_data_rate reference to vbi document.
 */
-#define VBI_DTO_USCC		0x35a0
-#define VBI_DTO_EURCC		0x3600
-#define VBI_DTO_TT625A		0x0f7a
-#define VBI_DTO_TT625B		0x0dd6
-#define VBI_DTO_TT625C		0x10be
-#define VBI_DTO_TT625D		0x1103
-#define VBI_DTO_TT525B		0x10c3
-#define VBI_DTO_TT525C		0x10c3
-#define VBI_DTO_TT525D		0x10c3
-#define VBI_DTO_WSS625		0x2066
-#define VBI_DTO_WSSJ		0x1e2c
-#define VBI_DTO_VPS		0x1333
+#define VBI_DTO_USCC        0x35a0
+#define VBI_DTO_EURCC       0x3600
+#define VBI_DTO_TT625A      0x0f7a
+#define VBI_DTO_TT625B      0x0dd6
+#define VBI_DTO_TT625C      0x10be
+#define VBI_DTO_TT625D      0x1103
+#define VBI_DTO_TT525B      0x10c3
+#define VBI_DTO_TT525C      0x10c3
+#define VBI_DTO_TT525D      0x10c3
+#define VBI_DTO_WSS625      0x2066
+#define VBI_DTO_WSSJ        0x1e2c
+#define VBI_DTO_VPS     0x1333
 
 
 #define VBI_LINE_MIN               6
 #define VBI_LINE_MAX               25
 
 enum vbi_package_type_e {
-	VBI_PACKAGE_CC1 = 1,
-	VBI_PACKAGE_CC2 = 2,
-	VBI_PACKAGE_CC3 = 4,
-	VBI_PACKAGE_CC4 = 8,
-	VBI_PACKAGE_TT1 = 16,
-	VBI_PACKAGE_TT2 = 32,
-	VBI_PACKAGE_TT3 = 64,
-	VBI_PACKAGE_TT4 = 128,
-	VBI_PACKAGE_XDS = 256
+    VBI_PACKAGE_CC1 = 1,
+    VBI_PACKAGE_CC2 = 2,
+    VBI_PACKAGE_CC3 = 4,
+    VBI_PACKAGE_CC4 = 8,
+    VBI_PACKAGE_TT1 = 16,
+    VBI_PACKAGE_TT2 = 32,
+    VBI_PACKAGE_TT3 = 64,
+    VBI_PACKAGE_TT4 = 128,
+    VBI_PACKAGE_XDS = 256
 };
 
 #define VBI_PACKAGE_FILTER_MAX     3
@@ -180,20 +180,20 @@ enum vbi_package_type_e {
 
 /* vbi_slicer type */
 enum vbi_slicer_e {
-	VBI_TYPE_NULL = 0,
-	VBI_TYPE_USCC = 0x00001,
-	VBI_TYPE_EUROCC = 0x00020,
-	VBI_TYPE_VPS = 0x00040,
-	/* Germany, Austria and Switzerland. */
-	VBI_TYPE_TT_625A = 0x00080,
-	VBI_TYPE_TT_625B  = 0x00100,
-	VBI_TYPE_TT_625C = 0x00200,
-	VBI_TYPE_TT_625D  = 0x00400,
-	VBI_TYPE_TT_525B  = 0x00800,
-	VBI_TYPE_TT_525C = 0x01000,
-	VBI_TYPE_TT_525D  = 0x02000,
-	VBI_TYPE_WSS625 = 0x04000,
-	VBI_TYPE_WSSJ = 0x08000
+    VBI_TYPE_NULL = 0,
+    VBI_TYPE_USCC = 0x00001,
+    VBI_TYPE_EUROCC = 0x00020,
+    VBI_TYPE_VPS = 0x00040,
+    /* Germany, Austria and Switzerland. */
+    VBI_TYPE_TT_625A = 0x00080,
+    VBI_TYPE_TT_625B  = 0x00100,
+    VBI_TYPE_TT_625C = 0x00200,
+    VBI_TYPE_TT_625D  = 0x00400,
+    VBI_TYPE_TT_525B  = 0x00800,
+    VBI_TYPE_TT_525C = 0x01000,
+    VBI_TYPE_TT_525D  = 0x02000,
+    VBI_TYPE_WSS625 = 0x04000,
+    VBI_TYPE_WSSJ = 0x08000
 };
 
 #define VBI_DEFAULT_BUFFER_SIZE 8192 /*set default buffer size--8KByte*/
@@ -206,17 +206,17 @@ enum vbi_slicer_e {
 ***************** */
 
 enum field_id_e {
-	VBI_FIELD_1 = 0,
-	VBI_FIELD_2 = 1,
+    VBI_FIELD_1 = 0,
+    VBI_FIELD_2 = 1,
 };
 
 enum vbi_state_e {
-	VBI_STATE_FREE      = 0,
-	VBI_STATE_ALLOCATED = 1,
-	VBI_STATE_SET       = 2,
-	VBI_STATE_GO        = 3,
-	VBI_STATE_DONE      = 4,
-	VBI_STATE_TIMEDOUT  = 5
+    VBI_STATE_FREE      = 0,
+    VBI_STATE_ALLOCATED = 1,
+    VBI_STATE_SET       = 2,
+    VBI_STATE_GO        = 3,
+    VBI_STATE_DONE      = 4,
+    VBI_STATE_TIMEDOUT  = 5
 } vbi_state_t;
 
 /* ********************
@@ -227,12 +227,12 @@ enum vbi_state_e {
 ***************** */
 
 struct vbi_data_s {
-	unsigned int vbi_type:8;
-	unsigned int field_id:8;
-	unsigned int tt_sys:8;/*tt*/
-	unsigned int nbytes:16;
-	unsigned int line_num:16;
-	unsigned char b[42];         /* 42 for TT-625B */
+    unsigned int vbi_type:8;
+    unsigned int field_id:8;
+    unsigned int tt_sys:8;/*tt*/
+    unsigned int nbytes:16;
+    unsigned int line_num:16;
+    unsigned char b[42];         /* 42 for TT-625B */
 };
 
 #endif /* TVIN_VBI_H_ */

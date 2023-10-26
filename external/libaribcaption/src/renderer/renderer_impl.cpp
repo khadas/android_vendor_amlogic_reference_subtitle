@@ -20,22 +20,11 @@
 #include <algorithm>
 #include <iterator>
 #include "aribcaption/context.hpp"
+#include "base/log_aribcaption_android.hpp"
 #include "renderer/bitmap.hpp"
 #include "renderer/canvas.hpp"
 #include "renderer/renderer_impl.hpp"
 
-#ifdef ANDROID
-#include <android/log.h>
-#endif
-
-#define LOG_TAG    "libaribcaption"
-#ifdef ANDROID
-#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-#else
-#define LOGI(...) printf(__VA_ARGS__)
-#define LOGE(...) printf(__VA_ARGS__)
-#endif
 
 namespace aribcaption::internal {
 
@@ -49,7 +38,7 @@ bool RendererImpl::Initialize(CaptionType caption_type,
                               TextRendererType text_renderer_type) {
     expected_caption_type_ = caption_type;
     LoadDefaultFontFamilies();
-    LOGI("RendererImpl::Initialize");
+    ALOGI("RendererImpl::Initialize");
     return region_renderer_.Initialize(font_provider_type, text_renderer_type);
 }
 
@@ -143,7 +132,7 @@ bool RendererImpl::SetLanguageSpecificFontFamily(uint32_t language_code, const s
 bool RendererImpl::SetFrameSize(int frame_width, int frame_height) {
     if (frame_width < 0 || frame_height < 0) {
         assert(frame_width >= 0 && frame_height >= 0 && "Frame width/height must >= 0");
-        LOGE("RendererImpl: frame_width:%d frame_height:%d Frame width/height must >= 0", frame_width, frame_height);
+        ALOGE("RendererImpl: frame_width:%d frame_height:%d Frame width/height must >= 0", frame_width, frame_height);
         return false;
     }
 
@@ -170,7 +159,7 @@ bool RendererImpl::SetMargins(int top, int bottom, int left, int right) {
     int video_height = frame_height_ - top - bottom;
 
     if (video_width < 0 || video_height < 0) {
-        LOGE("RendererImpl: Invalid margins, video area size attempts to be < 0");
+        ALOGE("RendererImpl: Invalid margins, video area size attempts to be < 0");
         return false;
     }
 
@@ -344,7 +333,7 @@ RenderStatus RendererImpl::TryRender(int64_t pts) {
 RenderStatus RendererImpl::Render(int64_t pts, RenderResult& out_result) {
     if (!frame_size_inited_ || !margins_inited_) {
         assert(frame_size_inited_ && margins_inited_ && "Frame size / margins must be indicated first");
-        LOGE("RendererImpl frame_size_inited_:%d margins_inited_:%d Frame size / margins must be indicated first.", frame_size_inited_, margins_inited_);
+        ALOGE("RendererImpl frame_size_inited_:%d margins_inited_:%d Frame size / margins must be indicated first.", frame_size_inited_, margins_inited_);
         return RenderStatus::kError;
     }
 
@@ -414,7 +403,7 @@ RenderStatus RendererImpl::Render(int64_t pts, RenderResult& out_result) {
             // Skip image which is too small
             continue;
         } else {
-            LOGE("RendererImpl: RenderCaptionRegion() failed with error: %d", static_cast<int>(result.error()));
+            ALOGE("RendererImpl: RenderCaptionRegion() failed with error: %d", static_cast<int>(result.error()));
             InvalidatePrevRenderedImages();
             return RenderStatus::kError;
         }

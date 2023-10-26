@@ -1,3 +1,4 @@
+#define  LOG_TAG "AM_DMX"
 #ifdef _FORTIFY_SOURCE
 #undef _FORTIFY_SOURCE
 #endif
@@ -16,15 +17,16 @@
  * \date 2010-05-21: create the document
  ***************************************************************************/
 
-#define AM_DEBUG_LEVEL 1
-
-#include <am_debug.h>
-//#include <am_mem.h>
-#include "am_dmx_internal.h"
-#include "am_adp_internal.h"
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
+#include <pthread.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <utils/Log.h>
+
+#include "am_dmx_internal.h"
+#include "am_adp_internal.h"
 #include "am_misc.h"
 
 /****************************************************************************
@@ -100,226 +102,226 @@ static AM_DMX_Device_t dmx_devices[DMX_DEV_COUNT] =
 /**\brief 根据设备号取得设备结构指针*/
 static AM_INLINE AM_ErrorCode_t dmx_get_dev(int dev_no, AM_DMX_Device_t **dev)
 {
-	if ((dev_no < 0) || (dev_no >= DMX_DEV_COUNT))
-	{
-		AM_DEBUG(1, "invalid demux device number %d, must in(%d~%d)", dev_no, 0, DMX_DEV_COUNT-1);
-		return AM_DMX_ERR_INVALID_DEV_NO;
-	}
+    if ((dev_no < 0) || (dev_no >= DMX_DEV_COUNT))
+    {
+        ALOGD("invalid demux device number %d, must in(%d~%d)", dev_no, 0, DMX_DEV_COUNT-1);
+        return AM_DMX_ERR_INVALID_DEV_NO;
+    }
 
-	*dev = &dmx_devices[dev_no];
-	return AM_SUCCESS;
+    *dev = &dmx_devices[dev_no];
+    return AM_SUCCESS;
 }
 
 /**\brief 根据设备号取得设备结构并检查设备是否已经打开*/
-static AM_INLINE AM_ErrorCode_t dmx_get_openned_dev(int dev_no, AM_DMX_Device_t **dev)
+static AM_INLINE AM_ErrorCode_t dmx_get_opened_dev(int dev_no, AM_DMX_Device_t **dev)
 {
-	AM_TRY(dmx_get_dev(dev_no, dev));
+    AM_TRY(dmx_get_dev(dev_no, dev));
 
-	if ((*dev)->open_count <= 0)
-	{
-		AM_DEBUG(1, "demux device %d has not been openned", dev_no);
-		return AM_DMX_ERR_INVALID_DEV_NO;
-	}
+    if ((*dev)->open_count <= 0)
+    {
+        ALOGD("demux device %d has not been opened", dev_no);
+        return AM_DMX_ERR_INVALID_DEV_NO;
+    }
 
-	return AM_SUCCESS;
+    return AM_SUCCESS;
 }
 
 /**\brief 根据ID取得对应filter结构，并检查设备是否在使用*/
 static AM_INLINE AM_ErrorCode_t dmx_get_used_filter(AM_DMX_Device_t *dev, int filter_id, AM_DMX_Filter_t **pf)
 {
-	AM_DMX_Filter_t *filter;
+    AM_DMX_Filter_t *filter;
 
-	if ((filter_id < 0) || (filter_id >= DMX_FILTER_COUNT))
-	{
-		AM_DEBUG(1, "invalid filter id, must in %d~%d", 0, DMX_FILTER_COUNT-1);
-		return AM_DMX_ERR_INVALID_ID;
-	}
+    if ((filter_id < 0) || (filter_id >= DMX_FILTER_COUNT))
+    {
+        ALOGD("invalid filter id, must in %d~%d", 0, DMX_FILTER_COUNT-1);
+        return AM_DMX_ERR_INVALID_ID;
+    }
 
-	filter = &dev->filters[filter_id];
+    filter = &dev->filters[filter_id];
 
-	if (!filter->used)
-	{
-		AM_DEBUG(1, "filter %d has not been allocated", filter_id);
-		return AM_DMX_ERR_NOT_ALLOCATED;
-	}
+    if (!filter->used)
+    {
+        ALOGD("filter %d has not been allocated", filter_id);
+        return AM_DMX_ERR_NOT_ALLOCATED;
+    }
 
-	*pf = filter;
-	return AM_SUCCESS;
+    *pf = filter;
+    return AM_SUCCESS;
 }
 
 /**\brief 数据检测线程*/
 static void* dmx_data_thread(void *arg)
 {
-	AM_DMX_Device_t *dev = (AM_DMX_Device_t*)arg;
-	uint8_t *sec_buf;
-	uint8_t *sec;
-	int sec_len;
-	AM_DMX_FilterMask_t mask;
-	AM_ErrorCode_t ret;
+    AM_DMX_Device_t *dev = (AM_DMX_Device_t*)arg;
+    uint8_t *sec_buf;
+    uint8_t *sec;
+    int sec_len;
+    AM_DMX_FilterMask_t mask;
+    AM_ErrorCode_t ret;
 
 #define BUF_SIZE (4096)
 
-	sec_buf = (uint8_t*)malloc(BUF_SIZE);
-	//for coverity
-	if (sec_buf) {
-		memset(sec_buf, 0, BUF_SIZE);
-	}
-	while (dev->enable_thread)
-	{
-		AM_DMX_FILTER_MASK_CLEAR(&mask);
-		uint32_t id;
+    sec_buf = (uint8_t*)malloc(BUF_SIZE);
+    //for coverity
+    if (sec_buf) {
+        memset(sec_buf, 0, BUF_SIZE);
+    }
+    while (dev->enable_thread)
+    {
+        AM_DMX_FILTER_MASK_CLEAR(&mask);
+        uint32_t id;
 
-		ret = dev->drv->poll(dev, &mask, DMX_POLL_TIMEOUT);
-		if (ret == AM_SUCCESS)
-		{
-			if (AM_DMX_FILTER_MASK_ISEMPTY(&mask))
-				continue;
+        ret = dev->drv->poll(dev, &mask, DMX_POLL_TIMEOUT);
+        if (ret == AM_SUCCESS)
+        {
+            if (AM_DMX_FILTER_MASK_ISEMPTY(&mask))
+                continue;
 
 #if defined(DMX_WAIT_CB) || defined(DMX_SYNC)
-			pthread_mutex_lock(&dev->lock);
-			dev->flags |= DMX_FL_RUN_CB;
-			pthread_mutex_unlock(&dev->lock);
+            pthread_mutex_lock(&dev->lock);
+            dev->flags |= DMX_FL_RUN_CB;
+            pthread_mutex_unlock(&dev->lock);
 #endif
 
-			for (id=0; id < DMX_FILTER_COUNT; id++)
-			{
-				AM_DMX_Filter_t *filter=&dev->filters[id];
-				AM_DMX_DataCb cb;
-				void *data;
+            for (id=0; id < DMX_FILTER_COUNT; id++)
+            {
+                AM_DMX_Filter_t *filter=&dev->filters[id];
+                AM_DMX_DataCb cb;
+                void *data;
 
-				if (!AM_DMX_FILTER_MASK_ISSET(&mask, id))
-					continue;
+                if (!AM_DMX_FILTER_MASK_ISSET(&mask, id))
+                    continue;
 
-				if (!filter->enable || !filter->used)
-					continue;
+                if (!filter->enable || !filter->used)
+                    continue;
 
-				sec_len = BUF_SIZE;
+                sec_len = BUF_SIZE;
 
 #ifndef DMX_WAIT_CB
-				pthread_mutex_lock(&dev->lock);
+                pthread_mutex_lock(&dev->lock);
 #endif
-				if (!filter->enable || !filter->used)
-				{
-					ret = AM_FAILURE;
-				}
-				else
-				{
-					cb   = filter->cb;
-					data = filter->user_data;
-					ret  = dev->drv->read(dev, filter, sec_buf, &sec_len);
-				}
+                if (!filter->enable || !filter->used)
+                {
+                    ret = AM_FAILURE;
+                }
+                else
+                {
+                    cb   = filter->cb;
+                    data = filter->user_data;
+                    ret  = dev->drv->read(dev, filter, sec_buf, &sec_len);
+                }
 #ifndef DMX_WAIT_CB
-				pthread_mutex_unlock(&dev->lock);
+                pthread_mutex_unlock(&dev->lock);
 #endif
-				if (ret == AM_DMX_ERR_TIMEOUT)
-				{
-					sec = NULL;
-					sec_len = 0;
-				}
-				else if (ret!=AM_SUCCESS)
-				{
-					continue;
-				}
-				else
-				{
-					sec = sec_buf;
-				}
+                if (ret == AM_DMX_ERR_TIMEOUT)
+                {
+                    sec = NULL;
+                    sec_len = 0;
+                }
+                else if (ret!=AM_SUCCESS)
+                {
+                    continue;
+                }
+                else
+                {
+                    sec = sec_buf;
+                }
 
-				if (cb)
-				{
-					if (id && sec)
-					AM_DEBUG(5, "filter %d data callback len fd:%ld len:%d, %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
-						id, (long)filter->drv_data, sec_len,
-						sec[0], sec[1], sec[2], sec[3], sec[4],
-						sec[5], sec[6], sec[7], sec[8], sec[9]);
-					cb(dev->dev_no, id, sec, sec_len, data);
-					if (id && sec)
-					AM_DEBUG(5, "filter %d data callback ok", id);
-				}
-			}
+                if (cb)
+                {
+                    if (id && sec)
+                    ALOGD("filter %d data callback len fd:%ld len:%d, %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
+                        id, (long)filter->drv_data, sec_len,
+                        sec[0], sec[1], sec[2], sec[3], sec[4],
+                        sec[5], sec[6], sec[7], sec[8], sec[9]);
+                    cb(dev->dev_no, id, sec, sec_len, data);
+                    if (id && sec)
+                    ALOGD("filter %d data callback ok", id);
+                }
+            }
 #if defined(DMX_WAIT_CB) || defined(DMX_SYNC)
-			pthread_mutex_lock(&dev->lock);
-			dev->flags &= ~DMX_FL_RUN_CB;
-			pthread_mutex_unlock(&dev->lock);
-			pthread_cond_broadcast(&dev->cond);
+            pthread_mutex_lock(&dev->lock);
+            dev->flags &= ~DMX_FL_RUN_CB;
+            pthread_mutex_unlock(&dev->lock);
+            pthread_cond_broadcast(&dev->cond);
 #endif
-		}
-		else
-		{
-			usleep(10000);
-		}
-	}
+        }
+        else
+        {
+            usleep(10000);
+        }
+    }
 
-	if (sec_buf)
-	{
-		free(sec_buf);
-	}
+    if (sec_buf)
+    {
+        free(sec_buf);
+    }
 
-	return NULL;
+    return NULL;
 }
 
 /**\brief 等待回调函数停止运行*/
 static AM_INLINE AM_ErrorCode_t dmx_wait_cb(AM_DMX_Device_t *dev)
 {
 #ifdef DMX_WAIT_CB
-	if (dev->thread != pthread_self())
-	{
-		while (dev->flags & DMX_FL_RUN_CB)
-			pthread_cond_wait(&dev->cond, &dev->lock);
-	}
+    if (dev->thread != pthread_self())
+    {
+        while (dev->flags & DMX_FL_RUN_CB)
+            pthread_cond_wait(&dev->cond, &dev->lock);
+    }
 #else
-	UNUSED(dev);
+    UNUSED(dev);
 #endif
-	return AM_SUCCESS;
+    return AM_SUCCESS;
 }
 
 /**\brief 停止Section过滤器*/
 static AM_ErrorCode_t dmx_stop_filter(AM_DMX_Device_t *dev, AM_DMX_Filter_t *filter)
 {
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	if (!filter->used || !filter->enable)
-	{
-		return ret;
-	}
+    if (!filter->used || !filter->enable)
+    {
+        return ret;
+    }
 
-	if (dev->drv->enable_filter)
-	{
-		ret = dev->drv->enable_filter(dev, filter, AM_FALSE);
-	}
+    if (dev->drv->enable_filter)
+    {
+        ret = dev->drv->enable_filter(dev, filter, AM_FALSE);
+    }
 
-	if (ret >= 0)
-	{
-		filter->enable = AM_FALSE;
-	}
+    if (ret >= 0)
+    {
+        filter->enable = AM_FALSE;
+    }
 
-	return ret;
+    return ret;
 }
 
 /**\brief 释放过滤器*/
 static int dmx_free_filter(AM_DMX_Device_t *dev, AM_DMX_Filter_t *filter)
 {
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	if (!filter->used)
-		return ret;
+    if (!filter->used)
+        return ret;
 
-	ret = dmx_stop_filter(dev, filter);
+    ret = dmx_stop_filter(dev, filter);
 
-	if (ret == AM_SUCCESS)
-	{
-		if (dev->drv->free_filter)
-		{
-			ret = dev->drv->free_filter(dev, filter);
-		}
-	}
+    if (ret == AM_SUCCESS)
+    {
+        if (dev->drv->free_filter)
+        {
+            ret = dev->drv->free_filter(dev, filter);
+        }
+    }
 
-	if (ret == AM_SUCCESS)
-	{
-		filter->used=AM_FALSE;
-	}
+    if (ret == AM_SUCCESS)
+    {
+        filter->used=AM_FALSE;
+    }
 
-	return ret;
+    return ret;
 }
 
 /****************************************************************************
@@ -335,62 +337,62 @@ static int dmx_free_filter(AM_DMX_Device_t *dev, AM_DMX_Filter_t *filter)
  */
 AM_ErrorCode_t AM_DMX_Open(int dev_no, const AM_DMX_OpenPara_t *para)
 {
-	AM_DMX_Device_t *dev;
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_DMX_Device_t *dev;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	assert(para);
+    assert(para);
 
-	AM_TRY(dmx_get_dev(dev_no, &dev));
+    AM_TRY(dmx_get_dev(dev_no, &dev));
 
-	pthread_mutex_lock(&am_gAdpLock);
+    pthread_mutex_lock(&am_gAdpLock);
 
-	if (dev->open_count > 0)
-	{
-		AM_DEBUG(1, "demux device %d has already been openned", dev_no);
-		dev->open_count++;
-		ret = AM_SUCCESS;
-		goto final;
-	}
+    if (dev->open_count > 0)
+    {
+        ALOGD("demux device %d has already been opened", dev_no);
+        dev->open_count++;
+        ret = AM_SUCCESS;
+        goto final;
+    }
 
-	dev->dev_no = dev_no;
+    dev->dev_no = dev_no;
 
-	/*if(para->use_sw_filter){
-		dev->drv = &SW_DMX_DRV;
-	}else{
-		dev->drv = &HW_DMX_DRV;
-	}*/
-	//default use hw dmx
-	dev->drv = &HW_DMX_DRV;
-	if (dev->drv->open)
-	{
-		ret = dev->drv->open(dev, para);
-	}
+    /*if(para->use_sw_filter){
+        dev->drv = &SW_DMX_DRV;
+    }else{
+        dev->drv = &HW_DMX_DRV;
+    }*/
+    //default use hw dmx
+    dev->drv = &HW_DMX_DRV;
+    if (dev->drv->open)
+    {
+        ret = dev->drv->open(dev, para);
+    }
 
-	if (ret == AM_SUCCESS)
-	{
-		pthread_mutex_init(&dev->lock, NULL);
-		pthread_cond_init(&dev->cond, NULL);
-		dev->enable_thread = AM_TRUE;
-		pthread_mutex_lock(&dev->lock);
-		dev->flags = 0;
-		pthread_mutex_unlock(&dev->lock);
+    if (ret == AM_SUCCESS)
+    {
+        pthread_mutex_init(&dev->lock, NULL);
+        pthread_cond_init(&dev->cond, NULL);
+        dev->enable_thread = AM_TRUE;
+        pthread_mutex_lock(&dev->lock);
+        dev->flags = 0;
+        pthread_mutex_unlock(&dev->lock);
 
-		if (pthread_create(&dev->thread, NULL, dmx_data_thread, dev))
-		{
-			pthread_mutex_destroy(&dev->lock);
-			pthread_cond_destroy(&dev->cond);
-			ret = AM_DMX_ERR_CANNOT_CREATE_THREAD;
-		}
-	}
+        if (pthread_create(&dev->thread, NULL, dmx_data_thread, dev))
+        {
+            pthread_mutex_destroy(&dev->lock);
+            pthread_cond_destroy(&dev->cond);
+            ret = AM_DMX_ERR_CANNOT_CREATE_THREAD;
+        }
+    }
 
-	if (ret == AM_SUCCESS)
-	{
-		dev->open_count = 1;
-	}
+    if (ret == AM_SUCCESS)
+    {
+        dev->open_count = 1;
+    }
 final:
-	pthread_mutex_unlock(&am_gAdpLock);
+    pthread_mutex_unlock(&am_gAdpLock);
 
-	return ret;
+    return ret;
 }
 
 /**\brief 关闭解复用设备
@@ -401,39 +403,39 @@ final:
  */
 AM_ErrorCode_t AM_DMX_Close(int dev_no)
 {
-	AM_DMX_Device_t *dev;
-	AM_ErrorCode_t ret = AM_SUCCESS;
-	int i;
+    AM_DMX_Device_t *dev;
+    AM_ErrorCode_t ret = AM_SUCCESS;
+    int i;
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	pthread_mutex_lock(&am_gAdpLock);
+    pthread_mutex_lock(&am_gAdpLock);
 
-	if (dev->open_count == 1)
-	{
-		dev->enable_thread = AM_FALSE;
-		if (dev->drv->wake)
-		{
-			dev->drv->wake(dev);
-		}
-		pthread_join(dev->thread, NULL);
-		for (i = 0; i < DMX_FILTER_COUNT; i++)
-		{
-			dmx_free_filter(dev, &dev->filters[i]);
-		}
+    if (dev->open_count == 1)
+    {
+        dev->enable_thread = AM_FALSE;
+        if (dev->drv->wake)
+        {
+            dev->drv->wake(dev);
+        }
+        pthread_join(dev->thread, NULL);
+        for (i = 0; i < DMX_FILTER_COUNT; i++)
+        {
+            dmx_free_filter(dev, &dev->filters[i]);
+        }
 
-		if (dev->drv->close)
-		{
-			dev->drv->close(dev);
-		}
-		pthread_mutex_destroy(&dev->lock);
-		pthread_cond_destroy(&dev->cond);
-	}
-	dev->open_count--;
+        if (dev->drv->close)
+        {
+            dev->drv->close(dev);
+        }
+        pthread_mutex_destroy(&dev->lock);
+        pthread_cond_destroy(&dev->cond);
+    }
+    dev->open_count--;
 
-	pthread_mutex_unlock(&am_gAdpLock);
+    pthread_mutex_unlock(&am_gAdpLock);
 
-	return ret;
+    return ret;
 }
 
 /**\brief 分配一个过滤器
@@ -445,50 +447,50 @@ AM_ErrorCode_t AM_DMX_Close(int dev_no)
  */
 AM_ErrorCode_t AM_DMX_AllocateFilter(int dev_no, int *fhandle)
 {
-	AM_DMX_Device_t *dev;
-	AM_ErrorCode_t ret = AM_SUCCESS;
-	int fid;
+    AM_DMX_Device_t *dev;
+    AM_ErrorCode_t ret = AM_SUCCESS;
+    int fid;
 
-	assert(fhandle);
+    assert(fhandle);
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	pthread_mutex_lock(&am_gHwDmxLock);
-	pthread_mutex_lock(&dev->lock);
+    pthread_mutex_lock(&am_gHwDmxLock);
+    pthread_mutex_lock(&dev->lock);
 
-	for (fid = 0; fid < DMX_FILTER_COUNT; fid++)
-	{
-		if (!dev->filters[fid].used)
-			break;
-	}
+    for (fid = 0; fid < DMX_FILTER_COUNT; fid++)
+    {
+        if (!dev->filters[fid].used)
+            break;
+    }
 
-	if (fid >= DMX_FILTER_COUNT)
-	{
-		AM_DEBUG(1, "no free section filter");
-		ret = AM_DMX_ERR_NO_FREE_FILTER;
-	}
+    if (fid >= DMX_FILTER_COUNT)
+    {
+        ALOGD("no free section filter");
+        ret = AM_DMX_ERR_NO_FREE_FILTER;
+    }
 
-	if (ret == AM_SUCCESS)
-	{
-		dmx_wait_cb(dev);
+    if (ret == AM_SUCCESS)
+    {
+        dmx_wait_cb(dev);
 
-		dev->filters[fid].id   = fid;
-		if (dev->drv->alloc_filter)
-		{
-			ret = dev->drv->alloc_filter(dev, &dev->filters[fid]);
-		}
-	}
+        dev->filters[fid].id   = fid;
+        if (dev->drv->alloc_filter)
+        {
+            ret = dev->drv->alloc_filter(dev, &dev->filters[fid]);
+        }
+    }
 
-	if (ret == AM_SUCCESS)
-	{
-		dev->filters[fid].used = AM_TRUE;
-		*fhandle = fid;
-	}
+    if (ret == AM_SUCCESS)
+    {
+        dev->filters[fid].used = AM_TRUE;
+        *fhandle = fid;
+    }
 
-	pthread_mutex_unlock(&dev->lock);
-	pthread_mutex_unlock(&am_gHwDmxLock);
+    pthread_mutex_unlock(&dev->lock);
+    pthread_mutex_unlock(&am_gHwDmxLock);
 
-	return ret;
+    return ret;
 }
 
 /**\brief 设定Section过滤器
@@ -501,50 +503,50 @@ AM_ErrorCode_t AM_DMX_AllocateFilter(int dev_no, int *fhandle)
  */
 AM_ErrorCode_t AM_DMX_SetSecFilter(int dev_no, int fhandle, const struct dmx_sct_filter_params *params)
 {
-	AM_DMX_Device_t *dev;
-	AM_DMX_Filter_t *filter;
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_DMX_Device_t *dev;
+    AM_DMX_Filter_t *filter;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	assert(params);
+    assert(params);
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	if (!dev->drv->set_sec_filter)
-	{
-		AM_DEBUG(1, "demux do not support set_sec_filter");
-		return AM_DMX_ERR_NOT_SUPPORTED;
-	}
+    if (!dev->drv->set_sec_filter)
+    {
+        ALOGD("demux do not support set_sec_filter");
+        return AM_DMX_ERR_NOT_SUPPORTED;
+    }
 
-	pthread_mutex_lock(&am_gHwDmxLock);
-	pthread_mutex_lock(&dev->lock);
+    pthread_mutex_lock(&am_gHwDmxLock);
+    pthread_mutex_lock(&dev->lock);
 
-	ret = dmx_get_used_filter(dev, fhandle, &filter);
+    ret = dmx_get_used_filter(dev, fhandle, &filter);
 
-	if (ret == AM_SUCCESS)
-	{
-		dmx_wait_cb(dev);
-		ret = dmx_stop_filter(dev, filter);
-	}
+    if (ret == AM_SUCCESS)
+    {
+        dmx_wait_cb(dev);
+        ret = dmx_stop_filter(dev, filter);
+    }
 
-	if (ret == AM_SUCCESS)
-	{
-		ret = dev->drv->set_sec_filter(dev, filter, params);
-		AM_DEBUG(5, "set sec filter %d PID: %d filter: %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x",
-				fhandle, params->pid,
-				params->filter.filter[0], params->filter.mask[0],
-				params->filter.filter[1], params->filter.mask[1],
-				params->filter.filter[2], params->filter.mask[2],
-				params->filter.filter[3], params->filter.mask[3],
-				params->filter.filter[4], params->filter.mask[4],
-				params->filter.filter[5], params->filter.mask[5],
-				params->filter.filter[6], params->filter.mask[6],
-				params->filter.filter[7], params->filter.mask[7]);
-	}
+    if (ret == AM_SUCCESS)
+    {
+        ret = dev->drv->set_sec_filter(dev, filter, params);
+        ALOGD("set sec filter %d PID: %d filter: %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x",
+                fhandle, params->pid,
+                params->filter.filter[0], params->filter.mask[0],
+                params->filter.filter[1], params->filter.mask[1],
+                params->filter.filter[2], params->filter.mask[2],
+                params->filter.filter[3], params->filter.mask[3],
+                params->filter.filter[4], params->filter.mask[4],
+                params->filter.filter[5], params->filter.mask[5],
+                params->filter.filter[6], params->filter.mask[6],
+                params->filter.filter[7], params->filter.mask[7]);
+    }
 
-	pthread_mutex_unlock(&dev->lock);
-	pthread_mutex_unlock(&am_gHwDmxLock);
+    pthread_mutex_unlock(&dev->lock);
+    pthread_mutex_unlock(&am_gHwDmxLock);
 
-	return ret;
+    return ret;
 }
 
 /**\brief 设定PES过滤器
@@ -557,41 +559,41 @@ AM_ErrorCode_t AM_DMX_SetSecFilter(int dev_no, int fhandle, const struct dmx_sct
  */
 AM_ErrorCode_t AM_DMX_SetPesFilter(int dev_no, int fhandle, const struct dmx_pes_filter_params *params)
 {
-	AM_DMX_Device_t *dev;
-	AM_DMX_Filter_t *filter;
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_DMX_Device_t *dev;
+    AM_DMX_Filter_t *filter;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	assert(params);
+    assert(params);
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	if (!dev->drv->set_pes_filter)
-	{
-		AM_DEBUG(1, "demux do not support set_pes_filter");
-		return AM_DMX_ERR_NOT_SUPPORTED;
-	}
+    if (!dev->drv->set_pes_filter)
+    {
+        ALOGD("demux do not support set_pes_filter");
+        return AM_DMX_ERR_NOT_SUPPORTED;
+    }
 
-	pthread_mutex_lock(&am_gHwDmxLock);
-	pthread_mutex_lock(&dev->lock);
+    pthread_mutex_lock(&am_gHwDmxLock);
+    pthread_mutex_lock(&dev->lock);
 
-	ret = dmx_get_used_filter(dev, fhandle, &filter);
+    ret = dmx_get_used_filter(dev, fhandle, &filter);
 
-	if (ret == AM_SUCCESS)
-	{
-		dmx_wait_cb(dev);
-		ret = dmx_stop_filter(dev, filter);
-	}
+    if (ret == AM_SUCCESS)
+    {
+        dmx_wait_cb(dev);
+        ret = dmx_stop_filter(dev, filter);
+    }
 
-	if (ret == AM_SUCCESS)
-	{
-		ret = dev->drv->set_pes_filter(dev, filter, params);
-		AM_DEBUG(2, "set pes filter %d PID %d flags %d", fhandle, params->pid, params->flags);
-	}
+    if (ret == AM_SUCCESS)
+    {
+        ret = dev->drv->set_pes_filter(dev, filter, params);
+        ALOGD("set pes filter %d PID %d flags %d", fhandle, params->pid, params->flags);
+    }
 
-	pthread_mutex_unlock(&dev->lock);
-	pthread_mutex_unlock(&am_gHwDmxLock);
+    pthread_mutex_unlock(&dev->lock);
+    pthread_mutex_unlock(&am_gHwDmxLock);
 
-	return ret;
+    return ret;
 }
 
 /**\brief 释放一个过滤器
@@ -603,27 +605,27 @@ AM_ErrorCode_t AM_DMX_SetPesFilter(int dev_no, int fhandle, const struct dmx_pes
  */
 AM_ErrorCode_t AM_DMX_FreeFilter(int dev_no, int fhandle)
 {
-	AM_DMX_Device_t *dev;
-	AM_DMX_Filter_t *filter;
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_DMX_Device_t *dev;
+    AM_DMX_Filter_t *filter;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	pthread_mutex_lock(&am_gHwDmxLock);
-	pthread_mutex_lock(&dev->lock);
+    pthread_mutex_lock(&am_gHwDmxLock);
+    pthread_mutex_lock(&dev->lock);
 
-	ret = dmx_get_used_filter(dev, fhandle, &filter);
+    ret = dmx_get_used_filter(dev, fhandle, &filter);
 
-	if (ret == AM_SUCCESS)
-	{
-		dmx_wait_cb(dev);
-		ret = dmx_free_filter(dev, filter);
-	}
+    if (ret == AM_SUCCESS)
+    {
+        dmx_wait_cb(dev);
+        ret = dmx_free_filter(dev, filter);
+    }
 
-	pthread_mutex_unlock(&dev->lock);
-	pthread_mutex_unlock(&am_gHwDmxLock);
+    pthread_mutex_unlock(&dev->lock);
+    pthread_mutex_unlock(&am_gHwDmxLock);
 
-	return ret;
+    return ret;
 }
 
 /**\brief 让一个过滤器开始运行
@@ -635,37 +637,37 @@ AM_ErrorCode_t AM_DMX_FreeFilter(int dev_no, int fhandle)
  */
 AM_ErrorCode_t AM_DMX_StartFilter(int dev_no, int fhandle)
 {
-	AM_DMX_Device_t *dev;
-	AM_DMX_Filter_t *filter = NULL;
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_DMX_Device_t *dev;
+    AM_DMX_Filter_t *filter = NULL;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	pthread_mutex_lock(&am_gHwDmxLock);
-	pthread_mutex_lock(&dev->lock);
+    pthread_mutex_lock(&am_gHwDmxLock);
+    pthread_mutex_lock(&dev->lock);
 
-	ret = dmx_get_used_filter(dev, fhandle, &filter);
+    ret = dmx_get_used_filter(dev, fhandle, &filter);
 
-	if (!filter->enable)
-	{
-		if (ret == AM_SUCCESS)
-		{
-			if (dev->drv->enable_filter)
-			{
-				ret = dev->drv->enable_filter(dev, filter, AM_TRUE);
-			}
-		}
+    if (!filter->enable)
+    {
+        if (ret == AM_SUCCESS)
+        {
+            if (dev->drv->enable_filter)
+            {
+                ret = dev->drv->enable_filter(dev, filter, AM_TRUE);
+            }
+        }
 
-		if (ret == AM_SUCCESS)
-		{
-			filter->enable = AM_TRUE;
-		}
-	}
+        if (ret == AM_SUCCESS)
+        {
+            filter->enable = AM_TRUE;
+        }
+    }
 
-	pthread_mutex_unlock(&dev->lock);
-	pthread_mutex_unlock(&am_gHwDmxLock);
+    pthread_mutex_unlock(&dev->lock);
+    pthread_mutex_unlock(&am_gHwDmxLock);
 
-	return ret;
+    return ret;
 }
 
 /**\brief 停止一个过滤器
@@ -677,30 +679,30 @@ AM_ErrorCode_t AM_DMX_StartFilter(int dev_no, int fhandle)
  */
 AM_ErrorCode_t AM_DMX_StopFilter(int dev_no, int fhandle)
 {
-	AM_DMX_Device_t *dev;
-	AM_DMX_Filter_t *filter = NULL;
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_DMX_Device_t *dev;
+    AM_DMX_Filter_t *filter = NULL;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	pthread_mutex_lock(&am_gHwDmxLock);
-	pthread_mutex_lock(&dev->lock);
+    pthread_mutex_lock(&am_gHwDmxLock);
+    pthread_mutex_lock(&dev->lock);
 
-	ret = dmx_get_used_filter(dev, fhandle, &filter);
+    ret = dmx_get_used_filter(dev, fhandle, &filter);
 
-	if (ret == AM_SUCCESS)
-	{
-		if (filter->enable)
-		{
-			dmx_wait_cb(dev);
-			ret = dmx_stop_filter(dev, filter);
-		}
-	}
+    if (ret == AM_SUCCESS)
+    {
+        if (filter->enable)
+        {
+            dmx_wait_cb(dev);
+            ret = dmx_stop_filter(dev, filter);
+        }
+    }
 
-	pthread_mutex_unlock(&dev->lock);
-	pthread_mutex_unlock(&am_gHwDmxLock);
+    pthread_mutex_unlock(&dev->lock);
+    pthread_mutex_unlock(&am_gHwDmxLock);
 
-	return ret;
+    return ret;
 }
 
 /**\brief 设置一个过滤器的缓冲区大小
@@ -713,31 +715,31 @@ AM_ErrorCode_t AM_DMX_StopFilter(int dev_no, int fhandle)
  */
 AM_ErrorCode_t AM_DMX_SetBufferSize(int dev_no, int fhandle, int size)
 {
-	AM_DMX_Device_t *dev;
-	AM_DMX_Filter_t *filter;
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_DMX_Device_t *dev;
+    AM_DMX_Filter_t *filter;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	pthread_mutex_lock(&am_gHwDmxLock);
-	pthread_mutex_lock(&dev->lock);
+    pthread_mutex_lock(&am_gHwDmxLock);
+    pthread_mutex_lock(&dev->lock);
 
-	if (!dev->drv->set_buf_size)
-	{
-		AM_DEBUG(1, "do not support set_buf_size");
-		ret = AM_DMX_ERR_NOT_SUPPORTED;
-	}
+    if (!dev->drv->set_buf_size)
+    {
+        ALOGD("do not support set_buf_size");
+        ret = AM_DMX_ERR_NOT_SUPPORTED;
+    }
 
-	if (ret == AM_SUCCESS)
-		ret = dmx_get_used_filter(dev, fhandle, &filter);
+    if (ret == AM_SUCCESS)
+        ret = dmx_get_used_filter(dev, fhandle, &filter);
 
-	if (ret == AM_SUCCESS)
-		ret = dev->drv->set_buf_size(dev, filter, size);
+    if (ret == AM_SUCCESS)
+        ret = dev->drv->set_buf_size(dev, filter, size);
 
-	pthread_mutex_unlock(&dev->lock);
-	pthread_mutex_unlock(&am_gHwDmxLock);
+    pthread_mutex_unlock(&dev->lock);
+    pthread_mutex_unlock(&am_gHwDmxLock);
 
-	return ret;
+    return ret;
 }
 
 /**\brief 取得一个过滤器对应的回调函数和用户参数
@@ -751,28 +753,28 @@ AM_ErrorCode_t AM_DMX_SetBufferSize(int dev_no, int fhandle, int size)
  */
 AM_ErrorCode_t AM_DMX_GetCallback(int dev_no, int fhandle, AM_DMX_DataCb *cb, void **data)
 {
-	AM_DMX_Device_t *dev;
-	AM_DMX_Filter_t *filter;
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_DMX_Device_t *dev;
+    AM_DMX_Filter_t *filter;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	pthread_mutex_lock(&dev->lock);
+    pthread_mutex_lock(&dev->lock);
 
-	ret = dmx_get_used_filter(dev, fhandle, &filter);
+    ret = dmx_get_used_filter(dev, fhandle, &filter);
 
-	if (ret == AM_SUCCESS)
-	{
-		if (cb)
-			*cb = filter->cb;
+    if (ret == AM_SUCCESS)
+    {
+        if (cb)
+            *cb = filter->cb;
 
-		if (data)
-			*data = filter->user_data;
-	}
+        if (data)
+            *data = filter->user_data;
+    }
 
-	pthread_mutex_unlock(&dev->lock);
+    pthread_mutex_unlock(&dev->lock);
 
-	return ret;
+    return ret;
 }
 
 /**\brief 设置一个过滤器对应的回调函数和用户参数
@@ -786,27 +788,27 @@ AM_ErrorCode_t AM_DMX_GetCallback(int dev_no, int fhandle, AM_DMX_DataCb *cb, vo
  */
 AM_ErrorCode_t AM_DMX_SetCallback(int dev_no, int fhandle, AM_DMX_DataCb cb, void *data)
 {
-	AM_DMX_Device_t *dev;
-	AM_DMX_Filter_t *filter;
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_DMX_Device_t *dev;
+    AM_DMX_Filter_t *filter;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	pthread_mutex_lock(&dev->lock);
+    pthread_mutex_lock(&dev->lock);
 
-	ret = dmx_get_used_filter(dev, fhandle, &filter);
+    ret = dmx_get_used_filter(dev, fhandle, &filter);
 
-	if (ret == AM_SUCCESS)
-	{
-		dmx_wait_cb(dev);
+    if (ret == AM_SUCCESS)
+    {
+        dmx_wait_cb(dev);
 
-		filter->cb = cb;
-		filter->user_data = data;
-	}
+        filter->cb = cb;
+        filter->user_data = data;
+    }
 
-	pthread_mutex_unlock(&dev->lock);
+    pthread_mutex_unlock(&dev->lock);
 
-	return ret;
+    return ret;
 }
 
 /**\brief 设置解复用设备的输入源
@@ -818,33 +820,33 @@ AM_ErrorCode_t AM_DMX_SetCallback(int dev_no, int fhandle, AM_DMX_DataCb cb, voi
  */
 AM_ErrorCode_t AM_DMX_SetSource(int dev_no, AM_DMX_Source_t src)
 {
-	AM_DMX_Device_t *dev;
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_DMX_Device_t *dev;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	pthread_mutex_lock(&dev->lock);
-	if (!dev->drv->set_source)
-	{
-		AM_DEBUG(1, "do not support set_source");
-		ret = AM_DMX_ERR_NOT_SUPPORTED;
-	}
+    pthread_mutex_lock(&dev->lock);
+    if (!dev->drv->set_source)
+    {
+        ALOGD("do not support set_source");
+        ret = AM_DMX_ERR_NOT_SUPPORTED;
+    }
 
-	if (ret == AM_SUCCESS)
-	{
-		ret = dev->drv->set_source(dev, src);
-	}
+    if (ret == AM_SUCCESS)
+    {
+        ret = dev->drv->set_source(dev, src);
+    }
 
-	pthread_mutex_unlock(&dev->lock);
+    pthread_mutex_unlock(&dev->lock);
 
-	if (ret == AM_SUCCESS)
-	{
-		pthread_mutex_lock(&am_gAdpLock);
-		dev->src = src;
-		pthread_mutex_unlock(&am_gAdpLock);
-	}
+    if (ret == AM_SUCCESS)
+    {
+        pthread_mutex_lock(&am_gAdpLock);
+        dev->src = src;
+        pthread_mutex_unlock(&am_gAdpLock);
+    }
 
-	return ret;
+    return ret;
 }
 
 /**\brief DMX同步，可用于等待回调函数执行完毕
@@ -855,55 +857,55 @@ AM_ErrorCode_t AM_DMX_SetSource(int dev_no, AM_DMX_Source_t src)
  */
 AM_ErrorCode_t AM_DMX_Sync(int dev_no)
 {
-	AM_DMX_Device_t *dev;
-	AM_ErrorCode_t ret = AM_SUCCESS;
+    AM_DMX_Device_t *dev;
+    AM_ErrorCode_t ret = AM_SUCCESS;
 
-	AM_TRY(dmx_get_openned_dev(dev_no, &dev));
+    AM_TRY(dmx_get_opened_dev(dev_no, &dev));
 
-	pthread_mutex_lock(&dev->lock);
-	if (dev->thread != pthread_self())
-	{
-		while (dev->flags & DMX_FL_RUN_CB)
-			pthread_cond_wait(&dev->cond, &dev->lock);
-	}
-	pthread_mutex_unlock(&dev->lock);
+    pthread_mutex_lock(&dev->lock);
+    if (dev->thread != pthread_self())
+    {
+        while (dev->flags & DMX_FL_RUN_CB)
+            pthread_cond_wait(&dev->cond, &dev->lock);
+    }
+    pthread_mutex_unlock(&dev->lock);
 
-	return ret;
+    return ret;
 }
 
 AM_ErrorCode_t AM_DMX_GetScrambleStatus(int dev_no, AM_Bool_t dev_status[2])
 {
-	char buf[32];
-	char class_file[64];
-	int vflag, aflag;
-	int i;
+    char buf[32];
+    char class_file[64];
+    int vflag, aflag;
+    int i;
 
-	dev_status[0] = dev_status[1] = AM_FALSE;
-	snprintf(class_file,sizeof(class_file), "/sys/class/dmx/demux%d_scramble", dev_no);
-	for (i = 0; i < 5; i++)
-	{
-		if (AM_FileRead(class_file, buf, sizeof(buf)) == AM_SUCCESS)
-		{
-			sscanf(buf,"%d %d", &vflag, &aflag);
-			if (!dev_status[0])
-				dev_status[0] = vflag ? AM_TRUE : AM_FALSE;
-			if (!dev_status[1])
-				dev_status[1] = aflag ? AM_TRUE : AM_FALSE;
-			//AM_DEBUG(1, "AM_DMX_GetScrambleStatus video scamble %d, audio scamble %d\n", vflag, aflag);
-			if (dev_status[0] && dev_status[1])
-			{
-				return AM_SUCCESS;
-			}
-			usleep(10*1000);
-		}
-		else
-		{
-			AM_DEBUG(1, "AM_DMX_GetScrambleStatus read scamble status failed\n");
-			return AM_FAILURE;
-		}
-	}
+    dev_status[0] = dev_status[1] = AM_FALSE;
+    snprintf(class_file,sizeof(class_file), "/sys/class/dmx/demux%d_scramble", dev_no);
+    for (i = 0; i < 5; i++)
+    {
+        if (AM_FileRead(class_file, buf, sizeof(buf)) == AM_SUCCESS)
+        {
+            sscanf(buf,"%d %d", &vflag, &aflag);
+            if (!dev_status[0])
+                dev_status[0] = vflag ? AM_TRUE : AM_FALSE;
+            if (!dev_status[1])
+                dev_status[1] = aflag ? AM_TRUE : AM_FALSE;
+            //ALOGD("AM_DMX_GetScrambleStatus video scramble %d, audio scramble %d\n", vflag, aflag);
+            if (dev_status[0] && dev_status[1])
+            {
+                return AM_SUCCESS;
+            }
+            usleep(10*1000);
+        }
+        else
+        {
+            ALOGD("AM_DMX_GetScrambleStatus read scramble status failed\n");
+            return AM_FAILURE;
+        }
+    }
 
-	return AM_SUCCESS;
+    return AM_SUCCESS;
 }
 
 

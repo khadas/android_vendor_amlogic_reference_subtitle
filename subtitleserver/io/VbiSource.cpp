@@ -11,18 +11,15 @@
 #include <sys/stat.h>
 #include <sys/poll.h>
 #include <sys/ioctl.h>
-
 #include <string>
 #include <utils/Log.h>
 #include <utils/CallStack.h>
+#include <pthread.h>
+
 #include "VbiSource.h"
 #include "tvin_vbi.h"
 
-
-#include <pthread.h>
-
 #define ATV_TELETEXT_SUB_HEADER_LEN 9
-
 
 static const std::string VBI_DEV_FILE = "/dev/vbi";
 static const std::string SYSFS_VIDEO_PTS = "/sys/class/tsync/pts_video";

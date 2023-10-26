@@ -32,11 +32,11 @@ extern "C"
 /**\brief PES parser module's error code*/
 enum AM_PES_ErrorCode
 {
-	AM_PES_ERROR_BASE=AM_ERROR_BASE(AM_MOD_PES),
-	AM_PES_ERR_INVALID_PARAM,   /**< Invalid parameter*/
-	AM_PES_ERR_INVALID_HANDLE,  /**< Invalid handle*/
-	AM_PES_ERR_NO_MEM,          /**< Not enough memory*/
-	AM_PES_ERR_END
+    AM_PES_ERROR_BASE=AM_ERROR_BASE(AM_MOD_PES),
+    AM_PES_ERR_INVALID_PARAM,   /**< Invalid parameter*/
+    AM_PES_ERR_INVALID_HANDLE,  /**< Invalid handle*/
+    AM_PES_ERR_NO_MEM,          /**< Not enough memory*/
+    AM_PES_ERR_END
 };
 
 /**\brief PES parser handle*/
@@ -52,10 +52,10 @@ typedef void (*AM_PES_PacketCb_t)(AM_PES_Handle_t handle, uint8_t *buf, int size
 /**\brief PES parser parameters*/
 typedef struct
 {
-	AM_PES_PacketCb_t packet;       /**< PES packet callback function*/
-	AM_Bool_t         payload_only; /**< Only read PES payload*/
-	void             *user_data;    /**< User defined data*/
-	int				  afmt;			/**< audio fmt*/
+    AM_PES_PacketCb_t packet;       /**< PES packet callback function*/
+    AM_Bool_t         payload_only; /**< Only read PES payload*/
+    void             *user_data;    /**< User defined data*/
+    int               afmt;         /**< audio fmt*/
 }AM_PES_Para_t;
 
 /**\brief Create a new PES parser

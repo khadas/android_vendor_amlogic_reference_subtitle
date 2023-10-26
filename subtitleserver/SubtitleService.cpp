@@ -1,14 +1,12 @@
 #define LOG_TAG "SubtitleService"
 
 #include <stdlib.h>
+
 #include <utils/Log.h>
 #include <utils/CallStack.h>
+
 #include "SocketServer.h"
 #include "DataSourceFactory.h"
-
-
-//#include "AndroidDisplay.h"
-
 #include "SubtitleService.h"
 
 

@@ -1,11 +1,11 @@
 #ifndef _SUBTITLE_CLIENT_PRIVATE_H_
 #define _SUBTITLE_CLIENT_PRIVATE_H_
 
+#include <media/stagefright/foundation/ADebug.h>
+
+#include "ClientAdapter.h"
 #include "SubtitleClient.h"
 #include "subtitleServerHidlClient/SubtitleServerHidlClient.h"
-#include <media/stagefright/foundation/ADebug.h>
-#include "ClientAdapter.h"
-
 #include "SubtitleReportAPI.h"
 
 using namespace android;

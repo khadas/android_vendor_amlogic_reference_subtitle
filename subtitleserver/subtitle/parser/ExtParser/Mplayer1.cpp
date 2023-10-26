@@ -3,8 +3,6 @@
 #include "Mplayer1.h"
 #include <utils/Log.h>
 
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 Mplayer1::Mplayer1(std::shared_ptr<DataSource> source): TextSubtitle(source) {
     // default rate
@@ -17,12 +15,12 @@ Mplayer1::~Mplayer1() {
 std::shared_ptr<ExtSubItem> Mplayer1::decodedItem() {
     char *line = (char *)MALLOC(LINE_LEN+1);
     if (!line) {
-        LOGE("[%s::%d] line malloc error!\n", __FUNCTION__, __LINE__);
+        ALOGE("[%s::%d] line malloc error!\n", __FUNCTION__, __LINE__);
         return nullptr;
     }
     char *line2 = (char *)MALLOC(LINE_LEN);
     if (!line2) {
-        LOGE("[%s::%d] line2 malloc error!\n", __FUNCTION__, __LINE__);
+        ALOGE("[%s::%d] line2 malloc error!\n", __FUNCTION__, __LINE__);
         free(line);
         return nullptr;
     }

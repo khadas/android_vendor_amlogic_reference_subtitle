@@ -1,20 +1,17 @@
-#define LOG_NDEBUG 0
 #define LOG_TAG "SubtitleNativeAPI"
-#include <utils/Log.h>
-#include <utils/CallStack.h>
+
 #include <mutex>
 #include <utils/RefBase.h>
-
 #include <fmq/EventFlag.h>
 #include <fmq/MessageQueue.h>
+
+#include <utils/Log.h>
+#include <utils/CallStack.h>
+
 #include <vendor/amlogic/hardware/subtitleserver/1.0/ISubtitleServer.h>
-
-
 #include "SubtitleNativeAPI.h"
 #include "SubtitleServerClient.h"
 
-#define DEBUG_CALL 0
-#define DEBUG_SESSION 0
 #define INVALID_PIP_ID -1
 
 using ::android::CallStack;
@@ -44,7 +41,7 @@ static AmlSubDataType __mapServerType2ApiType(int type) {
 }
 
 static int __mapApiType2SubtitleType(int type) {
-    if (DEBUG_CALL) ALOGD("call>> %s [stype:%d]", __func__, type);
+    ALOGD("call>> %s [stype:%d]", __func__, type);
     switch (type) {
     case TYPE_SUBTITLE_DVB:
         return DTV_SUB_DTVKIT_DVB;
@@ -151,12 +148,12 @@ private:
 class SubtitleContext : public android::RefBase {
 public:
     SubtitleContext() {
-        if (DEBUG_CALL) ALOGD("call>> %s [%p]", __func__, this);
+        ALOGD("call>> %s [%p]", __func__, this);
         mClient = nullptr;
     }
 
     ~SubtitleContext() {
-        if (DEBUG_CALL) ALOGD("call>> %s [%p]", __func__, this);
+        ALOGD("call>> %s [%p]", __func__, this);
     }
 
     amlogic::SubtitleServerClient *mClient;
@@ -172,7 +169,7 @@ static bool __pushContext(sp<SubtitleContext> ctx) {
     auto it = gAvailContextMap.begin();
     it = gAvailContextMap.insert (it , ctx);
 
-    if (DEBUG_SESSION) ALOGD("%s>> ctx:%p MapSize=%d", __func__, ctx.get(), gAvailContextMap.size());
+    ALOGD("%s>> ctx:%p MapSize=%d", __func__, ctx.get(), gAvailContextMap.size());
 
     return *it != nullptr;
 }
@@ -180,7 +177,7 @@ static bool __pushContext(sp<SubtitleContext> ctx) {
 static bool __checkInContextMap(SubtitleContext *ctx) {
     android::Mutex::Autolock autoLock(gContextMapLock);
     for (auto it=gAvailContextMap.begin(); it<gAvailContextMap.end(); it++) {
-        if (DEBUG_SESSION) ALOGD("%s>> search ctx:%p current:%p MapSize=%d",
+        ALOGD("%s>> search ctx:%p current:%p MapSize=%d",
                 __func__, ctx, (*it).get(), gAvailContextMap.size());
 
         if (ctx == (*it).get()) {
@@ -195,7 +192,7 @@ static bool __eraseFromContext(SubtitleContext *ctx) {
     android::Mutex::Autolock autoLock(gContextMapLock);
     for (auto it=gAvailContextMap.begin(); it<gAvailContextMap.end(); it++) {
 
-        if (DEBUG_SESSION) ALOGD("%s>> search ctx:%p current:%p MapSize=%d",
+        ALOGD("%s>> search ctx:%p current:%p MapSize=%d",
                 __func__, ctx, (*it).get(), gAvailContextMap.size());
 
         if (ctx == (*it).get()) {
@@ -211,7 +208,7 @@ static bool __eraseFromContext(SubtitleContext *ctx) {
 
 
 AmlSubtitleHnd amlsub_Create() {
-    if (DEBUG_CALL) ALOGD("call>> %s", __func__);
+    ALOGD("call>> %s", __func__);
     sp<SubtitleContext> ctx = new SubtitleContext();
     sp<MyAdaptorListener> listener = new MyAdaptorListener();
 
@@ -226,7 +223,7 @@ AmlSubtitleHnd amlsub_Create() {
 AmlSubtitleStatus amlsub_Destroy(AmlSubtitleHnd handle) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
 
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
 
     if (ctx == nullptr) {
         return SUB_STAT_INV;
@@ -257,7 +254,7 @@ AmlSubtitleStatus amlsub_Destroy(AmlSubtitleHnd handle) {
  *   path: the subtitle external file path.
  */
 AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         ALOGE("Error! invalid handle, uninitialized?");
@@ -287,7 +284,7 @@ AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
 
     // TODO: CTC always use amstream. later we may all change to hwdemux
     // From middleware, the extSubPath should always null.
-    if (DEBUG_CALL) ALOGD("call>> %s demuxId[%d] ioSource[%d]", __func__, param->dmxId, param->ioSource);
+    ALOGD("call>> %s demuxId[%d] ioSource[%d]", __func__, param->dmxId, param->ioSource);
     int ioType = -1;
     if (param->dmxId >= 0) {
         ioType = (param->dmxId << 16 | param->ioSource);
@@ -305,7 +302,7 @@ AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
 }
 
 AmlSubtitleStatus amlsub_Close(AmlSubtitleHnd handle) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
@@ -322,7 +319,7 @@ AmlSubtitleStatus amlsub_Close(AmlSubtitleHnd handle) {
  * reset current play, most used for seek.
  */
 AmlSubtitleStatus amlsub_Reset(AmlSubtitleHnd handle) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
@@ -339,7 +336,7 @@ AmlSubtitleStatus amlsub_Reset(AmlSubtitleHnd handle) {
 ////////////////////////////////////////////////////////////
 
 AmlSubtitleStatus amlsub_SetParameter(AmlSubtitleHnd handle, AmlSubtitleParamCmd cmd, void *value, int paramSize) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
@@ -352,12 +349,12 @@ AmlSubtitleStatus amlsub_SetParameter(AmlSubtitleHnd handle, AmlSubtitleParamCmd
 }
 
 int amlsub_GetParameter(AmlSubtitleHnd handle, AmlSubtitleParamCmd cmd, void *value) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     return 0;
 }
 
 AmlSubtitleStatus amlsub_SetPip(AmlSubtitleHnd handle, AmlSubtitlePipMode mode, int value) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     if (value == INVALID_PIP_ID) return SUB_STAT_INV;
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
@@ -373,7 +370,7 @@ AmlSubtitleStatus amlsub_SetPip(AmlSubtitleHnd handle, AmlSubtitlePipMode mode, 
 }
 
 AmlSubtitleStatus amlsub_TeletextControl(AmlSubtitleHnd handle, AmlTeletextCtrlParam *param) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr || param == nullptr) {
         return SUB_STAT_INV;
@@ -388,7 +385,7 @@ AmlSubtitleStatus amlsub_TeletextControl(AmlSubtitleHnd handle, AmlTeletextCtrlP
 }
 
 AmlSubtitleStatus amlsub_SelectCcChannel(AmlSubtitleHnd handle, int ch) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p] ch:%d", __func__, handle, ch);
+    ALOGD("call>> %s handle[%p] ch:%d", __func__, handle, ch);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr || ch < 0) {
         return SUB_STAT_INV;
@@ -408,7 +405,7 @@ AmlSubtitleStatus amlsub_SelectCcChannel(AmlSubtitleHnd handle, int ch) {
 ////// Regist callbacks for subtitle Event and data ////////
 ////////////////////////////////////////////////////////////
 AmlSubtitleStatus amlsub_RegistOnDataCB(AmlSubtitleHnd handle, AmlSubtitleDataCb listener) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
@@ -424,7 +421,7 @@ AmlSubtitleStatus amlsub_RegistOnDataCB(AmlSubtitleHnd handle, AmlSubtitleDataCb
 }
 
 AmlSubtitleStatus amlsub_RegistOnChannelUpdateCb(AmlSubtitleHnd handle, AmlChannelUpdateCb listener) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
@@ -438,7 +435,7 @@ AmlSubtitleStatus amlsub_RegistOnChannelUpdateCb(AmlSubtitleHnd handle, AmlChann
 }
 
 AmlSubtitleStatus amlsub_RegistOnSubtitleAvailCb(AmlSubtitleHnd handle, AmlSubtitleAvailCb listener) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
@@ -452,7 +449,7 @@ AmlSubtitleStatus amlsub_RegistOnSubtitleAvailCb(AmlSubtitleHnd handle, AmlSubti
 }
 
 AmlSubtitleStatus amlsub_RegistAfdEventCB(AmlSubtitleHnd handle, AmlAfdEventCb listener) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
@@ -466,7 +463,7 @@ AmlSubtitleStatus amlsub_RegistAfdEventCB(AmlSubtitleHnd handle, AmlAfdEventCb l
 }
 
 AmlSubtitleStatus amlsub_RegistGetDimensionCb(AmlSubtitleHnd handle, AmlSubtitleDimensionCb listener) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
@@ -480,7 +477,7 @@ AmlSubtitleStatus amlsub_RegistGetDimensionCb(AmlSubtitleHnd handle, AmlSubtitle
 }
 
 AmlSubtitleStatus amlsub_RegistOnSubtitleLanguageCb(AmlSubtitleHnd handle, AmlSubtitleLanguageCb listener) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
@@ -494,7 +491,7 @@ AmlSubtitleStatus amlsub_RegistOnSubtitleLanguageCb(AmlSubtitleHnd handle, AmlSu
 }
 
 AmlSubtitleStatus amlsub_RegistOnSubtitleInfoCB(AmlSubtitleHnd handle, AmlSubtitleInfoCb listener) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
@@ -511,7 +508,7 @@ AmlSubtitleStatus amlsub_RegistOnSubtitleInfoCB(AmlSubtitleHnd handle, AmlSubtit
 
 
 AmlSubtitleStatus amlsub_UiShow(AmlSubtitleHnd handle) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
@@ -526,7 +523,7 @@ AmlSubtitleStatus amlsub_UiShow(AmlSubtitleHnd handle) {
 }
 
 AmlSubtitleStatus amlsub_UiHide(AmlSubtitleHnd handle) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
@@ -542,7 +539,7 @@ AmlSubtitleStatus amlsub_UiHide(AmlSubtitleHnd handle) {
 
 /* Only available for text subtitle */
 AmlSubtitleStatus amlsub_UiSetTextColor(AmlSubtitleHnd handle, int color) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
@@ -556,7 +553,7 @@ AmlSubtitleStatus amlsub_UiSetTextColor(AmlSubtitleHnd handle, int color) {
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 AmlSubtitleStatus amlsub_UiSetTextSize(AmlSubtitleHnd handle, int sp) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
@@ -570,7 +567,7 @@ AmlSubtitleStatus amlsub_UiSetTextSize(AmlSubtitleHnd handle, int sp) {
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 AmlSubtitleStatus amlsub_UiSetGravity(AmlSubtitleHnd handle, int gravity) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
@@ -584,7 +581,7 @@ AmlSubtitleStatus amlsub_UiSetGravity(AmlSubtitleHnd handle, int gravity) {
 }
 
 AmlSubtitleStatus amlsub_UiSetPosHeight(AmlSubtitleHnd handle, int yOffset) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
@@ -599,7 +596,7 @@ AmlSubtitleStatus amlsub_UiSetPosHeight(AmlSubtitleHnd handle, int yOffset) {
 }
 
 AmlSubtitleStatus amlsub_UiSetImgRatio(AmlSubtitleHnd handle, float ratioW, float ratioH, int maxW, int maxH) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
@@ -614,7 +611,7 @@ AmlSubtitleStatus amlsub_UiSetImgRatio(AmlSubtitleHnd handle, float ratioW, floa
 }
 
 AmlSubtitleStatus amlsub_UiSetSurfaceViewRect(AmlSubtitleHnd handle, int x, int y, int width, int height) {
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
@@ -630,7 +627,7 @@ AmlSubtitleStatus amlsub_UiSetSurfaceViewRect(AmlSubtitleHnd handle, int x, int 
 
 AmlSubtitleStatus amlsub_UpdateVideoPos(AmlSubtitleHnd handle, int64_t pos) {
 
-    if (DEBUG_CALL) ALOGD("call>> %s handle[%p]", __func__, handle);
+    ALOGD("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;

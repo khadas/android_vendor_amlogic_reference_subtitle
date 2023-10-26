@@ -17,9 +17,6 @@
 #include "ParserFactory.h"
 
 #include "streamUtils.h"
-#define LOGI ALOGI
-#define LOGD ALOGD
-#define LOGE ALOGE
 #define MIN_HEADER_DATA_SIZE 24
 
 static inline std::string stringConvert2Stream(std::string s1, std::string s2) {
@@ -223,7 +220,7 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
 
     // Got enough data (MIN_HEADER_DATA_SIZE bytes), then start parse
     while (dataSize >= MIN_HEADER_DATA_SIZE) {
-        LOGI("dataSize =%u  mRestLen=%d,", dataSize, mRestLen);
+        ALOGI("dataSize =%u  mRestLen=%d,", dataSize, mRestLen);
 
         char *tmpSpuBuffer = spuBuf;
         char *spuBufPiece = tmpSpuBuffer;
@@ -240,19 +237,19 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
         int syncWord = subPeekAsInt32(spuBufPiece + rdOffset);
         rdOffset += 4;
         if (syncWord != AML_PARSER_SYNC_WORD) {
-            LOGE("\n wrong subtitle header :%x %x %x %x    %x %x %x %x    %x %x %x %x \n",
+            ALOGE("\n wrong subtitle header :%x %x %x %x    %x %x %x %x    %x %x %x %x \n",
                     spuBufPiece[0], spuBufPiece[1], spuBufPiece[2], spuBufPiece[3],
                     spuBufPiece[4], spuBufPiece[5], spuBufPiece[6], spuBufPiece[7],
                     spuBufPiece[8], spuBufPiece[9], spuBufPiece[10], spuBufPiece[11]);
             mDataSource->read(spuBufPiece, dataSize);
             //dataSize = 0;
-            LOGE("\n\n ******* find wrong subtitle header!! ******\n\n");
+            ALOGE("\n\n ******* find wrong subtitle header!! ******\n\n");
             delete[] spuBuf;
             return -1;
 
         }
 
-        LOGI("\n\n ******* find correct subtitle header ******\n\n");
+        ALOGI("\n\n ******* find correct subtitle header ******\n\n");
         // ignore first sync byte: 0xAA/0x77
         currentType = subPeekAsInt32(spuBufPiece + rdOffset) & 0x00FFFFFF;
         rdOffset += 4;
@@ -260,10 +257,10 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
         rdOffset += 4;
         currentPts = subPeekAsInt64(spuBufPiece + rdOffset);
         rdOffset += 8;
-        LOGI("dataSize=%u, currentType:%x, currentPts is %llx, currentLen is %d, \n",
+        ALOGI("dataSize=%u, currentType:%x, currentPts is %llx, currentLen is %d, \n",
                 dataSize, currentType, currentPts, currentLen);
         if (currentLen > dataSize) {
-            LOGI("currentLen > size");
+            ALOGI("currentLen > size");
             mDataSource->read(spuBufPiece, dataSize);
             //dataSize = 0;
             delete[] spuBuf;
@@ -276,7 +273,7 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
             mRestLen = dataSize;
             dataSize = 0;
             tmpSpuBuffer += currentLen;
-            LOGI("currentType=0x17000 or 0x1700a! mRestLen=%d, dataSize=%d,\n", mRestLen, dataSize);
+            ALOGI("currentType=0x17000 or 0x1700a! mRestLen=%d, dataSize=%d,\n", mRestLen, dataSize);
         } else {
             mDataSource->read(spuBufPiece + 20, currentLen + 4);
             dataSize -= (currentLen + 4);
@@ -290,7 +287,7 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
                 durationPts = subPeekAsInt32(spuBufPiece + rdOffset);
                 rdOffset += 4;
                 mRestLen -= 4;
-                LOGI("durationPts is %d\n", durationPts);
+                ALOGI("durationPts is %d\n", durationPts);
                 break;
 
             case AV_CODEC_ID_TEXT:   //mkv internel utf-8
@@ -312,7 +309,7 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
                 memcpy(spu->spu_data, spuBufPiece + rdOffset, currentLen);
                 if (currentType == AV_CODEC_ID_SSA || currentType == AV_CODEC_ID_ASS) {
                     ret = __getAssSpu(spu->spu_data, spu->buffer_size, spu);
-                    LOGI("CODEC_ID_SSA  size is:%u ,data is:%s, currentLen=%d\n",
+                    ALOGI("CODEC_ID_SSA  size is:%u ,data is:%s, currentLen=%d\n",
                              spu->buffer_size, spu->spu_data, currentLen);
                 } else {
                     ret = 0;
@@ -338,7 +335,7 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
                     break;
                 }
                 memcpy(spu->spu_data, spuBufPiece + rdOffset, currentLen);
-                LOGI("CODEC_ID_TIME_TEXT   size is:    %u ,data is:    %s, currentLen=%d\n",
+                ALOGI("CODEC_ID_TIME_TEXT   size is:    %u ,data is:    %s, currentLen=%d\n",
                         spu->buffer_size, spu->spu_data, currentLen);
                 ret = 0;
                 break;
@@ -360,7 +357,7 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
          break;
     }
 
-    //LOGI("[%s::%d] error! spuBuf=%x, \n", __FUNCTION__, __LINE__, spuBuf);
+    //ALOGI("[%s::%d] error! spuBuf=%x, \n", __FUNCTION__, __LINE__, spuBuf);
     if (spuBuf) {
         delete[] spuBuf;
         //spuBuf = NULL;

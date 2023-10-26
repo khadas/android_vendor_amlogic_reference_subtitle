@@ -20,18 +20,9 @@
 #include "aribcaption/aligned_alloc.hpp"
 #include "aribcaption/renderer.h"
 #include "aribcaption/renderer.hpp"
+#include "base/log_aribcaption_android.hpp"
 #include "renderer/renderer_impl.hpp"
 
-#ifdef ANDROID
-#include <android/log.h>
-#endif
-
-#define LOG_TAG    "libaribcaption"
-#ifdef ANDROID
-#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#else
-#define LOGI(...) printf(__VA_ARGS__)
-#endif
 
 using namespace aribcaption;
 using namespace aribcaption::internal;
@@ -85,7 +76,7 @@ static Caption ConstructCaptionFromCAPI(const aribcc_caption_t* src) {
 extern "C" {
 
 void aribcc_render_result_cleanup(aribcc_render_result_t* render_result) {
-    LOGI("aribcc_render_result_cleanup\n");
+    ALOGI("aribcc_render_result_cleanup\n");
     if (render_result->images) {
         for (uint32_t i = 0; i < render_result->image_count; i++) {
             aribcc_image_t* image = &render_result->images[i];
@@ -100,7 +91,7 @@ void aribcc_render_result_cleanup(aribcc_render_result_t* render_result) {
 aribcc_renderer_t* aribcc_renderer_alloc(aribcc_context_t* context) {
     auto ctx = reinterpret_cast<Context*>(context);
     auto impl = new(std::nothrow) RendererImpl(*ctx);
-    LOGI("aribcc_renderer_alloc\n");
+    ALOGI("aribcc_renderer_alloc\n");
     return reinterpret_cast<aribcc_renderer_t*>(impl);
 }
 
@@ -113,7 +104,7 @@ bool aribcc_renderer_initialize(aribcc_renderer_t* renderer,
                                 aribcc_captiontype_t caption_type,
                                 aribcc_fontprovider_type_t font_provider_type,
                                 aribcc_textrenderer_type_t text_renderer_type) {
-    LOGI("aribcc_renderer_initialize\n");
+    ALOGI("aribcc_renderer_initialize\n");
     auto impl = reinterpret_cast<RendererImpl*>(renderer);
     return impl->Initialize(static_cast<CaptionType>(caption_type),
                             static_cast<FontProviderType>(font_provider_type),
@@ -243,14 +234,14 @@ aribcc_render_status_t aribcc_renderer_try_render(aribcc_renderer_t* renderer, i
 aribcc_render_status_t aribcc_renderer_render(aribcc_renderer_t* renderer,
                                               int64_t pts,
                                               aribcc_render_result_t* out_result) {
-    LOGI("aribcc_renderer_render\n");
+    ALOGI("aribcc_renderer_render\n");
     auto impl = reinterpret_cast<RendererImpl*>(renderer);
 
     RenderResult result;
     RenderStatus status = impl->Render(pts, result);
 
     memset(out_result, 0, sizeof(*out_result));
-    LOGI("aribcc_renderer_render result pts:%lld status:%d\n", result.pts, status);
+    ALOGI("aribcc_renderer_render result pts:%lld status:%d\n", result.pts, status);
 
     if (status == RenderStatus::kGotImage || status == RenderStatus::kGotImageUnchanged) {
         ConvertRenderResultToCAPI(result, out_result);

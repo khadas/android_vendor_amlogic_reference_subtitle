@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-
-#define LOG_NDEBUG 0
 #define LOG_TAG "MemoryLeackTrackUtil"
-#include <utils/Log.h>
 #include <utils/Vector.h>
 #include <utils/String8.h>
 
+#include <utils/Log.h>
+
 #include "MemoryLeakTrackUtil.h"
 
-//#include <bionic_malloc.h>
 
 extern std::string backtrace_string(const uintptr_t* frames, size_t frame_count);
 

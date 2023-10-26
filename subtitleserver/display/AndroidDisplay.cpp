@@ -4,7 +4,6 @@
 #include <fcntl.h>
 #include <string>
 #include <utils/Log.h>
-
 #include <chrono>
 
 #include "AndroidDisplay.h"

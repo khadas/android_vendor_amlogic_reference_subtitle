@@ -17,18 +17,10 @@
  */
 
 #include <cassert>
+#include "base/log_aribcaption_android.hpp"
 #include "renderer/bitmap.hpp"
 #include "renderer/canvas.hpp"
 #include "renderer/region_renderer.hpp"
-
-#define LOG_TAG    "libaribcaption"
-#ifdef ANDROID
-#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-#else
-#define LOGI(...) printf(__VA_ARGS__)
-#define LOGE(...) printf(__VA_ARGS__)
-#endif
 
 
 namespace aribcaption {
@@ -36,7 +28,7 @@ namespace aribcaption {
 RegionRenderer::RegionRenderer(Context& context) : context_(context), log_(GetContextLogger(context)) {}
 
 bool RegionRenderer::Initialize(FontProviderType font_provider_type, TextRendererType text_renderer_type) {
-    LOGI("RegionRenderer::Initialize\n");
+    ALOGI("RegionRenderer::Initialize\n");
     font_provider_ = FontProvider::Create(font_provider_type, context_);
     if (!font_provider_->Initialize()) {
         return false;
@@ -230,7 +222,7 @@ auto RegionRenderer::RenderCaptionRegion(const CaptionRegion& region,
             }
 
             if (status != TextRenderStatus::kOK) {
-                LOGE("RegionRenderer: TextRenderer::DrawChar() returned error: %d", static_cast<int>(status));
+                ALOGE("RegionRenderer: TextRenderer::DrawChar() returned error: %d", static_cast<int>(status));
                 if (status == TextRenderStatus::kFontNotFound) {
                     has_font_not_found_error = true;
                 } else if (status == TextRenderStatus::kCodePointNotFound) {
@@ -249,11 +241,11 @@ auto RegionRenderer::RenderCaptionRegion(const CaptionRegion& region,
                 succeed++;
             } else {
                 if (status == TextRenderStatus::kCodePointNotFound) {
-                    LOGI("RegionRenderer: Cannot find alternative codepoint U+%04X, fallback to DRCS rendering",
+                    ALOGI("RegionRenderer: Cannot find alternative codepoint U+%04X, fallback to DRCS rendering",
                             ch.codepoint);
                     has_codepoint_not_found_error = true;
                 } else {
-                    LOGE("RegionRenderer: TextRenderer::DrawChar() returned error: %d", static_cast<int>(status));
+                    ALOGE("RegionRenderer: TextRenderer::DrawChar() returned error: %d", static_cast<int>(status));
                     if (status == TextRenderStatus::kFontNotFound) {
                         has_font_not_found_error = true;
                     } else if (status == TextRenderStatus::kOtherError) {
@@ -279,11 +271,11 @@ auto RegionRenderer::RenderCaptionRegion(const CaptionRegion& region,
                 if (ret) {
                     succeed++;
                 } else {
-                    LOGE("RegionRenderer: drcs_renderer_.DrawDRCS() returned error");
+                    ALOGE("RegionRenderer: drcs_renderer_.DrawDRCS() returned error");
                 }
             } else {
                 // DRCS not found in drcs_map
-                LOGE("RegionRenderer: Missing DRCS for drcs_code %u", ch.drcs_code);
+                ALOGE("RegionRenderer: Missing DRCS for drcs_code %u", ch.drcs_code);
             }
         }
     }

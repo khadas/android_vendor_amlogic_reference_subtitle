@@ -37,49 +37,49 @@ extern "C"
 /**\brief Error code of the user data module*/
 enum AM_USERDATA_ErrorCode
 {
-	AM_USERDATA_ERROR_BASE=AM_ERROR_BASE(AM_MOD_USERDATA),
-	AM_USERDATA_ERR_INVALID_ARG,             /**< Invalid argument*/
-	AM_USERDATA_ERR_INVALID_DEV_NO,          /**< Invalid device number*/
-	AM_USERDATA_ERR_BUSY,                    /**< The device is busy*/
-	AM_USERDATA_ERR_CANNOT_OPEN_DEV,         /**< Cannot open the device*/
-	AM_USERDATA_ERR_NOT_SUPPORTED,           /**< Not supported*/
-	AM_USERDATA_ERR_NO_MEM,                  /**< Not enough memory*/
-	AM_USERDATA_ERR_TIMEOUT,                 /**< Timeout*/
-	AM_USERDATA_ERR_SYS,                     /**< System error*/
-	AM_USERDATA_ERR_END
+    AM_USERDATA_ERROR_BASE=AM_ERROR_BASE(AM_MOD_USERDATA),
+    AM_USERDATA_ERR_INVALID_ARG,             /**< Invalid argument*/
+    AM_USERDATA_ERR_INVALID_DEV_NO,          /**< Invalid device number*/
+    AM_USERDATA_ERR_BUSY,                    /**< The device is busy*/
+    AM_USERDATA_ERR_CANNOT_OPEN_DEV,         /**< Cannot open the device*/
+    AM_USERDATA_ERR_NOT_SUPPORTED,           /**< Not supported*/
+    AM_USERDATA_ERR_NO_MEM,                  /**< Not enough memory*/
+    AM_USERDATA_ERR_TIMEOUT,                 /**< Timeout*/
+    AM_USERDATA_ERR_SYS,                     /**< System error*/
+    AM_USERDATA_ERR_END
 };
 
 enum AM_USERDATA_EventType
 {
-	AM_USERDATA_EVT_BASE = AM_EVT_TYPE_BASE(AM_MOD_USERDATA),
-	AM_USERDATA_EVT_AFD,
+    AM_USERDATA_EVT_BASE = AM_EVT_TYPE_BASE(AM_MOD_USERDATA),
+    AM_USERDATA_EVT_AFD,
 };
 
 enum AM_USERDATA_Mode
 {
-	AM_USERDATA_MODE_CC = 0x1,
-	AM_USERDATA_MODE_AFD = 0x2,
+    AM_USERDATA_MODE_CC = 0x1,
+    AM_USERDATA_MODE_AFD = 0x2,
 };
 
 /**\brief MPEG user data device open parameters*/
 typedef struct
 {
-	int    foo;
-	int vfmt;
-	int cc_default_stop;
-	int playerid;
-	int mediasyncid;
+    int    foo;
+    int vfmt;
+    int cc_default_stop;
+    int playerid;
+    int mediasyncid;
 } AM_USERDATA_OpenPara_t;
 
 typedef struct
 {
-	uint8_t         :6;
-	uint8_t  af_flag:1;
-	uint8_t         :1;
-	uint8_t  af     :4;
-	uint8_t         :4;
-	//uint16_t reserved;
-	//uint32_t pts;
+    uint8_t         :6;
+    uint8_t  af_flag:1;
+    uint8_t         :1;
+    uint8_t  af     :4;
+    uint8_t         :4;
+    //uint16_t reserved;
+    //uint32_t pts;
 } AM_USERDATA_AFD_t;
 
 /****************************************************************************
@@ -107,7 +107,7 @@ extern AM_ErrorCode_t AM_USERDATA_SetParameters(int dev_no, int para);
 /**\brief Read MPEG user data from the device
  * \param dev_no Device number
  * \param[out] buf Output buffer to store the user data
- * \param size	Buffer length in bytes
+ * \param size  Buffer length in bytes
  * \param timeout_ms Timeout time in milliseconds
  * \return Read data length in bytes
  */

@@ -62,54 +62,54 @@ extern "C"
 
 /**\brief 检查如果返回值是否错误，返回错误代码给调用函数*/
 #define AM_TRY(_func) \
-	AM_MACRO_BEGIN\
-	AM_ErrorCode_t _ret;\
-	if ((_ret=(_func))!=AM_SUCCESS)\
-		return _ret;\
-	AM_MACRO_END
+    AM_MACRO_BEGIN\
+    AM_ErrorCode_t _ret;\
+    if ((_ret=(_func))!=AM_SUCCESS)\
+        return _ret;\
+    AM_MACRO_END
 
 /**\brief 检查返回值是否错误，如果错误，跳转到final标号。注意:函数中必须定义"AM_ErrorCode_t ret"和标号"final"*/
 #define AM_TRY_FINAL(_func)\
-	AM_MACRO_BEGIN\
-	if ((ret=(_func))!=AM_SUCCESS)\
-		goto final;\
-	AM_MACRO_END
+    AM_MACRO_BEGIN\
+    if ((ret=(_func))!=AM_SUCCESS)\
+        goto final;\
+    AM_MACRO_END
 
 /**\brief 开始解析一个被指定字符隔开的字符串*/
 #define AM_TOKEN_PARSE_BEGIN(_str, _delim, _token) \
-	{\
-	char *_strb =  strdup(_str);\
-	if (_strb) {\
-		_token = strtok(_strb, _delim);\
-		while (_token != NULL) {
+    {\
+    char *_strb =  strdup(_str);\
+    if (_strb) {\
+        _token = strtok(_strb, _delim);\
+        while (_token != NULL) {
 
 #define AM_TOKEN_PARSE_END(_str, _delim, _token) \
-		_token = strtok(NULL, _delim);\
-		}\
-		free(_strb);\
-	}\
-	}
+        _token = strtok(NULL, _delim);\
+        }\
+        free(_strb);\
+    }\
+    }
 
 
 /**\brief 从一个被指定字符隔开的字符串中取指定位置的值，int类型，如未找到指定位置，则使用默认值_default代替*/
 #define AM_TOKEN_VALUE_INT(_str, _delim, _index, _default) \
-	({\
-		char *token;\
-		char *_strbak = strdup(_str);\
-		int counter = 0;\
-		int val = _default;\
-		if (_strbak != NULL) {\
-			AM_TOKEN_PARSE_BEGIN(_strbak, _delim, token)\
-				if (counter == (_index)) {\
-					val = atoi(token);\
-					break;\
-				}\
-				counter++;\
-			AM_TOKEN_PARSE_END(_strbak, _delim, token)\
-			free(_strbak);\
-		}\
-		val;\
-	})
+    ({\
+        char *token;\
+        char *_strbak = strdup(_str);\
+        int counter = 0;\
+        int val = _default;\
+        if (_strbak != NULL) {\
+            AM_TOKEN_PARSE_BEGIN(_strbak, _delim, token)\
+                if (counter == (_index)) {\
+                    val = atoi(token);\
+                    break;\
+                }\
+                counter++;\
+            AM_TOKEN_PARSE_END(_strbak, _delim, token)\
+            free(_strbak);\
+        }\
+        val;\
+    })
 
 /****************************************************************************
  * Type definitions

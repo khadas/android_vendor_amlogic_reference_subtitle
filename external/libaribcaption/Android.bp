@@ -78,11 +78,11 @@ cc_library_static {
         "-DENABLE_V4L=1",
         "-DENABLE_V4L2=1",
         "-DHAVE_ICONV=1",
-        "-DANDROID",
+        "-DDEBUG_ANDROID",
         "-DARIBCC_USE_FONTCONFIG",
         "-DARIBCC_USE_FREETYPE",
         "-DARIBCC_IS_ANDROID",
-        "-DCUSTOM_SPECIAL_DATA_CONVERSION",
+        "-DARIBCC_CUSTOM_SPECIAL_DATA_CONVERSION",
     ],
 
     arch: {
