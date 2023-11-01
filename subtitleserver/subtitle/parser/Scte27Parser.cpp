@@ -295,17 +295,18 @@ bool Scte27Parser::updateParameter(int type, void *data) {
 
 void Scte27Parser::setPipId (int mode, int id) {
     SUBTITLE_LOGI(" setPipId mode:%d, id %d", mode, id);
+    if (id < 0) return;
     if (PIP_PLAYER_ID == mode) {
         mPlayerId = id;
     } else if (PIP_MEDIASYNC_ID == mode) {
         SUBTITLE_LOGI(" setPipId  mMediaSyncId = %d, id=%d,mState=%d",mMediaSyncId,id,mState);
        if ((mMediaSyncId != id) && ( mState == SUB_PLAYING)) {
            mMediaSyncId = id;
-           stopScte27();
-           startScte27(0, 0);
-           return;
+           //stopScte27();
+           //startScte27(0, 0);
+           //return;
         }
-       mMediaSyncId = id;
+       //mMediaSyncId = id;
     }
 }
 

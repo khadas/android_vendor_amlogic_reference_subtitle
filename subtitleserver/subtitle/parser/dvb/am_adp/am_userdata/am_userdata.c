@@ -377,6 +377,7 @@ AM_ErrorCode_t AM_USERDATA_Open(int dev_no, const AM_USERDATA_OpenPara_t *para)
     {
         SUBTITLE_LOGE("userdata device %d has already been opened", dev_no);
         dev->open_cnt++;
+        SUBTITLE_LOGE("userdata device AM_USERDATA_Open dev->open_cnt = %d", dev->open_cnt);
         goto final;
     }
 
@@ -423,9 +424,10 @@ AM_ErrorCode_t AM_USERDATA_Close(int dev_no)
 
     pthread_mutex_lock(&am_gAdpLock);
 
-    if (dev->open_cnt > 0)
+    while (dev->open_cnt > 0)
     {
         dev->open_cnt--;
+        SUBTITLE_LOGE("AM_USERDATA_Close dev->open_cnt = %d",dev->open_cnt);
         if (dev->open_cnt == 0)
         {
             //Notify cond(if has), we're exiting, should break polling
