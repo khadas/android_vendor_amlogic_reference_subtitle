@@ -1,4 +1,4 @@
-/***************************************************************************
+/*
  * Copyright (C) 2014-2019 Amlogic, Inc. All rights reserved.
  *
  * All information contained herein is Amlogic confidential.
@@ -81,4 +81,3 @@ int main(int argc __unused, char** argv __unused) {
     joinRpcThreadpool();
     SUBTITLE_LOGI("Treble SubtitleServerHal service created end-3-!!");
 }
-

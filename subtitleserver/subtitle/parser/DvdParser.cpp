@@ -36,8 +36,8 @@
 
 #include "SubtitleLog.h"
 
-#include "streamUtils.h"
-#include "sub_types.h"
+#include "StreamUtils.h"
+#include "SubtitleTypes.h"
 #include "DvdParser.h"
 #include "ParserFactory.h"
 #include "VideoInfo.h"
@@ -316,12 +316,14 @@ int fillResizedData(unsigned char *dstData, int *srcData, std::shared_ptr<AML_SP
 
 void DvdParser::checkDebug() {
        //dump dvd subtitle bitmap
+       #ifdef NEED_DUMP_ANDROID
        char value[PROPERTY_VALUE_MAX] = {0};
        memset(value, 0, PROPERTY_VALUE_MAX);
        property_get("vendor.subtitle.dump", value, "false");
        if (!strcmp(value, "true")) {
            mDumpSub = true;
        }
+       #endif
 }
 
 
@@ -505,7 +507,7 @@ unsigned char DvdParser::spuFillPixel(unsigned short *pixelIn, char *pixelOut,
     unsigned short nDecodedPixNum = 0;
     unsigned short PXDBufferBitPos = 0, WrOffset = 16;
     unsigned short change_data = 0;
-    unsigned short PixelDatas[4] = { 0, 1, 2, 3 };
+    unsigned short PixelData[4] = { 0, 1, 2, 3 };
     unsigned short rownum = subFrame->spu_width;
     unsigned short height = subFrame->spu_height;
     unsigned short _alpha = subFrame->spu_alpha;
@@ -519,8 +521,8 @@ unsigned char DvdParser::spuFillPixel(unsigned short *pixelIn, char *pixelOut,
             change_data++;
             _alpha = _alpha >> 4;
         }
-        PixelDatas[0] = change_data;
-        PixelDatas[change_data] = 0;
+        PixelData[0] = change_data;
+        PixelData[change_data] = 0;
         if (n == 2) {
             subFrame->spu_alpha = (subFrame->spu_alpha & 0xFFF0) | (0x000F << (change_data<<2));
         }
@@ -542,7 +544,7 @@ unsigned char DvdParser::spuFillPixel(unsigned short *pixelIn, char *pixelOut,
             }
 
             if (change_data) {
-                nPixelData = PixelDatas[nPixelData];
+                nPixelData = PixelData[nPixelData];
             }
 
             for (int i = 0; i<nPixelNum; i++) {
@@ -788,13 +790,13 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
          SUBTITLE_LOGI("currentType? %x", currentType);
 
         switch (currentType) {
-            case 0x1700a:   //mkv internel image
+            case 0x1700a:   //mkv internal image
                 durationPts = subPeekAsInt32(spuBuffer + rdOffset);
                 rdOffset += 4;
                 mRestLen -= 4;
                 SUBTITLE_LOGI("durationPts is %d\n", durationPts);
                 [[fallthrough]];
-            case 0x17000:   //vob internel image
+            case 0x17000:   //vob internal image
                 //init
                 spu->subtitle_type = TYPE_SUBTITLE_VOB;
                 spu->buffer_size = VOB_SUB_SIZE;

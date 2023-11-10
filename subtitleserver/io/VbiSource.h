@@ -35,6 +35,7 @@
 
 #include "Segment.h"
 #include "DataSource.h"
+#include "VbiDriver.h"
 
 class VbiSource : public DataSource {
 
@@ -78,4 +79,3 @@ private:
 };
 
 #endif
-

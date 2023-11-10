@@ -81,7 +81,7 @@ bool AndroidHidlRemoteRender::postSubtitleData() {
 
         width = (*it)->spu_width;
         height = (*it)->spu_height;
-        if (mParseType == TYPE_SUBTITLE_DTVKIT_TELETEXT || mParseType == TYPE_SUBTITLE_DVB_TELETEXT) {
+        if (mParseType == TYPE_SUBTITLE_DVB_TELETEXT) {
             x = (*it)->disPlayBackground;
         } else {
             x = (*it)->spu_start_x;

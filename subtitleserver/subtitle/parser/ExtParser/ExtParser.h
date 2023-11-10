@@ -28,8 +28,8 @@
 
 #include "Parser.h"
 #include "DataSource.h"
-#include "sub_types.h"
-#include "StreamReader.h"
+#include "SubtitleTypes.h"
+#include "ExtSubStreamReader.h"
 #include "TextSubtitle.h"
 
 #define SUBAPI

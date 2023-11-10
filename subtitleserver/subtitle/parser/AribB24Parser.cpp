@@ -1,17 +1,29 @@
 /*
- * AribB24 decoding for ffmpeg
- * Copyright (c) 2005-2010, 2012 Wolfram Gloger
- * Copyright (c) 2013 Marton Balint
+ * Copyright (C) 2014-2019 Amlogic, Inc. All rights reserved.
  *
- * This library is free software; you can redistribute it and/or
-*
-* Copyright (c) 2014 Amlogic, Inc. All rights reserved.
-*
-* This source code is subject to the terms and conditions defined in the
-* file 'LICENSE' which is part of this source code package.
-*
-* Description: c++file
-*/
+ * All information contained herein is Amlogic confidential.
+ *
+ * This software is provided to you pursuant to Software License Agreement
+ * (SLA) with Amlogic Inc ("Amlogic"). This software may be used
+ * only in accordance with the terms of this agreement.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification is strictly prohibited without prior written permission from
+ * Amlogic.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #define  LOG_TAG "AribB24Parser"
 #include <stdarg.h>
 #include <stdio.h>
@@ -19,9 +31,6 @@
 #include <string.h>
 #include <time.h>
 #include "bprint.h"
-#include "SubtitleLog.h"
-#include <utils/CallStack.h>
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <list>
@@ -29,9 +38,10 @@
 #include <algorithm>
 #include <functional>
 
+#include <utils/CallStack.h>
+#include "SubtitleLog.h"
 #include "ParserFactory.h"
-#include "streamUtils.h"
-
+#include "StreamUtils.h"
 #include "VideoInfo.h"
 
 #include "AribB24Parser.h"
@@ -63,14 +73,20 @@ bool static inline isMore32Bit(int64_t pts) {
     return false;
 }
 
+#ifdef NEED_ARIB24_LIBARIBCAPTION
 std::string colorToString(const aribcaption::ColorRGBA& color) {
     return "rgba("+std::to_string(color.r) + ", " +
            std::to_string(color.g) + ", " +
            std::to_string(color.b) + ", " +
            std::to_string(color.a) + ")";
 }
+#endif
 
+#ifdef NEED_ARIB24_LIBARIBCAPTION
 AribB24Parser::AribB24Parser(std::shared_ptr<DataSource> source) : aribcaptionDecoder(aribcaptionContext){
+#else
+AribB24Parser::AribB24Parser(std::shared_ptr<DataSource> source) {
+#endif
     mDataSource = source;
     mParseType = TYPE_SUBTITLE_ARIB_B24;
     mIndex = 0;
@@ -103,37 +119,6 @@ AribB24Parser::~AribB24Parser() {
     mTimeoutThread->join();
 }
 
-static inline int generateNormalDisplay(AVSubtitleRect *subRect, unsigned char *des, uint32_t *src, int width, int height) {
-    SUBTITLE_LOGE(" generateNormalDisplay width = %d, height=%d\n",width, height);
-    int mt =0, mb =0;
-    int ret = -1;
-    AribB24Parser *parser = AribB24Parser::getCurrentInstance();
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            src[(y*width) + x] =
-                    ((uint32_t *)subRect->pict.data[1])[(subRect->pict.data[0])[y*width + x]];
-            if ((ret != 0) && ((src[(y*width) + x] != 0) && (src[(y*width) + x] != 0xff000000))) {
-                ret = 0;
-            }
-            des[(y*width*4) + x*4] = src[(y*width) + x] & 0xff;
-            des[(y*width*4) + x*4 + 1] = (src[(y*width) + x] >> 8) & 0xff;
-            des[(y*width*4) + x*4 + 2] = (src[(y*width) + x] >> 16) & 0xff;
-
-#ifdef SUPPORT_GRAPHICS_MODE_SUBTITLE_PAGE_FULL_SCREEN
-            if (parser->mContext->isSubtitle && parser->mContext->subtitleMode == TT2_GRAPHICS_MODE) {
-                des[(y*width*4) + x*4 + 3] = 0xff;
-            } else {
-                des[(y*width*4) + x*4 + 3] = (src[(y*width) + x] >> 24) & 0xff;   //color style
-            }
-#else
-            des[(y*width*4) + x*4 + 3] = (src[(y*width) + x] >> 24) & 0xff;   //color style
-#endif
-        }
-    }
-    return ret;
-}
-
 /**
  *  AribB24 has interaction, with event handling
  *  This function main for this. the control interface.not called in parser thread, need protect.
@@ -141,7 +126,7 @@ static inline int generateNormalDisplay(AVSubtitleRect *subRect, unsigned char *
 bool AribB24Parser::updateParameter(int type, void *data) {
     std::unique_lock<std::mutex> autolock(mMutex);
     if (TYPE_SUBTITLE_ARIB_B24 == type) {
-        DtvKitArib24Param *pAribParam = (DtvKitArib24Param* )data;
+        Arib24Param *pAribParam = (Arib24Param* )data;
         mContext->languageCode = pAribParam->languageCodeId;
     }
     return true;
@@ -149,7 +134,9 @@ bool AribB24Parser::updateParameter(int type, void *data) {
 
 int AribB24Parser::initContext() {
     std::unique_lock<std::mutex> autolock(mMutex);
+    #ifdef NEED_ARIB24_LIBARIBCAPTION
     aribcaptionDecoder.Initialize();
+    #endif
     mContext = new AribB24Context();
     if (!mContext) {
         SUBTITLE_LOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
@@ -159,12 +146,14 @@ int AribB24Parser::initContext() {
 }
 
 void AribB24Parser::checkDebug() {
+    #ifdef NEED_DUMP_ANDROID
     char value[PROPERTY_VALUE_MAX] = {0};
     memset(value, 0, PROPERTY_VALUE_MAX);
     property_get("vendor.subtitle.dump", value, "false");
     if (!strcmp(value, "true")) {
         mDumpSub = true;
     }
+    #endif
 }
 
 int AribB24Parser::aribB24DecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, int srcLen) {
@@ -196,6 +185,7 @@ int AribB24Parser::aribB24DecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *src
         SUBTITLE_LOGI("%s languageCode:%d", __FUNCTION__, mContext->languageCode);
     }
 
+    #ifdef NEED_ARIB24_LIBARIBCAPTION
     switch (mContext->languageCode) {
         case ARIB_B24_POR:
             aribcaptionDecoder.SetEncodingScheme(aribcaption::EncodingScheme::kABNT_NBR_15606_1_Latin);
@@ -348,6 +338,7 @@ int AribB24Parser::aribB24DecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *src
         memcpy(spu->spu_data, stringJson.c_str(), stringJson.length());
 
     }
+    #endif
     return ARIB_B24_SUCCESS;
 
 }
@@ -612,7 +603,12 @@ int AribB24Parser::atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 }
 
 void AribB24Parser::callbackProcess() {
-    int timeout = property_get_int32("vendor.sys.subtitleService.decodeTimeOut", 60);
+    int timeout = 0;
+    #ifdef NEED_DECODE_TIMEOUT_ANDROID
+    timeout = property_get_int32("vendor.sys.subtitleService.decodeTimeOut", 60);
+    #elif NEED__DECODE_TIMEOUT_LINUX
+    timeout = 60;
+    #endif
     const int SIGNAL_UNSPEC = -1;
     const int NO_SIGNAL = 0;
     const int HAS_SIGNAL = 1;

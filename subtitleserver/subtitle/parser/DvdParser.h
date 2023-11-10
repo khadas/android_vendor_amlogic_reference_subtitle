@@ -28,7 +28,7 @@
 #define __SUBTITLE_DVD_PARSER_H__
 #include "Parser.h"
 #include "DataSource.h"
-#include "sub_types.h"
+#include "SubtitleTypes.h"
 
 class DvdParser: public Parser {
 public:

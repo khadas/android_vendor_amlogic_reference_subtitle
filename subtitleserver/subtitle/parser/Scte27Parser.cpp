@@ -26,6 +26,7 @@
 
 #define LOG_TAG "Scte27Parser"
 #include <unistd.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <string>
 #include <list>
@@ -33,44 +34,31 @@
 #include <algorithm>
 #include <functional>
 #include <mutex>
+#include <math.h>
 
 #include "SubtitleLog.h"
 
-#include "sub_types2.h"
+#include "StreamUtils.h"
+#include "SubtitleTypes.h"
 #include "Scte27Parser.h"
 #include "ParserFactory.h"
 
-#define  DATA_SIZE 10*1024
+#define DATA_SIZE 10*1024
+#define OSD_HALF_SIZE (1920*1280/8)
+#define HIGH_32_BIT_PTS 0xFFFFFFFF
+#define TSYNC_32_BIT_PTS 0xFFFFFFFF
 
-
-// we want access Parser in little-dvb callback.
-// must use a global lock
-static std::mutex gLock;
-
-Scte27Parser *Scte27Parser::sInstance = nullptr;
-Scte27Parser *Scte27Parser::getCurrentInstance() {
-    return Scte27Parser::sInstance;
-}
-
-void Scte27Parser::notifySubtitleDimension(int width, int height) {
-    if (mNotifier != nullptr) {
-        SUBTITLE_LOGI("notifySubtitleDimension: %d %d", width, height);
-        mNotifier->onSubtitleDimension(width, height);
-    }
-}
 static void save2BitmapFile(const char *filename, uint32_t *bitmap, int w, int h) {
     SUBTITLE_LOGI("save2BitmapFile:%s\n",filename);
     FILE *f;
     char fname[40];
-
-    snprintf(fname, sizeof(fname), "%s.bmp", filename);
+    snprintf(fname, sizeof(fname), "%s.ppm", filename);
     f = fopen(fname, "w");
     if (!f) {
-        perror(fname);
+        SUBTITLE_LOGE("Error cannot open file %s!", fname);
         return;
     }
-
-    fprintf(f, "P6\n %d %d\n%d\n", w, h, 255);
+    fprintf(f, "P6\n" "%d %d\n" "%d\n", w, h, 255);
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             int v = bitmap[y * w + x];
@@ -82,194 +70,43 @@ static void save2BitmapFile(const char *filename, uint32_t *bitmap, int w, int h
     fclose(f);
 }
 
-
-static inline void clearBitmap(TVSubtitleData *sub) {
-    uint8_t *ptr = sub->buffer;
-    int y = sub->bmp_h;
-
-    while (y--) {
-        memset(ptr, 0, sub->bmp_pitch);
-        ptr += sub->bmp_pitch;
+bool static inline isMore32Bit(int64_t pts) {
+    if (((pts >> 32) & HIGH_32_BIT_PTS) > 0) {
+        return true;
     }
+    return false;
 }
 
-static uint8_t *lockBitmap(int *w, int *h, int *bpp) {
-    uint8_t *pbuf = NULL;
-    *w = 1920;
-    *h = 1080;
-    *bpp = 4;
-    pbuf = (unsigned char *)malloc((*w)*(*h)*(*bpp));    //SCTE27_SUB_SIZE need *4
+static uint32_t subtitle_color_to_bitmap_color(uint32_t yCbCr) {
+    uint8_t R,G,B,A,Y,Cr,Cb,opaque_enable;
+    uint32_t bitmap_color;
+    char subtitle_color[2];
 
-    if (!pbuf) {
-        SUBTITLE_LOGI("malloc pbuf failed!\n");
-        return NULL;
-    }
+    subtitle_color[0] = (yCbCr >> 8) & 0xFF;
+    subtitle_color[1] = yCbCr & 0xFF;
 
-    return pbuf;
-}
+    Y = (subtitle_color[0] >> 3) & 0x1F;
+    opaque_enable = (subtitle_color[0] >> 2) & 1;
+    Cr = ((subtitle_color[0] & 0x3) << 3) | ((subtitle_color[1] >> 5) & 0x7);
+    Cb = subtitle_color[1] & 0x1F;
 
-static void unlockBitmap(TVSubtitleData *ctx) {
-    if (ctx != nullptr && ctx->buffer != nullptr) {
-        free(ctx->buffer);
-        ctx->buffer = NULL;
-    }
-}
+    if (opaque_enable)
+        A = 0xFF;
+    else
+        A = 0x80;
 
+    Y *= 8;
+    Cr *= 8;
+    Cb *= 8;
 
-
-static uint8_t *getBitmap(int *w, int *h, int *bpp) {
-    uint8_t *buf;
-
-    buf = lockBitmap(w, h, bpp);
-    SUBTITLE_LOGI("bitmap buffer [%p]", buf);
-    return buf;
-}
-
-
-static void initBitmap(TVSubtitleData *ctx, int bitmap_w, int bitmap_h) {
-    if (ctx == nullptr) {
-        return;
-    }
-
-    if (!ctx->buffer) {
-        ctx->buffer = getBitmap(&ctx->bmp_w, &ctx->bmp_h, &ctx->bmp_pitch);
-    }
-    ctx->sub_w = bitmap_w;
-    ctx->sub_h = bitmap_h;
-
-    SUBTITLE_LOGI("init_bitmap w:%d h:%d p:%d", ctx->bmp_w, ctx->bmp_h, ctx->bmp_pitch);
-
-
-}
-
-static void updateSizeCallback(AM_SCTE27_Handle_t handle, int width, int height) {
-    SUBTITLE_LOGI("scte27_update_size width:%d,height:%d", width, height);
-    TVSubtitleData *sub = (TVSubtitleData *)AM_SCTE27_GetUserData(handle);
-    if (!sub) {
-        SUBTITLE_LOGE("Error!Scte27 get userdata null! ");
-        return;
-    }
-    pthread_mutex_lock(&sub->lock);
-    sub->sub_w = width;
-    sub->sub_h = height;
-    //setScte27WidthHeight(width, height);
-    Scte27Parser *parser = Scte27Parser::getCurrentInstance();
-    if (parser == nullptr) {
-        SUBTITLE_LOGE("Report subtitle size to a deleted scte parser!");
-        pthread_mutex_unlock(&sub->lock);
-        return;
-    }
-    parser->notifySubtitleDimension(sub->sub_w, sub->sub_h);
-    pthread_mutex_unlock(&sub->lock);
-}
-
-static void drawBeginCallback(AM_SCTE27_Handle_t handle) {
-    SUBTITLE_LOGI("[scte27_draw_begin_cb]");
-    (void)handle;
-}
-
-static void drawEndCallback(AM_SCTE27_Handle_t handle) {
-    SUBTITLE_LOGI("[scte27_draw_end_cb]");
-    TVSubtitleData *sub = (TVSubtitleData *)AM_SCTE27_GetUserData(handle);
-
-    std::unique_lock<std::mutex> autolock(gLock);
-    Scte27Parser *parser = Scte27Parser::getCurrentInstance();
-    if (parser == nullptr) {
-        SUBTITLE_LOGE("Report subtitle string to a deleted scte parser!");
-        return;
-    }
-
-    TVSubtitleData *ctx = parser->getContexts();
-    std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
-    spu->buffer_size = sub->sub_w*sub->sub_h*4;//SCTE27_SUB_SIZE;
-    spu->spu_data = (unsigned char *)malloc(sub->sub_w*sub->sub_h*4);
-    if (!spu->spu_data) {
-        SUBTITLE_LOGI("av_malloc SCTE27_SUB_SIZE failed!\n");
-        return;
-    }
-    memset(spu->spu_data, 0, sub->sub_w*sub->sub_h*4);
-    memcpy(spu->spu_data,ctx->buffer, sub->sub_w*sub->sub_h*4);
-    spu->spu_width = sub->sub_w;
-    spu->spu_height = sub->sub_h;
-    SUBTITLE_LOGI("[scte27_draw_end_cb]data->buffer:%p", ctx->buffer);
-    spu->spu_origin_display_w = ctx->sub_w;
-    spu->spu_origin_display_h = ctx->sub_h;
-
-    // CC and scte use little dvb, render&presentation already handled.
-    spu->isImmediatePresent = true;
-    parser->addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
-
-    {
-        char value[PROPERTY_VALUE_MAX] = {0};
-        memset(value, 0, PROPERTY_VALUE_MAX);
-        property_get("vendor.subtitle.dump", value, "false");
-
-        if (!strcmp(value, "true")) {
-            static int sIndex = 0;
-            char filename[32];
-            snprintf(filename, sizeof(filename), "./data/subtitleDump/27_%d", sIndex++);
-            save2BitmapFile(filename, (uint32_t *)ctx->buffer, 1920, 1080);
-            SUBTITLE_LOGI("[scte27_draw_end_cb]dump success!");
-        }
-    }
-    memset(ctx->buffer, 0, sub->sub_w*sub->sub_h*4);
-    SUBTITLE_LOGI("[scte27_draw_end_cb]");
-
-}
-
-static void reportCallback(AM_SCTE27_Handle_t handle, int error) {
-    (void)handle;
-    std::unique_lock<std::mutex> autolock(gLock);
-    Scte27Parser *parser = Scte27Parser::getCurrentInstance();
-    if (parser != nullptr) {
-        parser->notifyCallerAvail(__notifierErrorRemap(error));
-    }
-}
-
-static void reportAvailableCallback(AM_SCTE27_Handle_t handle) {
-    (void)handle;
-    std::unique_lock<std::mutex> autolock(gLock);
-    Scte27Parser *parser = Scte27Parser::getCurrentInstance();
-    if (parser != nullptr) {
-        parser->notifyCallerAvail(1);
-    }
-}
-
-static void langCallback(AM_SCTE27_Handle_t handle, char *buffer, int size) {
-    (void)handle;
-    std::unique_lock<std::mutex> autolock(gLock);
-    Scte27Parser *parser = Scte27Parser::getCurrentInstance();
-    SUBTITLE_LOGI("%s, lang:%s, size:%d", __FUNCTION__, buffer, size);
-    if (buffer == NULL || size == 0) {
-        return;
-    }
-
-    if (parser != nullptr) {
-        parser->notifyCallerLanguage(buffer);
-    }
-}
-
-Scte27Parser::Scte27Parser(std::shared_ptr<DataSource> source) {
-    SUBTITLE_LOGI("creat Scte27 Parser");
-    mPid = -1;
-    mDataSource = source;
-    mParseType = TYPE_SUBTITLE_SCTE27;
-    std::unique_lock<std::mutex> autolock(gLock);
-    sInstance = this;
-    mScteContext = new TVSubtitleData();
-}
-
-Scte27Parser::~Scte27Parser() {
-    SUBTITLE_LOGI("%s", __func__);
-    {
-        std::unique_lock<std::mutex> autolock(gLock);
-        sInstance = nullptr;
-    }
-
-    stopScte27();
-    stopParser();
-
-    delete mScteContext;
+    R = Y + 1.4075 * (Cr - 128);
+    G = Y - 0.3455 * (Cb - 128) - 0.7169 * (Cr - 128);
+    B = Y + 1.779 * (Cb - 128);
+    // bitmap_color = (R << 24) | (G << 16) | (B << 8) | A;
+    bitmap_color = (A << 24) | (R << 16) | (G << 8) | B;
+    SUBTITLE_LOGI("YUV 0x%x R 0x%x G 0x%x B 0x%x, RGBA 0x%x",
+            yCbCr, R, G, B, bitmap_color);
+    return bitmap_color;
 }
 
 void Scte27Parser::notifyCallerAvail(int avil) {
@@ -278,118 +115,684 @@ void Scte27Parser::notifyCallerAvail(int avil) {
     }
 }
 
-void Scte27Parser::notifyCallerLanguage(char *lang) {
-    if (mNotifier != nullptr) {
-        mNotifier->onSubtitleLanguage(lang);
-    }
-}
-
-
-bool Scte27Parser::updateParameter(int type, void *data) {
-    (void) type;
-    Scte27Param *scte27_p = (Scte27Param *) data;
-    mPid = scte27_p->SCTE27_PID;
-    SUBTITLE_LOGI("updateParameter mPid:%d", mPid);
-    return true;
-}
-
-void Scte27Parser::setPipId (int mode, int id) {
-    SUBTITLE_LOGI(" setPipId mode:%d, id %d", mode, id);
-    if (id < 0) return;
-    if (PIP_PLAYER_ID == mode) {
-        mPlayerId = id;
-    } else if (PIP_MEDIASYNC_ID == mode) {
-        SUBTITLE_LOGI(" setPipId  mMediaSyncId = %d, id=%d,mState=%d",mMediaSyncId,id,mState);
-       if ((mMediaSyncId != id) && ( mState == SUB_PLAYING)) {
-           mMediaSyncId = id;
-           //stopScte27();
-           //startScte27(0, 0);
-           //return;
-        }
-       //mMediaSyncId = id;
-    }
+int Scte27Parser::initContext() {
+    mContext = new Scte27SubContext();
+    return 0;
 }
 
 void Scte27Parser::checkDebug() {
-    //AM_DebugSetLogLevel(property_get_int32("tv.dvb.loglevel", 1));
+       //dump subtitle bitmap
+       char value[PROPERTY_VALUE_MAX] = {0};
+       memset(value, 0, PROPERTY_VALUE_MAX);
+       property_get("vendor.subtitle.dump", value, "false");
+       if (!strcmp(value, "true")) {
+           mDumpSub = true;
+       }
 }
 
-int Scte27Parser::startScte27(int dmxId, int pid) {
-    SUBTITLE_LOGI("[sub_start_scte27]");
-    int ret;
-    SUBTITLE_LOGE("[sub_start_scte27]pid:%d, dmx_id:%d", pid, dmxId);
-    AM_SCTE27_Para_t sctep;
-    struct dmx_sct_filter_params param;
+void Scte27Parser::notifySubtitleDimension(int width, int height) {
+    if (mNotifier != nullptr) {
+        if ((mContext->lastSpuOriginDisplayW != width) || (mContext->lastSpuOriginDisplayH != height)) {
+            SUBTITLE_LOGI("notifySubtitleDimension: last wxh:(%d x %d), now wxh:(%d x %d)",
+                mContext->lastSpuOriginDisplayW, mContext->lastSpuOriginDisplayH, width, height);
+            mNotifier->onSubtitleDimension(width, height);
+            mContext->lastSpuOriginDisplayW = width;
+            mContext->lastSpuOriginDisplayH = height;
+        }
+    }
+}
 
+void Scte27Parser::notifySubtitleErrorInfo(int error) {
+    if (mNotifier != nullptr) {
+        SUBTITLE_LOGI("notifySubtitleErrorInfo: %d", error);
+        mNotifier->onSubtitleAvailable(error);
+    }
+}
+
+Scte27Parser::Scte27Parser(std::shared_ptr<DataSource> source) {
+    mContext = nullptr;
+    mDataSource = source;
+    mParseType = TYPE_SUBTITLE_SCTE27;
+    mPendingAction = -1;
+    initContext();
     checkDebug();
+}
 
-    initBitmap(mScteContext, VIDEO_W, VIDEO_H);
-
-    mScteContext->dmx_id = dmxId;
-    memset(&sctep, 0, sizeof(sctep));
-    sctep.width  = VIDEO_W;
-    sctep.height = VIDEO_H;
-    sctep.draw_begin        = drawBeginCallback;
-    sctep.draw_end          = drawEndCallback;
-    sctep.lang_cb           = langCallback;
-    sctep.report            = reportCallback;
-    sctep.report_available  = reportAvailableCallback;
-    sctep.bitmap        = &mScteContext->buffer;
-    sctep.pitch         = BITMAP_PITCH;/*data->bmp_pitch;*/
-    sctep.update_size   = updateSizeCallback;
-    sctep.user_data     = mScteContext;
-    sctep.lang_cb       = langCallback;
-    sctep.media_sync = mMediaSyncId;
-    ret = AM_SCTE27_Create(&mScteContext->scte27_handle, &sctep);
-    if (ret != AM_SUCCESS) {
-        goto error;
+Scte27Parser::~Scte27Parser() {
+    SUBTITLE_LOGI("%s", __func__);
+    mState = SUB_STOP;
+    if (mContext != NULL) {
+        delete mContext;
+        mContext = nullptr;
     }
 
-    ret = AM_SCTE27_Start(mScteContext->scte27_handle);
-    if (ret != AM_SUCCESS) {
-        goto error;
+    {   //To TimeoutThread: wakeup! we are exiting...
+        std::unique_lock<std::mutex> autolock(mMutex);
+        mPendingAction = 1;
+        mCv.notify_all();
+    }
+}
+
+bool Scte27Parser::updateParameter(int type, void *data) {
+    if (TYPE_SUBTITLE_SCTE27 == type) {
+        Scte27Param *pScte27Param = (Scte27Param* )data;
+    }
+    return true;
+}
+
+void Scte27Parser::decodeBitmap(std::shared_ptr<AML_SPUVAR> spu, uint8_t* buffer, int size, int bitmap_width, int bitmap_height, int pitch) {
+    uint32_t frame_duration;
+
+    if (!buffer) {
+        SUBTITLE_LOGE("%s buffer is null", __FUNCTION__);
+        return;
     }
 
-   mData = std::shared_ptr<uint8_t>(new uint8_t[DATA_SIZE], std::default_delete<uint8_t[]>());
+    scte_simple_bitmap_type *simple_bitmap;
+    simple_bitmap = (scte_simple_bitmap_type*)malloc(sizeof(scte_simple_bitmap_type));
+    if (!simple_bitmap) {
+        SUBTITLE_LOGE("%s simple_bitmap is null", __FUNCTION__);
+        return;
+    }
 
-    return 0;
-error:
-    SUBTITLE_LOGE("scte start failed");
-    if (mScteContext->scte27_handle) {
-        AM_SCTE27_Destroy(mScteContext->scte27_handle);
-        mScteContext->scte27_handle = NULL;
+    memset(simple_bitmap, 0, sizeof(scte_simple_bitmap_type));
+    simple_bitmap->is_framed = buffer[0] & (1<<2);
+    simple_bitmap->outline_style = buffer[0] & 0x3;
+    simple_bitmap->character_color = (buffer[1] << 8) | buffer[2];
+    simple_bitmap->character_color_rgba = subtitle_color_to_bitmap_color(simple_bitmap->character_color);
+    simple_bitmap->top_h = (buffer[3] << 4) | ((buffer[4] >> 4) & 0xF);
+    simple_bitmap->top_v = ((buffer[4] & 0xF) << 8) | buffer[5];
+    simple_bitmap->bottom_h = (buffer[6] << 4) | ((buffer[7] >> 4) & 0xF);
+    simple_bitmap->bottom_v = ((buffer[7] & 0xF) << 8) | buffer[8];
+
+    if (simple_bitmap->top_h >= simple_bitmap->bottom_h || simple_bitmap->top_v >= simple_bitmap->bottom_v) {
+        free (simple_bitmap);
+        SUBTITLE_LOGE("%s top_h:%d bottom_h:%d top_v:%d bottom_v:%d", __FUNCTION__,simple_bitmap->top_h, simple_bitmap->bottom_h, simple_bitmap->top_v, simple_bitmap->bottom_v);
+        return;
+    }
+    simple_bitmap->frame_bg_style.frame_top_h = simple_bitmap->top_h;
+    simple_bitmap->frame_bg_style.frame_top_v = simple_bitmap->top_v;
+    simple_bitmap->frame_bg_style.frame_bottom_h = simple_bitmap->bottom_h;
+    simple_bitmap->frame_bg_style.frame_bottom_v = simple_bitmap->bottom_v;
+
+    buffer = &buffer[9];
+
+    if (simple_bitmap->is_framed) {
+        simple_bitmap->frame_bg_style.frame_top_h = (buffer[0] << 4) | ((buffer[1] >> 4) & 0xF);
+        simple_bitmap->frame_bg_style.frame_top_v = ((buffer[1] & 0xF) << 8) | buffer[2];
+        simple_bitmap->frame_bg_style.frame_bottom_h = (buffer[3] << 4) | ((buffer[4] >> 4) & 0xF);
+        simple_bitmap->frame_bg_style.frame_bottom_v = ((buffer[4] & 0xF) << 8) | buffer[5];
+        simple_bitmap->frame_bg_style.frame_color = (buffer[6] << 8) | buffer[7];
+        simple_bitmap->frame_bg_style.frame_color_rgba = subtitle_color_to_bitmap_color(simple_bitmap->frame_bg_style.frame_color);
+        if (simple_bitmap->frame_bg_style.frame_top_h > simple_bitmap->top_h ||
+            simple_bitmap->frame_bg_style.frame_top_v > simple_bitmap->top_v ||
+            simple_bitmap->frame_bg_style.frame_bottom_h < simple_bitmap->bottom_h ||
+            simple_bitmap->frame_bg_style.frame_bottom_v < simple_bitmap->bottom_v) {
+            free (simple_bitmap);
+            SUBTITLE_LOGE("%s top_h:%d top_v:%d bottom_h:%d bottom_v:%d  frame_top_h:%d frame_top_v:%d frame_bottom_h:%d frame_bottom_v:%d",
+                __FUNCTION__,
+                simple_bitmap->top_h,
+                simple_bitmap->top_v,
+                simple_bitmap->bottom_h,
+                simple_bitmap->bottom_v,
+                simple_bitmap->frame_bg_style.frame_top_h,
+                simple_bitmap->frame_bg_style.frame_top_v,
+                simple_bitmap->frame_bg_style.frame_bottom_h,
+                simple_bitmap->frame_bg_style.frame_bottom_v);
+            return;
+        }
+        buffer = &buffer[8];
+    }
+
+    switch (simple_bitmap->outline_style) {
+        case BMP_OUTLINE_OUTLINE:
+            simple_bitmap->style_para.outlined.outline_thickness = buffer[0] & 0xF;
+            simple_bitmap->style_para.outlined.outline_color = (buffer[1] << 8) | buffer[2];
+            simple_bitmap->style_para.outlined.outline_color_rgba = subtitle_color_to_bitmap_color(simple_bitmap->style_para.outlined.outline_color);
+            buffer = &buffer[3];
+            break;
+        case BMP_OUTLINE_DROPSHADOW:
+            simple_bitmap->style_para.drop_shadow.shadow_right = (buffer[0] >> 4) & 0xF;
+            simple_bitmap->style_para.drop_shadow.shadow_bottom = buffer[0] & 0xF;
+            simple_bitmap->style_para.drop_shadow.shadow_color = (buffer[1] << 8) | buffer[2];
+            simple_bitmap->style_para.drop_shadow.shadow_color_rgba = subtitle_color_to_bitmap_color(simple_bitmap->style_para.drop_shadow.shadow_color);
+            buffer = &buffer[3];
+            break;
+        case BMP_OUTLINE_RESERVED:
+            buffer = &buffer[4];
+            break;
+        case BMP_OUTLINE_NONE:
+        default:
+            break;
+    }
+
+
+
+    int bitmap_size,  bitmap_h, bitmap_v;
+    uint8_t *bitmap;
+    bitmap_h = simple_bitmap->bottom_h - simple_bitmap->top_h;
+    bitmap_v = simple_bitmap->bottom_v - simple_bitmap->top_v;
+    bitmap_size = bitmap_h * bitmap_v;
+    simple_bitmap->bitmap_length = (buffer[0] << 8) | buffer[1];
+
+    bitmap = (uint8_t*)malloc(bitmap_size);
+    if (!bitmap) {
+        SUBTITLE_LOGE("%s bitmap is null", __FUNCTION__);
+        free (simple_bitmap);
+        return;
+    }
+    simple_bitmap->sub_bmp = bitmap;
+
+    int on_bits, off_bits, row_length;
+    uint8_t *row_start, *row_cursor;
+    int value = 0,row_count = 0;
+    int i, j;
+
+    init_beans_separator(&buffer[2], simple_bitmap->bitmap_length);
+    row_start = bitmap;
+    row_cursor = row_start;
+    row_length = 0;
+    while (1) {
+        assert_bits(value, 1);
+        if (value != 0) {
+            //1xxxYYYYY
+            assert_bits(on_bits, 3);
+            if (on_bits == 0) on_bits = 8;
+            for (i=0; i<on_bits; i++) {
+                *(row_cursor++) = PIXEL_CH;
+            }
+
+            assert_bits(off_bits, 5);
+            if (off_bits == 0) off_bits = 32;
+            for (i=0; i<off_bits; i++) {
+                *(row_cursor++) = PIXEL_BG;
+            }
+            row_length += (off_bits + on_bits);
+        } else {
+            assert_bits(value, 1);
+            if (value != 0) {
+                //01XXXXXX
+                assert_bits(off_bits, 6);
+                if (off_bits == 0) off_bits = 64;
+                for (i=0; i<off_bits; i++) {
+                    *(row_cursor++) = PIXEL_BG;
+                }
+                row_length += off_bits;
+            } else {
+                assert_bits(value, 1);
+                if (value != 0) {
+                    //001XXXX
+                    assert_bits(on_bits, 4);
+                    if (on_bits == 0) on_bits = 16;
+                    for (i=0; i<on_bits; i++) {
+                        *(row_cursor++) = PIXEL_CH;
+                    }
+                    row_length += on_bits;
+                } else {
+                    assert_bits(value, 2);
+                    switch (value) {
+                        case STUFF: //Stuff
+                            SUBTITLE_LOGI("stuffing code");
+                            break;
+                        case EOL: //EOL
+                            if (row_length < bitmap_h) {
+                                for (i=0; i<bitmap_h - row_length; i++) {
+                                    *(row_cursor++) = PIXEL_BG;
+                                }
+                            }
+                            row_start += bitmap_h;
+                            row_cursor = row_start;
+                            row_length = 0;
+                            row_count++;
+                            break;
+                        case RESERVED_1: //Reserved
+                        case RESERVED_2: //Reserved
+                            SUBTITLE_LOGI("reserved %d", value);
+                            break;
+                        default:
+                            SUBTITLE_LOGI("can not be here");
+                            break;
+                    };
+                    if (row_count >= bitmap_v)
+                        break;
+                }
+            }
+        }
+    }
+    //Outline
+
+    if (simple_bitmap->outline_style == OUTLINE_STYLE_OL) {
+        int thickness = simple_bitmap->style_para.outlined.outline_thickness;
+        for (i=0; i<bitmap_v; i++) {
+            for (j=0; j<bitmap_h; j++) {
+                if (bitmap[i*bitmap_h + j] == PIXEL_CH) {
+                    int outline_i, outline_j;
+                    for (outline_i = i - thickness; outline_i <= i + thickness; outline_i++) {
+                        for (outline_j = j -thickness; outline_j <= j + thickness; outline_j++) {
+                            int w = abs(outline_i - i);
+                            int h = abs(outline_j - j);
+                            if (sqrt(w*w + h*h) <= thickness) {
+                                if (bitmap[outline_i*bitmap_h + outline_j] == PIXEL_BG) {
+                                    bitmap[outline_i*bitmap_h + outline_j] = PIXEL_OL;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else if (simple_bitmap->outline_style == OUTLINE_STYLE_DS) {
+        int offset_right = simple_bitmap->style_para.drop_shadow.shadow_right;
+        int offset_below = simple_bitmap->style_para.drop_shadow.shadow_bottom;
+        for (i=0; i<bitmap_v; i++) {
+            for (j=0; j<bitmap_h; j++) {
+                if (bitmap[i*bitmap_h + j] == PIXEL_CH) {
+                    int target_ds = (i + offset_below) * bitmap_h + j + offset_right;
+                    if (bitmap[target_ds] == PIXEL_BG) {
+                        bitmap[target_ds] = PIXEL_DS;
+                    }
+                }
+            }
+        }
+    }
+
+
+    uint8_t *bmp, *target_bmp_start, *cursor;
+    bmp = (uint8_t *) malloc(bitmap_width*bitmap_height*4);
+    target_bmp_start = bmp + simple_bitmap->top_v * pitch + simple_bitmap->top_h * 4;
+
+    for (i=0; i<bitmap_v; i++)
+    {
+        cursor = target_bmp_start + i * pitch;
+        for (j=0; j<bitmap_h; j++)
+        {
+            switch (bitmap[i*bitmap_h + j])
+            {
+                case PIXEL_BG: //Bg
+                    if (simple_bitmap->is_framed)
+                        set_rgba(cursor + j * 4, simple_bitmap->frame_bg_style.frame_color_rgba);
+                    break;
+                case PIXEL_CH: //Font
+                    set_rgba(cursor + j * 4, simple_bitmap->character_color_rgba);
+                    break;
+                case PIXEL_OL: // Outline
+                    set_rgba(cursor + j * 4, simple_bitmap->style_para.outlined.outline_color_rgba);
+                    break;
+                case PIXEL_DS: // Drop shadow
+                    set_rgba(cursor + j * 4, simple_bitmap->style_para.drop_shadow.shadow_color_rgba);
+                    break;
+                default:
+                    SUBTITLE_LOGI("render should not be here");
+                    break;
+            }
+        }
+    }
+    spu->spu_data = (unsigned char *)malloc(bitmap_width*bitmap_height*4);
+    if (!spu->spu_data) {
+        SUBTITLE_LOGE("%s malloc SCTE27_SUB_SIZE failed!\n",__FUNCTION__);
+        free (bitmap);
+        free (simple_bitmap);
+        return;
+    }
+    memset(spu->spu_data, 0, bitmap_width*bitmap_height*4);
+    memcpy(spu->spu_data, bmp, bitmap_width*bitmap_height*4);
+    SUBTITLE_LOGI("%s top_h:%d top_v:%d bottom_h:%d bottom_v:%d frame_top_h:%d frame_top_v:%d frame_bottom_h:%d frame_bottom_v:%d frame_color:0x%x outline_style:%d character_color:0x%x bitmap_length:%d",
+        __FUNCTION__,
+        simple_bitmap->top_h,
+        simple_bitmap->top_v,
+        simple_bitmap->bottom_h,
+        simple_bitmap->bottom_v,
+        simple_bitmap->frame_bg_style.frame_top_h,
+        simple_bitmap->frame_bg_style.frame_top_v,
+        simple_bitmap->frame_bg_style.frame_bottom_h,
+        simple_bitmap->frame_bg_style.frame_bottom_v,
+        simple_bitmap->frame_bg_style.frame_color,
+        simple_bitmap->outline_style,
+        simple_bitmap->character_color,
+        simple_bitmap->bitmap_length);
+    if (!spu->spu_data) {
+        SUBTITLE_LOGE("%s malloc SCTE27_SUB_SIZE failed!\n",__FUNCTION__);
+        free (bitmap);
+        free (simple_bitmap);
+        free (bmp);
+        return;
+    }
+}
+
+int Scte27Parser::decodeMessageBodySubtitle(std::shared_ptr<AML_SPUVAR> spu, char *pSrc, const int size) {
+    uint8_t *buf = (uint8_t *)pSrc;
+    int bufSize = size;
+    const uint8_t *p, *pEnd;
+    int segmentType;
+    int pageId;
+    int segmentLength;
+    int dataSize;
+    int totalObject = 0;
+    int total_RegionSegment = 0;
+
+    uint8_t *bitmap = NULL;
+    int width;
+    int height;
+    int video_width;
+    int video_height;
+    char read_buff[64];
+    int lang_valid = -1;
+    int i;
+
+    memcpy(mContext->lang, buf, 3);
+    for (i=0; i<3; i++)
+    {
+        if ((mContext->lang[i] >= 'a' && mContext->lang[i] <= 'z') ||
+            (mContext->lang[i] >= 'A' && mContext->lang[i] <= 'Z'))
+        {
+            lang_valid = 0;
+        }
+        else
+        {
+            lang_valid = -1;
+            break;
+        }
+    }
+
+
+    bool pre_clear_display  = buf[3] & 0x80;
+    int immediate           = buf[3] & 0x40;
+    int display_standard    = buf[3] & 0x1F;
+    int subtitle_type       = (buf[8] >> 4) & 0xF;
+    int vlc_subtitle_type   = buf[8] >> 4;
+    int block_length        = (buf[10] << 8) | buf[11];
+    int64_t reveal_pts      = (buf[4] << 24) | (buf[5] << 16) | (buf[6] << 8) | buf[7];
+    reveal_pts = (reveal_pts < 0) ? -reveal_pts : reveal_pts;
+    int display_duration    = ((buf[8] & 0x07) << 8) | buf[9];
+
+    SUBTITLE_LOGI("%s pre_clear_display %d immediate %d display_standard:%d subtitle_type:%d vlc_subtitle_type:%d block_length:%d reveal_pts :%lld display_duration:%d", __FUNCTION__, pre_clear_display, immediate, display_standard, subtitle_type, vlc_subtitle_type, block_length, reveal_pts, display_duration);
+
+    if (block_length < 12 || block_length > size)
+    {
+        SUBTITLE_LOGE("%s sub_node->block_len invalid blen %x size %x", __FUNCTION__, block_length, size);
+        return -1;
+    }
+
+    video_width = VideoInfo::Instance()->getVideoWidth();
+    video_height = VideoInfo::Instance()->getVideoHeight();
+
+    int frame_duration;
+    switch (display_standard)
+    {
+        case DISPLAY_STD_720_480_30:
+            width = 720;
+            height = 480;
+            frame_duration = 3000;
+            break;
+        case DISPLAY_STD_720_576_25:
+            //frame_rate = 25; //Protocol says 25
+            width = 720;
+            height = 576;
+            frame_duration = 3600;
+            break;
+        case DISPLAY_STD_1280_720_60:
+            width = 1280;
+            height = 720;
+            frame_duration = 1500;
+            break;
+        case DISPLAY_STD_1920_1080_60:
+            width = 1920;
+            height = 1080;
+            frame_duration = 1500;
+            break;
+        default:
+            width = video_width;
+            height = video_height;
+            frame_duration = 3600;
+            SUBTITLE_LOGI("display standard error");
+            break;
+    }
+
+    if (!pre_clear_display) SUBTITLE_LOGI("%s SCTE-27 subtitles without pre_clear_display flag are not well supported", __FUNCTION__);
+
+    bitmap = &buf[12];
+
+    if (subtitle_type == SUB_TYPE_SIMPLE_BITMAP) {
+        decodeBitmap(spu, bitmap, block_length, width, height, width*4);
+    }
+    //memset(spu->spu_data, 0, width*height*4);
+    //memcpy(spu->spu_data,ctx->buffer, width*height*4);
+    spu->spu_width = width;
+    spu->spu_height = height;
+    spu->spu_origin_display_w = width;
+    spu->spu_origin_display_h = height;
+    spu->buffer_size = width * height * 4;
+    spu->sync_bytes = AML_PARSER_SYNC_WORD;
+    spu->subtitle_type = TYPE_SUBTITLE_SCTE27;
+    spu->pts = reveal_pts;
+    spu->m_delay = reveal_pts + display_duration + frame_duration;
+    SUBTITLE_LOGI("%s spu->spu_width:%d, spu->spu_height:%d, spu->spu_origin_display_w:%d, spu->spu_origin_display_h:%d, spu->buffer_size:%d, spu->sync_bytes:%d, spu->subtitle_type:%d, spu->pts:%lld, spu->m_delay:%lld", __FUNCTION__, spu->spu_width, spu->spu_height, spu->spu_origin_display_w, spu->spu_origin_display_h, spu->buffer_size, spu->sync_bytes, spu->subtitle_type, spu->pts, spu->m_delay);
+    if (mDumpSub) {
+        char filename[64];
+        snprintf(filename, sizeof(filename), "./data/subtitleDump/Scte27(%lld)", spu->pts);
+        save2BitmapFile(filename, (uint32_t *)spu->spu_data, spu->spu_width, spu->spu_height);
     }
     return 0;
 }
 
 
-int Scte27Parser::stopScte27() {
-    AM_SCTE27_Destroy(mScteContext->scte27_handle);
-    mScteContext->dmx_id = -1;
-    mScteContext->filter_handle = -1;
+int Scte27Parser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *psrc, const int size) {
+    int segmentation_overlay_included;
+    int section_length;
+    int protocol_version;
+    int segment_size;
+    int ret = -1;
 
-    pthread_mutex_lock(&mScteContext->lock);
-    //data->buffer = lockBitmap(env, data->obj_bitmap);
-    clearBitmap(mScteContext);
-    unlockBitmap(mScteContext);
+    if (!psrc || !size)
+    {
+        return -1;
+    }
 
-    pthread_mutex_unlock(&mScteContext->lock);
+    section_length = ((psrc[1] & 0xF) << 8) | psrc[2];
+    protocol_version = psrc[3] & 0x3F;
+    if (protocol_version != 0) SUBTITLE_LOGI("%s Unsupport scte version: %d only support 0", __FUNCTION__, protocol_version);
 
-    mScteContext->scte27_handle = NULL;
-    mScteContext->pes_handle = NULL;
-    return 0;
+    // 1. segmentation_overlay_included
+    segmentation_overlay_included = (psrc[3] >> 6) & 1;
+
+    SUBTITLE_LOGI("%s section_length:%d protocol_version:%d segmentation_overlay_included:%d", __FUNCTION__, section_length, protocol_version, segmentation_overlay_included);
+    if (segmentation_overlay_included) {
+        int table_ext = (psrc[4] << 8) | psrc[5];
+        int last_no = (psrc[6] << 4) | ((psrc[7] >> 4) & 0xF);
+        int curr_no = ((psrc[7] & 0xF)) << 8 | psrc[8];
+
+        if (curr_no > last_no) {
+            SUBTITLE_LOGE("%s curr_no:%d > last_no:%d fail.", __FUNCTION__, curr_no, last_no);
+            return -1;
+        }
+
+        if (curr_no == 0) {
+            SUBTITLE_LOGI("scte overlay");
+            mContext->seg_size = 0;
+            mContext->table_ext = table_ext;
+            mContext->last_no = last_no;
+            mContext->curr_no = -1;
+        }
+
+        if (table_ext != mContext->table_ext && mContext->has_segment) {
+            SUBTITLE_LOGE("%s segment ext does not match", __FUNCTION__);
+            return -1;
+        }
+
+        if ((curr_no != (mContext->curr_no + 1)) && mContext->has_segment) {
+            SUBTITLE_LOGE("%s segment curr_no does not match", __FUNCTION__);
+            return -1;
+        }
+
+        mContext->curr_no = curr_no;
+        mContext->has_segment = 1;
+        if (curr_no == last_no) {
+            if (mContext->seg_size < 12) {
+                SUBTITLE_LOGE("%s scte_segment.seg_size:%d < 12 fail.", __FUNCTION__, section_length - 1 - 5 - 4);
+                return -1;
+            }
+            ret = decodeMessageBodySubtitle(spu, &psrc[9], section_length - 1 - 5 - 4);
+        }
+    } else { // decode scte27 message body
+        if ((section_length - 1 - 4) < 12)
+        {
+            SUBTITLE_LOGE("(section_length - 1 - 4):%d < 12 fail.", section_length - 1- 4);
+            return -1;
+        }
+        ret = decodeMessageBodySubtitle(spu, &psrc[4], section_length - 1 - 4);
+    }
+
+    SUBTITLE_LOGI("[%s::%d] (width=%d,height=%d), (x=%d,y=%d),ret =%d,spu->buffer_size=%d--------\n", __FUNCTION__, __LINE__,
+            spu->spu_width, spu->spu_height, spu->spu_start_x, spu->spu_start_y, ret, spu->buffer_size);
+
+    if (ret != -1 && spu->buffer_size > 0) {
+        if (mDumpSub) SUBTITLE_LOGI("[%s::%d]dump-pts-hwdmx!success pts(%lld) frame was add\n", __FUNCTION__,__LINE__, spu->pts);
+        if (spu->spu_origin_display_w <= 0 || spu->spu_origin_display_h <= 0) {
+            spu->spu_origin_display_w = VideoInfo::Instance()->getVideoWidth();
+            spu->spu_origin_display_h = VideoInfo::Instance()->getVideoHeight();
+        }
+        //ttx,need immediatePresent show
+        spu->isImmediatePresent = true;
+        spu->isKeepShowing = true;
+        addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
+    } else {
+        if (mDumpSub) SUBTITLE_LOGI("[%s::%d]dump-pts-hwdmx!error this pts(%lld) frame was abandon\n", __FUNCTION__,__LINE__, spu->pts);
+    }
+    if (ret) SUBTITLE_LOGE("%s decodeMessageBodySubtitle failed",__FUNCTION__);
+    return ret;
 }
 
-static int getScte27Spu( ) {
+int Scte27Parser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu, char *psrc, const int size) {
+    int ret = -1;
+    ret = decodeSubtitle(spu, psrc, size);
+    return ret;
+}
+
+int Scte27Parser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu, char *psrc, const int size) {
+    char tmpbuf[256] = {0};
+    int64_t pts = 0, ptsDiff = 0;
     int ret = 0;
-    Scte27Parser *parser = Scte27Parser::getCurrentInstance();
-   uint8_t* tmpbuf = parser->mData.get();
-   memset(tmpbuf, 0, 10*1024);
-   int size = parser->mDataSource->read(tmpbuf, 0xffff);
-   if (size <= 0)
-       return -1;
-   ret = AM_SCTE27_Decode(parser->mScteContext->scte27_handle, tmpbuf, size);
-   return ret;
+    int dataLen = 0;
+    char *data = NULL;
+    int avil = 0;
+
+    SUBTITLE_LOGI("## 333 get_dvb_spu %x,%x,%x,%x-------------\n",tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3]);
+    if (mDataSource->read(tmpbuf, 19) == 19) {
+        dataLen = subPeekAsInt32(tmpbuf + 3);
+        pts     = subPeekAsInt64(tmpbuf + 7);
+        ptsDiff = subPeekAsInt32(tmpbuf + 15);
+
+        std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
+        spu->sync_bytes = AML_PARSER_SYNC_WORD;
+        spu->subtitle_type = TYPE_SUBTITLE_SCTE27;
+        SUBTITLE_LOGI("@@[%s::%d]malloc ptr=%p, size=%d\n",__FUNCTION__, __LINE__, spu->spu_data, DVB_SUB_SIZE);
+        spu->pts = pts;
+        SUBTITLE_LOGI("fmq send pts:%lld\n", spu->pts);
+        SUBTITLE_LOGI("## 4444 datalen=%d, pts=%llx,delay=%llx, diff=%llx, data: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x-------------\n",
+                dataLen, pts, spu->m_delay, ptsDiff,
+                tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4],
+                tmpbuf[5], tmpbuf[6], tmpbuf[7], tmpbuf[8], tmpbuf[9],
+                tmpbuf[10], tmpbuf[11], tmpbuf[12], tmpbuf[13], tmpbuf[14]);
+
+        data = (char *)malloc(dataLen);
+        if (!data) {
+            SUBTITLE_LOGI("data buf malloc fail!\n");
+            return -1;
+        }
+        memset(data, 0x0, dataLen);
+        ret = mDataSource->read(data, dataLen);
+        if (ret <= 0) {
+            SUBTITLE_LOGI("no data now\n");
+        }
+        ret = decodeMessageBodySubtitle(spu, data, dataLen);
+        if (ret != -1 && spu->buffer_size > 0) {
+            SUBTITLE_LOGI("dump-pts-swdmx!success pts(%lld) frame was add\n", spu->pts);
+            addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
+            notifySubtitleDimension(spu->spu_origin_display_w, spu->spu_origin_display_h);
+
+            {
+                std::unique_lock<std::mutex> autolock(mMutex);
+                mPendingAction = 1;
+                mCv.notify_all();
+            }
+
+        } else {
+            SUBTITLE_LOGI("dump-pts-swdmx!error this pts(%lld) frame was abandon\n", spu->pts);
+        }
+
+        if (data) free(data);
+    }
+    return ret;
+}
+
+int Scte27Parser::getScte27Spu() {
+    char tmpbuf[8];
+    char *originBuffer = NULL, *transportBuffer = NULL; // Pointer to dynamically allocated buffer
+    int bufferSize = 10*1024; // Set the initial buffer size as needed
+    int bufIndex = 0;
+    int64_t table_id = 0; //0xc6
+    int64_t CRC_32 = 0; //0xFFFFFFFF
+    bool packetSource = false;
+    originBuffer = new char[bufferSize];
+    transportBuffer = new char[bufferSize];
+
+    if (mDumpSub) SUBTITLE_LOGI("enter get_scte27_spu\n");
+    int ret = -1;
+
+    while (mDataSource->read(tmpbuf, 1) == 1) {
+        if (mState == SUB_STOP) {
+            if (originBuffer != NULL) {
+                delete[] originBuffer;
+            }
+            if (transportBuffer != NULL) {
+                delete[] transportBuffer;
+            }
+            return 0;
+        }
+
+        table_id = tmpbuf[0];
+        CRC_32 = ((CRC_32<<8) & 0x000000ffffffff00) | tmpbuf[0];
+
+
+        if (table_id  == 0xc6 && !packetSource) {
+            packetSource = true;
+            bufIndex = 0;
+            CRC_32 = 0;
+        }
+
+        if (packetSource) {
+            originBuffer[bufIndex++] = tmpbuf[0];
+            //SUBTITLE_LOGI("%s bufIndex:%d tmpbuf:0x%x\n", __FUNCTION__, bufIndex,tmpbuf[0]);
+        }
+
+        if ((CRC_32 & 0xffffffff) == 0xFFFFFFFF && packetSource) {
+            //If 0xFFFFFFFF(CRC_32), stop saving data to the buffer
+            //The data stored in dataBuffer can be used here
+            //Reset the data buffer and data size and prepare to receive the next data segment
+            memset(transportBuffer, 0x0, bufferSize);
+            memcpy(transportBuffer, originBuffer, bufIndex - 4);
+            if (mDumpSub) {
+                for (int i =0;i< bufIndex - 4;i++) {
+                    SUBTITLE_LOGI("%s transportBuffer[%d]:0x%x\n", __FUNCTION__, i,transportBuffer[i]);
+                }
+            }
+            std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
+            spu->sync_bytes = AML_PARSER_SYNC_WORD;
+            ret = hwDemuxParse(spu, transportBuffer ,bufIndex - 4);
+            packetSource = false;
+            bufIndex = 0;
+            CRC_32 = 0;
+        }
+    }
+
+    if (originBuffer != NULL) {
+        delete[] originBuffer;
+    }
+
+    if (transportBuffer != NULL) {
+        delete[] transportBuffer;
+    }
+    return ret;
 }
 
 int Scte27Parser::getSpu() {
@@ -399,30 +802,31 @@ int Scte27Parser::getSpu() {
         SUBTITLE_LOGI(" mState == SUB_STOP \n\n");
         return 0;
     }
+
     return getScte27Spu();
 }
+
+int Scte27Parser::getInterSpu() {
+    return getSpu();
+}
+
 int Scte27Parser::parse() {
-    startScte27(0, 0);
     while (!mThreadExitRequested) {
-        if (getSpu() < 0) {
+        if (getInterSpu() < 0) {
             // advance input, if parse failed, wait and retry.
             //std::this_thread::sleep_for(std::chrono::milliseconds(1));
             usleep(100);
         }
     }
     return 0;
-
 }
 
 void Scte27Parser::dump(int fd, const char *prefix) {
     dprintf(fd, "%s SCTE 27 Parser\n", prefix);
     dumpCommon(fd, prefix);
-    dprintf(fd, "\n");
-    dprintf(fd, "%s   Program Id: %d\n", prefix, mPid);
-    dprintf(fd, "\n");
-    if (mScteContext != nullptr) {
-        mScteContext->dump(fd, prefix);
+
+    if (mContext != nullptr) {
+        mContext->dump(fd, prefix);
     }
 
 }
-

@@ -35,15 +35,16 @@
 
 #include <utils/CallStack.h>
 #include "SubtitleLog.h"
-#include "streamUtils.h"
 
-#include "sub_types.h"
+#include "StreamUtils.h"
+#include "SubtitleTypes.h"
+
 #include "DvbParser.h"
 #include "ParserFactory.h"
 
 struct DVBSubCLUT {
     int id;
-     uint32_t clut4[4];
+    uint32_t clut4[4];
     uint32_t clut16[16];
     uint32_t clut256[256];
 
@@ -891,17 +892,19 @@ int DvbParser::init() {
 
 void DvbParser::checkDebug() {
        //dump dvb subtitle bitmap
+       #ifdef NEED_DUMP_ANDROID
        char value[PROPERTY_VALUE_MAX] = {0};
        memset(value, 0, PROPERTY_VALUE_MAX);
        property_get("vendor.subtitle.dump", value, "false");
        if (!strcmp(value, "true")) {
            mDumpSub = true;
        }
+       #endif
 }
 
 void DvbParser::notifySubtitleDimension(int width, int height) {
     if (mNotifier != nullptr) {
-        if ((mContext->lastSpuOriginDisplayW != width) || (mContext->lastSpuOriginDisplayH != height)) {
+        if ((mContext->lastSpuOriginDisplayW != (unsigned int)width) || (mContext->lastSpuOriginDisplayH != (unsigned int)height)) {
             SUBTITLE_LOGI("notifySubtitleDimension: last wxh:(%d x %d), now wxh:(%d x %d)",
                 mContext->lastSpuOriginDisplayW, mContext->lastSpuOriginDisplayH, width, height);
             mNotifier->onSubtitleDimension(width, height);
@@ -965,8 +968,8 @@ DvbParser::~DvbParser() {
 }
 
 bool DvbParser::updateParameter(int type, void *data) {
-    if (TYPE_SUBTITLE_DTVKIT_DVB == type) {
-        DtvKitDvbParam *pDvbParam = (DtvKitDvbParam* )data;
+    if (TYPE_SUBTITLE_DVB == type) {
+        DvbParam *pDvbParam = (DvbParam* )data;
         mContext->compositionId = pDvbParam->compositionId;
         mContext->ancillaryId = pDvbParam->ancillaryId;
         if (mContext->compositionId <= 0 && mContext->ancillaryId <= 0) {
@@ -1418,7 +1421,12 @@ void DvbParser::saveResult2Spu(std::shared_ptr<AML_SPUVAR> spu) {
         }
 
        if (mDumpSub) {
+           #ifdef NEED_DUMP_ANDROID
            snprintf(filename, sizeof(filename), "./data/subtitleDump/dvb(%lld)", spu->pts);
+           #endif
+           #ifdef NEED_DUMP_LINUX
+           snprintf(filename, sizeof(filename), "/tmp/dvb(%lld)", spu->pts);
+           #endif
            save2BitmapFile(filename, pbuf, width, height);
        }
 
@@ -1863,7 +1871,12 @@ int DvbParser::softDemuxParse() {
 }
 
 void DvbParser::callbackProcess() {
-    int timeout = property_get_int32("vendor.sys.subtitleService.decodeTimeOut", 60);
+    int timeout = 60;
+    #ifdef NEED_DECODE_TIMEOUT_ANDROID
+    timeout = property_get_int32("vendor.sys.subtitleService.decodeTimeOut", 60);
+    #elif NEED__DECODE_TIMEOUT_LINUX
+    timeout = 60;
+    #endif
     const int SIGNAL_UNSPEC = -1;
     const int NO_SIGNAL = 0;
     const int HAS_SIGNAL = 1;

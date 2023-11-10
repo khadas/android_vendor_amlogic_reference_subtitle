@@ -27,8 +27,9 @@
 #define LOG_TAG "WebVtt"
 #include <regex>
 
+#include "SubtitleLog.h"
+#include <utils/CallStack.h>
 #include "WebVtt.h"
-
 
 
 SimpleWebVtt::SimpleWebVtt(std::shared_ptr<DataSource> source): TextSubtitle(source) {

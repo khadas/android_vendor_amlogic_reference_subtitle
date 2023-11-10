@@ -27,7 +27,7 @@
 #ifndef __SUBTITLE_USERDATA_AFD_H__
 #define __SUBTITLE_USERDATA_AFD_H__
 
-#include "sub_types2.h"
+#include "SubtitleTypes.h"
 #include "ParserFactory.h"
 #include "ParserEventNotifier.h"
 #include <thread>

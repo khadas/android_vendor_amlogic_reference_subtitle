@@ -126,7 +126,7 @@ bool FmqReceiver::readLoop() {
                 //    curHeader.syncWord, curHeader.sessionId, curHeader.magicWord,
                 //    curHeader.pkgType, curHeader.dataSize);
                 if (ringbuffer_read_avail(bufferHandle) < (sizeof(IpcPackageHeader)+curHeader.dataSize)) {
-                    SUBTITLE_LOGI("not enough data, try next...");
+                    SUBTITLE_LOGE("not enough data, try next...");
                     break; // not enough data. try next
                 }
 
@@ -146,8 +146,8 @@ bool FmqReceiver::readLoop() {
                     //SUBTITLE_LOGI("payload listener=%p type=%x, %d", listener.get(), peekAsSocketWord(payloads), curHeader.dataSize);
                     if (listener != nullptr) {
                         if (listener->onData(payloads, curHeader.dataSize+4) < 0) {
-                            //for some ext and internel sub switch, if here return, then ext sub(now this no data) switch
-                            //to internel will no sub. so not return.
+                            //for some ext and internal sub switch, if here return, then ext sub(now this no data) switch
+                            //to internal will no sub. so not return.
                             SUBTITLE_LOGE("%s no need free buffer handle, need wait stop now! \n", __func__);
                         }
                     }

@@ -32,15 +32,19 @@
 #include <thread>
 #include <algorithm>
 #include <functional>
+#include <stack>
 #include <mutex>
-#include "SubtitleLog.h"
-#include <utils/CallStack.h>
 #include <future>
 
-#include "sub_types2.h"
-#include "ClosedCaptionParser.h"
-#include "ParserFactory.h"
+#include "SubtitleLog.h"
+#include <utils/CallStack.h>
+
+#include "StreamUtils.h"
 #include "VideoInfo.h"
+#include "SubtitleTypes.h"
+#include "ParserFactory.h"
+
+#include "ClosedCaptionParser.h"
 
 #define CC_EVENT_VCHIP_AUTH -1
 #define CC_EVENT_VCHIP_FLAG -2
@@ -52,7 +56,7 @@
 static std::mutex gLock;
 
 
-static void cc_report_cb(AM_CC_Handle_t handle, int error) {
+static void cc_report_cb(ClosedCaptionHandleType handle, int error) {
     (void)handle;
     ClosedCaptionParser *parser = ClosedCaptionParser::getCurrentInstance();
     if (parser != nullptr) {
@@ -81,7 +85,7 @@ struct ChannelHandle {
 ChannelHandle gHandle = {true, 0};
 std::thread gTimeoutThread;
 
-static void cc_rating_cb (AM_CC_Handle_t handle, vbi_rating *rating) {
+static void cc_rating_cb (ClosedCaptionHandleType handle, vbi_rating *rating) {
     (void)handle;
     std::unique_lock<std::mutex> autolock(gLock);
     ClosedCaptionParser *parser = ClosedCaptionParser::getCurrentInstance();
@@ -93,7 +97,7 @@ static void cc_rating_cb (AM_CC_Handle_t handle, vbi_rating *rating) {
     }
 }
 
-static void q_tone_data_cb(AM_CC_Handle_t handle, char *buffer, int size) {
+static void q_tone_data_cb(ClosedCaptionHandleType handle, char *buffer, int size) {
     SUBTITLE_LOGI("q_tone_data_cb data:%s, size:%d", buffer ,size);
     std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
     spu->spu_data = (unsigned char *)malloc(size);
@@ -119,7 +123,7 @@ static void q_tone_data_cb(AM_CC_Handle_t handle, char *buffer, int size) {
 
 }
 
-static void cc_data_cb(AM_CC_Handle_t handle, int mask) {
+static void cc_data_cb(ClosedCaptionHandleType handle, int mask) {
     (void)handle;
     if (mask > 0) {
         gHandle.mReqStop = true; // todo: CV notify
@@ -150,7 +154,7 @@ static void cc_data_cb(AM_CC_Handle_t handle, int mask) {
 
 
 
-void json_update_cb(AM_CC_Handle_t handle) {
+void json_update_cb(ClosedCaptionHandleType handle) {
     (void)handle;
 
     SUBTITLE_LOGI("@@@@@@ cc json string: %s", ClosedCaptionParser::sJsonStr);
@@ -222,7 +226,7 @@ ClosedCaptionParser::~ClosedCaptionParser() {
 
 bool ClosedCaptionParser::updateParameter(int type, void *data) {
     (void)type;
-  CcParam *cc_param = (CcParam *) data;
+  ClosedCaptionParam *cc_param = (ClosedCaptionParam *) data;
   mChannelId = cc_param->ChannelID;
   if (strlen(cc_param->lang) > 0) {
       mLang = strdup(cc_param->lang);
@@ -242,22 +246,13 @@ void ClosedCaptionParser::setPipId (int mode, int id) {
     }
 }
 
-void ClosedCaptionParser::setDvbDebugLogLevel() {
-    //AM_DebugSetLogLevel(property_get_int32("tv.dvb.loglevel", 1));
-}
-
-
-
 int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_color,
         int fg_opacity, int bg_color, int bg_opacity, int font_style, int font_size)
 {
-    AM_CC_CreatePara_t cc_para;
-    AM_CC_StartPara_t spara;
+    ClosedCaptionCreatePara_t cc_para;
+    ClosedCaptionStartPara_t spara;
     int ret;
     int mode;
-
-    setDvbDebugLogLevel();
-
     SUBTITLE_LOGI("start cc: vfmt %d caption %d, fgc %d, bgc %d, fgo %d, bgo %d, fsize %d, fstyle %d mMediaSyncId:%d",
             vfmt, caption, fg_color, bg_color, fg_opacity, bg_opacity, font_size, font_style, mMediaSyncId);
 
@@ -269,7 +264,7 @@ int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_c
     //cc_para.draw_begin = cc_draw_begin_cb;
     //cc_para.draw_end = cc_draw_end_cb;
     cc_para.user_data = (void *)mCcContext;
-    cc_para.input = (AM_CC_Input_t)source;
+    cc_para.input = (ClosedCaptionInput)source;
     //cc_para.rating_cb = cc_rating_cb;
     cc_para.data_cb = cc_data_cb;
     cc_para.report = cc_report_cb;
@@ -289,22 +284,22 @@ int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_c
     spara.vfmt = vfmt;
     spara.player_id = mPlayerId;
     spara.mediaysnc_id = mMediaSyncId;
-    spara.caption1                 = (AM_CC_CaptionMode_t)caption;
-    spara.caption2                 = AM_CC_CAPTION_NONE;
-    spara.user_options.bg_color    = (AM_CC_Color_t)bg_color;
-    spara.user_options.fg_color    = (AM_CC_Color_t)fg_color;
-    spara.user_options.bg_opacity  = (AM_CC_Opacity_t)bg_opacity;
-    spara.user_options.fg_opacity  = (AM_CC_Opacity_t)fg_opacity;
-    spara.user_options.font_size   = (AM_CC_FontSize_t)font_size;
-    spara.user_options.font_style  = (AM_CC_FontStyle_t)font_style;
+    spara.caption1                 = (ClosedCaptionMode)caption;
+    spara.caption2                 = CLOSED_CAPTION_NONE;
+    spara.user_options.bg_color    = (ClosedCaptionColor)bg_color;
+    spara.user_options.fg_color    = (ClosedCaptionColor)fg_color;
+    spara.user_options.bg_opacity  = (ClosedCaptionOpacity)bg_opacity;
+    spara.user_options.fg_opacity  = (ClosedCaptionOpacity)fg_opacity;
+    spara.user_options.font_size   = (ClosedCaptionFontSize)font_size;
+    spara.user_options.font_style  = (ClosedCaptionFontStyle)font_style;
 
     SUBTITLE_LOGI("%s %s", mLang, cc_para.lang);
-    ret = AM_CC_Create(&cc_para, &mCcContext->cc_handle);
+    ret = ClosedCaptionCreate(&cc_para, &mCcContext->cc_handle);
     if (ret != AM_SUCCESS) {
         goto error;
     }
 
-    ret = AM_CC_Start(mCcContext->cc_handle, &spara);
+    ret = ClosedCaptionStart(mCcContext->cc_handle, &spara);
     if (ret != AM_SUCCESS) {
         goto error;
     }
@@ -312,7 +307,7 @@ int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_c
     return 0;
 error:
     if (mCcContext->cc_handle != NULL) {
-        AM_CC_Destroy(mCcContext->cc_handle);
+        ClosedCaptionDestroy(mCcContext->cc_handle);
     }
     SUBTITLE_LOGI("start cc failed!");
     return -1;
@@ -320,7 +315,7 @@ error:
 
 int ClosedCaptionParser::stopAmlCC() {
     SUBTITLE_LOGI("stop cc");
-    AM_CC_Destroy(mCcContext->cc_handle);
+    ClosedCaptionDestroy(mCcContext->cc_handle);
     pthread_mutex_lock(&mCcContext->lock);
     pthread_mutex_unlock(&mCcContext->lock);
 
@@ -334,7 +329,7 @@ int ClosedCaptionParser::stopAmlCC() {
 int ClosedCaptionParser::startAmlCC() {
     int source = mChannelId>>8;
     int channel = mChannelId&0xff;
-    if (source != AM_CC_INPUT_VBI) {
+    if (source != CLOSED_CAPTION_INPUT_VBI) {
         mVfmt = VideoInfo::Instance()->getVideoFormat();
     }
 

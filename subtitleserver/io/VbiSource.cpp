@@ -25,9 +25,9 @@
  */
 
 /*
- *
  *for teletext atv data source
  */
+
 #define LOG_TAG "VbiSource"
 
 #include <unistd.h>
@@ -38,25 +38,17 @@
 #include <sys/poll.h>
 #include <sys/ioctl.h>
 #include <string>
-#include "SubtitleLog.h"
-#include <utils/CallStack.h>
 #include <pthread.h>
 
-#include "VbiSource.h"
-#include "tvin_vbi.h"
+#include "SubtitleLog.h"
+#include <utils/CallStack.h>
 
-#define ATV_TELETEXT_SUB_HEADER_LEN 9
+#include "VbiSource.h"
 
 static const std::string VBI_DEV_FILE = "/dev/vbi";
 static const std::string SYSFS_VIDEO_PTS = "/sys/class/tsync/pts_video";
 
-#define VBI_IOC_MAGIC 'X'
-#define VBI_IOC_SET_TYPE           _IOW(VBI_IOC_MAGIC, 0x03, int)
-#define VBI_IOC_S_BUF_SIZE         _IOW(VBI_IOC_MAGIC, 0x04, int)
-#define VBI_IOC_START              _IO(VBI_IOC_MAGIC, 0x05)
-#define VBI_IOC_STOP               _IO(VBI_IOC_MAGIC, 0x06)
-
-#define DTV_SUB_DTVKIT_TELETEXT 13
+#define DTV_SUB_DVB_TELETEXT 8
 
 static inline bool pollFd(int fd, int timeout) {
     struct pollfd pollFd[1];
@@ -130,7 +122,6 @@ void VbiSource::updateParameter(int type, void *data) {
    return;
 }
 
-
 bool VbiSource::notifyInfoChange() {
     std::unique_lock<std::mutex> autolock(mLock);
     for (auto it = mInfoListeners.begin(); it != mInfoListeners.end(); it++) {
@@ -139,7 +130,7 @@ bool VbiSource::notifyInfoChange() {
 
 
         if (auto lstn = wk_listener.lock()) {
-            value = DTV_SUB_DTVKIT_TELETEXT;
+            value = DTV_SUB_DVB_TELETEXT;
             if (value > 0) {  //0:no sub
                 lstn->onTypeChanged(value);
             }
@@ -244,8 +235,6 @@ bool VbiSource::start() {
     return false;
 }
 
-
-
 bool VbiSource::stop() {
     mState = E_SOURCE_STOPPED;
     ::ioctl(mRdFd, VBI_IOC_STOP);
@@ -317,7 +306,6 @@ size_t VbiSource::read(void *buffer, size_t size) {
 
 }
 
-
 void VbiSource::dump(int fd, const char *prefix) {
     dprintf(fd, "%s nVBISource:\n", prefix);
     {
@@ -329,8 +317,5 @@ void VbiSource::dump(int fd, const char *prefix) {
         }
     }
     dprintf(fd, "%s   state:%d\n\n", prefix, mState);
-
-
     dprintf(fd, "\n%s   Current Unconsumed Data Size: %d\n", prefix, availableDataSize());
 }
-

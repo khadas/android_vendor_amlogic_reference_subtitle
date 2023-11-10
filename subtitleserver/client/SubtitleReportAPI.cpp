@@ -1,3 +1,29 @@
+/*
+ * Copyright (C) 2014-2019 Amlogic, Inc. All rights reserved.
+ *
+ * All information contained herein is Amlogic confidential.
+ *
+ * This software is provided to you pursuant to Software License Agreement
+ * (SLA) with Amlogic Inc ("Amlogic"). This software may be used
+ * only in accordance with the terms of this agreement.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification is strictly prohibited without prior written permission from
+ * Amlogic.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #define LOG_TAG "SocketAPI"
 
 #include <mutex>
@@ -36,16 +62,16 @@ typedef struct SubtitleContext {
 } SubtitleContext;
 
 typedef enum {
-    SUBTITLE_TOTAL_TRACK    = 'STOT',
-    SUBTITLE_START_PTS      = 'SPTS',
-    SUBTITLE_RENDER_TIME    = 'SRDT',
-    SUBTITLE_SUB_TYPE       = 'STYP',
-    SUBTITLE_TYPE_STRING    = 'TPSR',
-    SUBTITLE_LANG_STRING    = 'LGSR',
-    SUBTITLE_SUB_DATA       = 'PLDT',
+    SUBTITLE_TOTAL_TRACK    = 0x53544F54,  // 'STOT'
+    SUBTITLE_START_PTS      = 0x53505453,  // 'SPTS'
+    SUBTITLE_RENDER_TIME    = 0x53524454,  // 'SRDT'
+    SUBTITLE_SUB_TYPE       = 0x53545950,  // 'STYP'
+    SUBTITLE_TYPE_STRING    = 0x54505352,  // 'TPSR'
+    SUBTITLE_LANG_STRING    = 0x4C475352,  // 'LGSR'
+    SUBTITLE_SUB_DATA       = 0x504C4454,  // 'PLDT'
 
-    SUBTITLE_RESET_SERVER   = 'CDRT',
-    SUBTITLE_EXIT_SERVER    = 'CDEX',
+    SUBTITLE_RESET_SERVER   = 0x43545244,  // 'CDRT'
+    SUBTITLE_EXIT_SERVER    = 0x43444558   // 'CDEX'
 
 } PayloadType;
 

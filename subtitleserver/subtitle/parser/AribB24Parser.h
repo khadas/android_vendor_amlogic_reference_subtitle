@@ -1,26 +1,45 @@
 /*
-* Copyright (c) 2014 Amlogic, Inc. All rights reserved.
-*
-* This source code is subject to the terms and conditions defined in the
-* file 'LICENSE' which is part of this source code package.
-*
-* Description: h file
-*/
+ * Copyright (C) 2014-2019 Amlogic, Inc. All rights reserved.
+ *
+ * All information contained herein is Amlogic confidential.
+ *
+ * This software is provided to you pursuant to Software License Agreement
+ * (SLA) with Amlogic Inc ("Amlogic"). This software may be used
+ * only in accordance with the terms of this agreement.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification is strictly prohibited without prior written permission from
+ * Amlogic.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef __SUBTITLE_ARIB24_PARSER_H__
 #define __SUBTITLE_ARIB24_PARSER_H__
 #include "Parser.h"
 #include "DataSource.h"
-#include "sub_types.h"
+#include "SubtitleTypes.h"
 
-#include "dvbCommon.h"
+#include "DvbCommon.h"
 
+#ifdef NEED_ARIB24_LIBARIBCAPTION
 #include <aribcaption/aribcaption.h>
 #include <aribcaption/decoder.h>
 #include <aribcaption/caption.h>
 #include <aribcaption/context.hpp>
 #include <aribcaption/caption.hpp>
 #include <aribcaption/decoder.hpp>
+#endif
 
 
 #define AV_NOPTS_VALUE          INT64_C(0x8000000000000000)
@@ -31,14 +50,14 @@
 #define ATV_ARIB_B24_DATA_LEN 42
 
 
-/**\brief Error code of the Arib B24 module*/
+/** Error code of the Arib B24 module*/
 enum AribB24FlagCode
 {
     ARIB_B24_FAILURE = -1,   /**< Invalid parameter*/
     ARIB_B24_SUCCESS
 };
 
-/**\brief Error code of the Arib B24 module*/
+/** Error code of the Arib B24 module*/
 enum AribB24LanguageCode
 {
     ARIB_B24_POR = 0,
@@ -81,13 +100,14 @@ typedef struct
 
 class AribB24Parser: public Parser {
 public:
+    #ifdef NEED_ARIB24_LIBARIBCAPTION
     explicit AribB24Parser() : aribcaptionDecoder(aribcaptionContext){};
+    #endif
     AribB24Parser(std::shared_ptr<DataSource> source);
     virtual ~AribB24Parser();
     virtual int parse();
     virtual bool updateParameter(int type, void *data);
     virtual void dump(int fd, const char *prefix);
-    static inline AribB24Parser *getCurrentInstance();
     void notifyCallerAvail(int avail);
 
 private:
@@ -107,14 +127,15 @@ private:
     // control dump file or not
     int mDumpSub;
     int mIndex;
-    static AribB24Parser *sInstance;
     std::mutex mMutex;
     std::condition_variable mCv;
     int mPendingAction;
     std::shared_ptr<std::thread> mTimeoutThread;
+    #ifdef NEED_ARIB24_LIBARIBCAPTION
     aribcaption::Decoder      aribcaptionDecoder;
     aribcaption::Context      aribcaptionContext;
     aribcaption::DecodeResult aribcaptionResult;
+    #endif
 };
 
 

@@ -568,13 +568,13 @@ bool SubtitleServerClient::setAncillaryPageId(int ancPageId){
     return r.isOk();
 }
 
-bool SubtitleServerClient::ttControl(int cmd, int magazine, int page, int regionId, int param) {
+bool SubtitleServerClient::ttControl(int cmd, int magazine, int pageNo, int regionId, int param) {
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
 
-    auto r = mRemote->ttControl(mSessionId, cmd, magazine, page, regionId, param);
+    auto r = mRemote->ttControl(mSessionId, cmd, magazine, pageNo, regionId, param);
     checkRemoteResultLocked(r);
     return r.isOk();
 

@@ -28,7 +28,7 @@
 
 #include "ParserFactory.h"
 #include "ExtSubFactory.h"
-#include "StreamReader.h"
+#include "ExtSubStreamReader.h"
 
 #include "tinyxml2.h"
 

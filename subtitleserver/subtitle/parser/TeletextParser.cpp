@@ -31,8 +31,6 @@
 #include <string.h>
 #include <time.h>
 #include "bprint.h"
-#include "SubtitleLog.h"
-#include <utils/CallStack.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <list>
@@ -40,9 +38,13 @@
 #include <algorithm>
 #include <functional>
 
-#include "ParserFactory.h"
-#include "streamUtils.h"
+#include "SubtitleLog.h"
+#include <utils/CallStack.h>
+
+#include "StreamUtils.h"
 #include "VideoInfo.h"
+
+#include "ParserFactory.h"
 #include "TeletextParser.h"
 
 #define TELETEXT_WARN_PAGE_1 0x548080
@@ -2067,41 +2069,41 @@ int TeletextParser::lockSubpgLocked()
  */
 bool TeletextParser::updateParameter(int type, void *data) {
     std::unique_lock<std::mutex> autolock(mMutex);
-    std::shared_ptr<TeletextParam> ttParam(new TeletextParam());
-    memcpy(ttParam.get(), data, sizeof(TeletextParam));
+    std::shared_ptr<TeletextParam> teletextParam(new TeletextParam());
+    memcpy(teletextParam.get(), data, sizeof(TeletextParam));
 
-    if (ttParam->event == TT_EVENT_INVALID) {
+    if (teletextParam->event == TT_EVENT_INVALID) {
         return false; // ignore invalid command requested.
     }
-    SUBTITLE_LOGI(" %s start, ttParam->event:%d magazine:%d subPageNo:0x%x\n", __FUNCTION__,ttParam->event, ttParam->magazine, ttParam->subPageNo);
+    SUBTITLE_LOGI(" %s start, teletextParam->event:%d magazine:%d subPageNo:0x%x\n", __FUNCTION__,teletextParam->event, teletextParam->magazine, teletextParam->subPageNo);
     #ifdef NEED_TELETEXT_CACHE_ZVBI_STATUS
     // teletext not started. this is the first time we check. when not started, vbi is null.
-    if (ttParam->event != TT_EVENT_SET_REGION_ID && (ttParam->event != TT_EVENT_GO_TO_SUBTITLE || (ttParam->event == TT_EVENT_GO_TO_SUBTITLE && mContext->subtitleMode == TT2_GRAPHICS_MODE))) {
-        SUBTITLE_LOGI("This is the first? pid:%d onid:%d tsid:%d  %d", ttParam->pid, ttParam->onid, ttParam->tsid, ttParam->event);
+    if (teletextParam->event != TT_EVENT_SET_REGION_ID && (teletextParam->event != TT_EVENT_GO_TO_SUBTITLE || (teletextParam->event == TT_EVENT_GO_TO_SUBTITLE && mContext->subtitleMode == TT2_GRAPHICS_MODE))) {
+        ALOGD("This is the first? pid:%d onid:%d tsid:%d  %d", teletextParam->pid, teletextParam->onid, teletextParam->tsid, teletextParam->event);
         // tricky for check need keep using vbi or not
-        gVBIStatus.updateProgramInfo(ttParam->pid, ttParam->onid, ttParam->tsid);
+        gVBIStatus.updateProgramInfo(teletextParam->pid, teletextParam->onid, teletextParam->tsid);
 
         // The first page, is setup by dtvkit. modify to the last
         if (gVBIStatus.needReuseVbiDecoder() && gVBIStatus.lastShowingPage >= 100) {
             // When dtvkit request home page, it goto last saved page when at the same program.
-            if (ttParam->event == TT_EVENT_GO_TO_PAGE && ttParam->magazine >= TELETEXT_MIN_MAGAZINE_NUMBER && ttParam->magazine <= TELETEXT_MAX_MAGAZINE_NUMBER&& ttParam->subPageNo >= TELETEXT_MIN_SUBPAGE_NUMBER && ttParam->subPageNo <= TELETEXT_MAX_SUBPAGE_NUMBER) {
-                ttParam->event = TT_EVENT_GO_TO_PAGE;
+            if (teletextParam->event == TT_EVENT_GO_TO_PAGE && teletextParam->magazine >= TELETEXT_MIN_MAGAZINE_NUMBER && teletextParam->magazine <= TELETEXT_MAX_MAGAZINE_NUMBER&& teletextParam->subPageNo >= TELETEXT_MIN_SUBPAGE_NUMBER && teletextParam->subPageNo <= TELETEXT_MAX_SUBPAGE_NUMBER) {
+                teletextParam->event = TT_EVENT_GO_TO_PAGE;
                 int pageNum = 0;
-                if ( gVBIStatus.lastMagazine == ttParam->magazine && gVBIStatus.lastSubPageNo == ttParam->subPageNo) {
+                if ( gVBIStatus.lastMagazine == teletextParam->magazine && gVBIStatus.lastSubPageNo == teletextParam->subPageNo) {
                     pageNum =vbi_dec2bcd(gVBIStatus.lastShowingPage);
                     if (gVBIStatus.lastShowingPage < TELETEXT_MAX_PAGE_NUMBER && gVBIStatus.lastShowingPage >= TELETEXT_PAGE_NUMBER_800) {
-                        ttParam->magazine = TELETEXT_MIN_MAGAZINE_NUMBER;
+                        teletextParam->magazine = TELETEXT_MIN_MAGAZINE_NUMBER;
                         gVBIStatus.lastMagazine = TELETEXT_MIN_MAGAZINE_NUMBER;
                     } else {
-                        ttParam->magazine = pageNum >> 8;
+                        teletextParam->magazine = pageNum >> 8;
                     }
-                    ttParam->subPageNo = pageNum & 0xFF;
+                    teletextParam->subPageNo = pageNum & 0xFF;
                 } else {
-                    pageNum = convertPageDecimal2Hex(ttParam->magazine, ttParam->subPageNo);
-                    gVBIStatus.lastMagazine = ttParam->magazine;
-                    gVBIStatus.lastSubPageNo = ttParam->subPageNo;
+                    pageNum = convertPageDecimal2Hex(teletextParam->magazine, teletextParam->subPageNo);
+                    gVBIStatus.lastMagazine = teletextParam->magazine;
+                    gVBIStatus.lastSubPageNo = teletextParam->subPageNo;
                 }
-                 SUBTITLE_LOGI("%s needReuseVbiDecoder magazine:%d subPageNo:0x%x",__FUNCTION__,ttParam->magazine,ttParam->subPageNo);
+                 SUBTITLE_LOGI("%s needReuseVbiDecoder magazine:%d subPageNo:0x%x",__FUNCTION__,teletextParam->magazine,teletextParam->subPageNo);
                 // here, search the last saved page. log start search...
                 gVBIStatus.updateSearchLastPageStart();
             }
@@ -2116,19 +2118,19 @@ bool TeletextParser::updateParameter(int type, void *data) {
             gVBIStatus.lastShowingPage = 100;
             vbi_decoder_delete(gVBIStatus.getVbiInstance());
             gVBIStatus.registerVbiInstance(nullptr);
-            SUBTITLE_LOGI(" %s, re-register VBI mContext->vbi:%p magazine:%d subPageNo:0x%x after\n", __FUNCTION__,mContext->vbi, ttParam->magazine, ttParam->subPageNo);
-            if ((ttParam->event == TT_EVENT_GO_TO_PAGE && ttParam->magazine >= TELETEXT_MIN_MAGAZINE_NUMBER && ttParam->magazine <= TELETEXT_MAX_MAGAZINE_NUMBER&& ttParam->subPageNo >= TELETEXT_MIN_SUBPAGE_NUMBER && ttParam->subPageNo <= TELETEXT_MAX_SUBPAGE_NUMBER)
-                || (ttParam->event == TT_EVENT_INDEXPAGE)) {
-                gVBIStatus.lastMagazine = ttParam->magazine;
-                gVBIStatus.lastSubPageNo = ttParam->subPageNo;
-                mContext->gotoPage = convertPageDecimal2Hex(ttParam->magazine, ttParam->subPageNo);
+            SUBTITLE_LOGI(" %s, re-register VBI mContext->vbi:%p magazine:%d subPageNo:0x%x after\n", __FUNCTION__,mContext->vbi, teletextParam->magazine, teletextParam->subPageNo);
+            if ((teletextParam->event == TT_EVENT_GO_TO_PAGE && teletextParam->magazine >= TELETEXT_MIN_MAGAZINE_NUMBER && teletextParam->magazine <= TELETEXT_MAX_MAGAZINE_NUMBER&& teletextParam->subPageNo >= TELETEXT_MIN_SUBPAGE_NUMBER && teletextParam->subPageNo <= TELETEXT_MAX_SUBPAGE_NUMBER)
+                || (teletextParam->event == TT_EVENT_INDEXPAGE)) {
+                gVBIStatus.lastMagazine = teletextParam->magazine;
+                gVBIStatus.lastSubPageNo = teletextParam->subPageNo;
+                mContext->gotoPage = convertPageDecimal2Hex(teletextParam->magazine, teletextParam->subPageNo);
             }
         }
     }
 
     SUBTITLE_LOGI("%s mContext->pageNum=%d mContext->gotoPage=%d, lastGotoPage=%d", __FUNCTION__, mContext->pageNum, mContext->gotoPage, gVBIStatus.lastShowingPage);
     #endif
-    mControlCmds.push_back(ttParam);
+    mControlCmds.push_back(teletextParam);
     mUpdateParamCount ++;
     return true;
 }
@@ -2139,13 +2141,12 @@ bool TeletextParser::handleControl() {
         return true; // No command to process
     }
 
-    std::shared_ptr<TeletextParam> ttParam = mControlCmds.front();
+    std::shared_ptr<TeletextParam> teletextParam = mControlCmds.front();
     mControlCmds.pop_front();
     int page;
     SUBTITLE_LOGI("%s, magazine:%d, subPageNo:0x%x, regionId:%d, subPageDir:%d, event:%d\n",
-        __FUNCTION__, ttParam->magazine, ttParam->subPageNo, ttParam->regionId, ttParam->subPageDir, ttParam->event);
-
-    switch (ttParam->event) {
+        __FUNCTION__, teletextParam->magazine, teletextParam->subPageNo, teletextParam->regionId, teletextParam->subPageDir, teletextParam->event);
+    switch (teletextParam->event) {
         case TT_EVENT_QUICK_NAVIGATE_1:
             return fetchCountPageLocked(1, TT2_COLOR_RED);
         case TT_EVENT_QUICK_NAVIGATE_2:
@@ -2191,7 +2192,7 @@ bool TeletextParser::handleControl() {
             //mContext->transparentBackground = 0; //SWPL-74650, TransparentBackground is not initialized here
             mContext->opacity = mContext->transparentBackground ? 0 : 255;
             mContext->subtitleMode = TT2_GRAPHICS_MODE;
-            if (ttParam->regionId >= 0) mContext->regionId = ttParam->regionId;
+            if (teletextParam->regionId >= 0) mContext->regionId = teletextParam->regionId;
             return goHomeLocked();
         case TT_EVENT_GO_TO_PAGE:
             if (vbi_get_subtitle_mix_video_flag(mContext->vbi) == TT2_MIX_TRANSPARENT) {
@@ -2214,17 +2215,17 @@ bool TeletextParser::handleControl() {
             mContext->pageState = TT2_SEARCH_STATE;
             mContext->subtitleMode = TT2_GRAPHICS_MODE;
             mContext->resetShowSubtitlePageNumberTimeFlag = true;
-            if (ttParam->regionId >= 0) mContext->regionId = ttParam->regionId;
-            page = convertPageDecimal2Hex(ttParam->magazine, ttParam->subPageNo);
+            if (teletextParam->regionId >= 0) mContext->regionId = teletextParam->regionId;
+            page = convertPageDecimal2Hex(teletextParam->magazine, teletextParam->subPageNo);
             mContext->gotoGraphicsSubtitlePage = page;
             return gotoPageLocked(page, AM_TT2_ANY_SUBNO);
         case TT_EVENT_GO_TO_SUBTITLE:
             mContext->transparentBackground = 0;
             mContext->opacity = mContext->transparentBackground ? 0 : 255;
             mContext->resetShowSubtitlePageNumberTimeFlag = true;
-            if (ttParam->regionId >= 0) mContext->regionId = ttParam->regionId;
+            if (teletextParam->regionId >= 0) mContext->regionId = teletextParam->regionId;
             SUBTITLE_LOGI("mContext->subtitlePageId:%d mContext->atvTeletext:%d mContext->dtvTeletext:%d", mContext->subtitlePageId, mContext->atvTeletext, mContext->dtvTeletext);
-            if (mContext->atvTeletext && ttParam->magazine == -1 && ttParam->subPageNo == -1) {
+            if (mContext->atvTeletext && teletextParam->magazine == -1 && teletextParam->subPageNo == -1) {
                 mContext->subtitleMode = TT2_GRAPHICS_MODE;
                 if (mContext->subtitlePages[mContext->subtitlePageId] == 0 && mContext->subtitlePageId == 0) {
                     SUBTITLE_LOGI("mContext->dtvTeletext:%d mContext->subtitlePages[0]:%d no subtitle or null page", mContext->atvTeletext,mContext->subtitlePages[mContext->subtitlePageId]);
@@ -2242,7 +2243,7 @@ bool TeletextParser::handleControl() {
                     }
                 }
             }
-            if (mContext->dtvTeletext && ttParam->magazine == -1 && ttParam->subPageNo == -1) {
+            if (mContext->dtvTeletext && teletextParam->magazine == -1 && teletextParam->subPageNo == -1) {
                 mContext->subtitleMode = TT2_GRAPHICS_MODE;
                 if (mContext->subtitlePages[mContext->subtitlePageId] == 0 && mContext->subtitlePageId == 0) {
                     SUBTITLE_LOGI("mContext->dtvTeletext:%d mContext->subtitlePages[0]:%d no subtitle or null page", mContext->dtvTeletext,mContext->subtitlePages[mContext->subtitlePageId]);
@@ -2261,7 +2262,7 @@ bool TeletextParser::handleControl() {
                 }
             }
             mContext->subtitleMode = TT2_SUBTITLE_MODE;
-            page = convertPageDecimal2Hex(ttParam->magazine, ttParam->subPageNo);
+            page = convertPageDecimal2Hex(teletextParam->magazine, teletextParam->subPageNo);
             return gotoPageLocked(page, AM_TT2_ANY_SUBNO);
          case TT_EVENT_0:
          case TT_EVENT_1:
@@ -2273,9 +2274,9 @@ bool TeletextParser::handleControl() {
          case TT_EVENT_7:
          case TT_EVENT_8:
          case TT_EVENT_9:
-             SUBTITLE_LOGE(" mGotoPageNum ttParam->event = %d, mGotoPageNum=%d",ttParam->event,mGotoPageNum);
-             mGotoPageNum = mGotoPageNum*10 + (ttParam->event - 4);
-             if (ttParam->regionId >= 0) mContext->regionId = ttParam->regionId;
+             SUBTITLE_LOGE(" mGotoPageNum teletextParam->event = %d, mGotoPageNum=%d",teletextParam->event,mGotoPageNum);
+             mGotoPageNum = mGotoPageNum*10 + (teletextParam->event - 4);
+             if (teletextParam->regionId >= 0) mContext->regionId = teletextParam->regionId;
              if ((mGotoPageNum == 9) || (mGotoPageNum == 0) || (mGotoPageNum > TELETEXT_MAX_PAGE_NUMBER)) {
                  SUBTITLE_LOGE(" ERROR:: Input the error page number = %d \n",mGotoPageNum);
                  mGotoPageNum = 0;
@@ -2293,7 +2294,7 @@ bool TeletextParser::handleControl() {
         case TT_EVENT_TIMER:
             return setClockModeLocked();
         case TT_EVENT_SET_REGION_ID:
-            mContext->regionId = ttParam->regionId;
+            mContext->regionId = teletextParam->regionId;
             return true;
         default:
             break;

@@ -69,7 +69,7 @@ public:
     void setSecureLevel(int flag);
     void setPipId(int mode, int id);
     //ttx control api
-    bool ttControl(int cmd, int magazine, int page, int regionId, int param);
+    bool ttControl(int cmd, int magazine, int pageNo, int regionId, int param);
     int ttGoHome();
     int ttGotoPage(int pageNo, int subPageNo);
     int ttNextPage(int dir);
@@ -108,4 +108,3 @@ private:
 };
 
 #endif
-

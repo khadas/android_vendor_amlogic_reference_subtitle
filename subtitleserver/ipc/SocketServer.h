@@ -24,10 +24,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// currently, we use android thread
-// TODO: impl with std lib, make it portable
 #ifndef __SUBTITLE_SOCKETSERVER_H__
 #define __SUBTITLE_SOCKETSERVER_H__
+#include "SubtitleLog.h"
+#include <utils/Thread.h>
 #include <mutex>
 #include <thread>
 #include<vector>

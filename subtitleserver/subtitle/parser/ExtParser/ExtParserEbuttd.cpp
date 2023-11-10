@@ -27,8 +27,7 @@
 #define LOG_TAG "ebuttd"
 
 #include "ExtParserEbuttd.h"
-#include "tinyxml.h"
-#include "tinystr.h"
+#include "tinyxml2.h"
 
 ExtParserEbuttd::ExtParserEbuttd(std::shared_ptr<DataSource> source): ExtParser(source) {
     mDataSource = source;
@@ -53,16 +52,16 @@ subtitle_t * ExtParserEbuttd::ExtSubtitleParser(subtitle_t *current) {
 }
 
 int ExtParserEbuttd::parseEbuttd(char *buffer) {
-    TiXmlDocument doc;
+    tinyxml2::XMLDocument doc;
     doc.Parse(buffer);
-    TiXmlElement* tt = doc.RootElement();
+    tinyxml2::XMLElement* tt = doc.RootElement();
     if (tt == NULL) {
         SUBTITLE_LOGI("Failed to load file: No tt element.\n");
         doc.Clear();
         return -1;
     }
 
-    TiXmlElement* body = tt->FirstChildElement("body");
+    tinyxml2::XMLElement* body = tt->FirstChildElement("body");
     if (body == NULL) {
         body = tt->FirstChildElement("tt:body");
         if (body == NULL) {
@@ -72,7 +71,7 @@ int ExtParserEbuttd::parseEbuttd(char *buffer) {
         }
     }
 
-    TiXmlElement* div = body->FirstChildElement("div");
+    tinyxml2::XMLElement* div = body->FirstChildElement("div");
     if (div == NULL) {
         div = body->FirstChildElement("tt:div");
         if (div == NULL) {
@@ -88,7 +87,7 @@ int ExtParserEbuttd::parseEbuttd(char *buffer) {
     int count = 0;
     char textBuff[4096] = {0};
 
-    for (TiXmlElement* elem = div->FirstChildElement(); elem != NULL; elem = elem->NextSiblingElement()) {
+    for (tinyxml2::XMLElement* elem = div->FirstChildElement(); elem != NULL; elem = elem->NextSiblingElement()) {
         const char* begin= elem->Attribute("begin");
         SUBTITLE_LOGI("%s begin:%s\n", __FUNCTION__, begin);
         count = sscanf(begin, "%d:%d:%d.%d", &hour, &min, &sec, &ms);
@@ -104,7 +103,7 @@ int ExtParserEbuttd::parseEbuttd(char *buffer) {
         }
 
         memset(textBuff, 0, sizeof(textBuff));
-        for (TiXmlElement* e3 = elem->FirstChildElement(); e3 != NULL; e3 = e3->NextSiblingElement()) {
+        for (tinyxml2::XMLElement* e3 = elem->FirstChildElement(); e3 != NULL; e3 = e3->NextSiblingElement()) {
             const char* text = e3->GetText();
             if (text) {
                 strcat(textBuff, text);
@@ -136,6 +135,3 @@ int ExtParserEbuttd::parseEbuttd(char *buffer) {
     doc.Clear();
     return 1;
 }
-
-
-

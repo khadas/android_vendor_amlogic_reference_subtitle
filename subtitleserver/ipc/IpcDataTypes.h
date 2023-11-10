@@ -27,17 +27,17 @@
 #pragma once
 
 enum {
-    eTypeSubtitleTotal      = 'STOT',
-    eTypeSubtitleStartPts   = 'SPTS',
-    eTypeSubtitleRenderTime = 'SRDT',
-    eTypeSubtitleType       = 'STYP',
+    eTypeSubtitleTotal      = 0x53544F54,  // 'STOT'
+    eTypeSubtitleStartPts   = 0x53505453,  // 'SPTS'
+    eTypeSubtitleRenderTime = 0x53524454,  // 'SRDT'
+    eTypeSubtitleType       = 0x53545950,  // 'STYP'
 
-    eTypeSubtitleTypeString = 'TPSR',
-    eTypeSubtitleLangString = 'LGSR',
-    eTypeSubtitleData       = 'PLDT',
+    eTypeSubtitleTypeString = 0x54505352,  // 'TPSR'
+    eTypeSubtitleLangString = 0x4C475352,  // 'LGSR'
+    eTypeSubtitleData       = 0x504C4454,  // 'PLDT'
 
-    eTypeSubtitleResetServ  = 'CDRT',
-    eTypeSubtitleExitServ   = 'CDEX',
+    eTypeSubtitleResetServ  = 0x43545244,  // 'CDRT'
+    eTypeSubtitleExitServ   = 0x43444558   // 'CDEX'
 };
 
 
@@ -53,6 +53,10 @@ const static unsigned int START_FLAG = 0xF0D0C0B1;
 const static unsigned int MAGIC_FLAG = 0xCFFFFFFB;
 
 static inline unsigned int peekAsSocketWord(const char *buffer) {
+#if BYTE_ORDER == LITTLE_ENDIAN
     return buffer[0] | (buffer[1]<<8) | (buffer[2]<<16) | (buffer[3]<<24);
+#else
+    return buffer[3] | (buffer[2]<<8) | (buffer[1]<<16) | (buffer[0]<<24);
+#endif
 }
 

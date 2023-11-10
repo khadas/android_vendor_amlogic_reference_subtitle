@@ -28,11 +28,11 @@
 #define __SUBTITLE_TELETEXT_PARSER_H__
 #include "Parser.h"
 #include "DataSource.h"
-#include "sub_types.h"
+#include "SubtitleTypes.h"
 
 
 #include <libzvbi.h>
-#include "dvbCommon.h"
+#include "DvbCommon.h"
 
 #include<stack>
 
@@ -56,7 +56,7 @@ struct TeletextPage {
     int64_t pts;
 };
 
-/**\brief Error code of the Teletext module*/
+/** Error code of the Teletext module*/
 enum TeletextFlgCode
 {
     TT2_FAILURE = -1,   /**< Invalid parameter*/
@@ -108,7 +108,7 @@ typedef struct NavigatorPageS{
     int subPageNo;
 }NavigatorPageT;
 
-/**\brief Teletext color*/
+/** Teletext color*/
 typedef enum{
     TT2_COLOR_RED  = 1,           /**< red*/
     TT2_COLOR_GREEN,         /**< green*/
@@ -116,7 +116,7 @@ typedef enum{
     TT2_COLOR_BLUE           /**< blue*/
 }TeletextPageColorParam;
 
-/**\brief Teletext double height state*/
+/** Teletext double height state*/
 typedef enum{
     DOUBLE_HEIGHT_NORMAL,
     DOUBLE_HEIGHT_TOP,

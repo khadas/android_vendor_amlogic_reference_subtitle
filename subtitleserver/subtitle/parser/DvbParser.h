@@ -28,9 +28,9 @@
 #define __SUBTITLE_DVB_PARSER_H__
 #include "Parser.h"
 #include "DataSource.h"
-#include "sub_types.h"
+#include "SubtitleTypes.h"
 
-#include "dvbCommon.h"
+#include "DvbCommon.h"
 
 struct DVBSubContext;
 struct DVBSubObjectDisplay;

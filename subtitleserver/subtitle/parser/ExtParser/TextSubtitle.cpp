@@ -27,7 +27,7 @@
 #define LOG_TAG "TextSubtitle"
 
 #include "TextSubtitle.h"
-#include "StreamReader.h"
+#include "ExtSubStreamReader.h"
 
 #include "SubtitleLog.h"
 

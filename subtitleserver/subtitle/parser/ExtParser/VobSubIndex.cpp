@@ -684,7 +684,7 @@ unsigned char VobSubIndex::vob_fill_pixel(unsigned char *rawData, unsigned char 
     unsigned short PXDBufferBitPos = 0, WrOffset = 16;
     //  unsigned short totalBits = 0;
     unsigned short change_data = 0;
-    unsigned short PixelDatas[4] = { 0, 1, 2, 3 };
+    unsigned short PixelData[4] = { 0, 1, 2, 3 };
     unsigned short *vob_ptrPXDWrite;
 
     unsigned short *vob_ptrPXDRead;
@@ -711,8 +711,8 @@ unsigned char VobSubIndex::vob_fill_pixel(unsigned char *rawData, unsigned char 
             change_data++;
             _alpha = _alpha >> 4;
         }
-        PixelDatas[0] = change_data;
-        PixelDatas[change_data] = 0;
+        PixelData[0] = change_data;
+        PixelData[change_data] = 0;
         if (n == 2)
             VobSPU.spu_alpha = (VobSPU.spu_alpha & 0xFFF0) | (0x000F << (change_data << 2));
     }
@@ -732,7 +732,7 @@ unsigned char VobSubIndex::vob_fill_pixel(unsigned char *rawData, unsigned char 
             }
 
             if (change_data) {
-                nPixelData = PixelDatas[nPixelData];
+                nPixelData = PixelData[nPixelData];
             }
 
             for (i = 0; i < nPixelNum; i++) {

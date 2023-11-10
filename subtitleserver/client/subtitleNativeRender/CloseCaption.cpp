@@ -9,7 +9,6 @@
 #include <SkPath.h>
 #include "SkTextBox.h"
 
-#include <utils/CallStack.h>
 #include "SubtitleLog.h"
 #include <cutils/properties.h>
 

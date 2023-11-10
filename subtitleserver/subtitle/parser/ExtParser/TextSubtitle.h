@@ -28,8 +28,8 @@
 
 #include <list>
 #include "DataSource.h"
-#include "StreamReader.h"
-#include "sub_types.h"
+#include "ExtSubStreamReader.h"
+#include "SubtitleTypes.h"
 
 #define SUB_MAX_TEXT                30
 

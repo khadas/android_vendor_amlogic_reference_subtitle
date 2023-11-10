@@ -116,9 +116,9 @@ public:
                 }
 
                 close(fd);
-            } else {
-                SUBTITLE_LOGE("open error:%d,%s!!", errno,strerror(errno));
-            }
+            } // else {
+                //SUBTITLE_LOGE("open error:%d,%s!!", errno,strerror(errno));
+            // }
             usleep(20*1000);
         }
 
@@ -137,4 +137,3 @@ VideoInfo *VideoInfo::Instance() {
     }
     return mInstance;
 }
-

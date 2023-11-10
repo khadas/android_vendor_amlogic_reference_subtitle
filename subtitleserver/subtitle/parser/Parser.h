@@ -29,14 +29,15 @@
 
 #include <list>
 #include <vector>
+#include <condition_variable>
 #include <thread>
 #include "DataSource.h"
-#include "sub_types.h"
-#include "sub_types2.h"   //for cc scte27
+#include "SubtitleTypes.h"
 #include "cutils/properties.h"
 #include "ParserEventNotifier.h"
 #include <sys/types.h>
 #include "VideoInfo.h"
+#include "SubtitleLog.h"
 
 
 //before is disorder with amnuplayer send,now
@@ -48,20 +49,15 @@ enum SubtitleType {
     TYPE_SUBTITLE_MKV_STR,
     TYPE_SUBTITLE_SSA,
     TYPE_SUBTITLE_MKV_VOB,
-    TYPE_SUBTITLE_DVB,
-    TYPE_SUBTITLE_TMD_TXT   = 7,
+    TYPE_SUBTITLE_TMD_TXT   = 5,
     TYPE_SUBTITLE_IDX_SUB,  //now discard
+    TYPE_SUBTITLE_DVB,
     TYPE_SUBTITLE_DVB_TELETEXT,
+    TYPE_SUBTITLE_DVB_TTML,
     TYPE_SUBTITLE_CLOSED_CAPTION,
     TYPE_SUBTITLE_SCTE27,
-    TYPE_SUBTITLE_DTVKIT_DVB, //12
-    TYPE_SUBTITLE_DTVKIT_TELETEXT,
-    TYPE_SUBTITLE_DTVKIT_SCTE27,
-    TYPE_SUBTITLE_EXTERNAL,
     TYPE_SUBTITLE_ARIB_B24,
-    TYPE_SUBTITLE_DTVKIT_ARIB_B24,
-    TYPE_SUBTITLE_TTML,
-    TYPE_SUBTITLE_DTVKIT_TTML,
+    TYPE_SUBTITLE_EXTERNAL,
     TYPE_SUBTITLE_MAX,
 };
 
@@ -83,7 +79,7 @@ enum SubtitleType {
 #define FILTER_DATA_TIMEROUT 10*1000
 
 
-static const int AML_PARSER_SYNC_WORD = 'AMLU';
+static const int AML_PARSER_SYNC_WORD = 0x414D4C55; //'AMLU'
 
 class Parser {
 public:
@@ -125,7 +121,12 @@ public:
         mState = SUB_INIT;
         mNotifier = notify;
         mDataNotifier = dataNofity;
-        mThread = std::thread(&Parser::_parserEntry, this);
+        if (this) {
+            mThread = std::thread(&Parser::_parserEntry, this);
+        } else {
+            SUBTITLE_LOGE("This is Null, startParser Error!");
+            return false;
+        }
         return true;
     }
 
@@ -163,7 +164,7 @@ public:
         std::shared_ptr<AML_SPUVAR> item;
         std::unique_lock<std::mutex> autolock(mMutex);
         if (mDecodedSpu.size() == 0) {
-            //__android_log_print(ANDROID_LOG_ERROR, "Parser", "in parser item->spu_data null");
+            // SUBTITLE_LOGE("tryConsumeDecodedItem in parser item->spu_data null!");
             return nullptr;
         }
         item = mDecodedSpu.front();
@@ -184,7 +185,7 @@ public:
 
         // validate the item: do not sent empty items due to parser error.
         if (item == nullptr ) {
-            __android_log_print(ANDROID_LOG_ERROR, "Parser", "add invalid empty spu!");
+            SUBTITLE_LOGE("addDecodedItem add invalid empty spu!");
             return;
         }
 

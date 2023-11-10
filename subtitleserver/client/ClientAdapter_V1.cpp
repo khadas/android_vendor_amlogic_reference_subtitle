@@ -118,7 +118,7 @@ const sp<ISubTitleService>& getSubtitleService()
         subtitleservice = interface_cast<ISubTitleService>(binder);
     }
     if (subtitleservice == 0) {
-        SUBTITLE_LOGE("no subtitle_service!!")
+        SUBTITLE_LOGE("no subtitle_service!!");
     }
     return subtitleservice;
 }

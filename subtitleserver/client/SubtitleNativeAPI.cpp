@@ -1,3 +1,29 @@
+/*
+ * Copyright (C) 2014-2019 Amlogic, Inc. All rights reserved.
+ *
+ * All information contained herein is Amlogic confidential.
+ *
+ * This software is provided to you pursuant to Software License Agreement
+ * (SLA) with Amlogic Inc ("Amlogic"). This software may be used
+ * only in accordance with the terms of this agreement.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification is strictly prohibited without prior written permission from
+ * Amlogic.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #define LOG_TAG "SubtitleNativeAPI"
 
 #include <mutex>
@@ -44,18 +70,18 @@ static int __mapApiType2SubtitleType(int type) {
     SUBTITLE_LOGI("call>> %s [stype:%d]", __func__, type);
     switch (type) {
     case TYPE_SUBTITLE_DVB:
-        return DTV_SUB_DTVKIT_DVB;
+        return DTV_SUB_DVB;
 
     case TYPE_SUBTITLE_DVB_TELETEXT:
-        return DTV_SUB_DTVKIT_TELETEXT;
+        return DTV_SUB_DVB_TELETEXT;
     case TYPE_SUBTITLE_SCTE27:
-        return DTV_SUB_DTVKIT_SCTE27;
+        return DTV_SUB_SCTE27;
         case TYPE_SUBTITLE_CLOSED_CAPTION:
             return DTV_SUB_CC;
         case TYPE_SUBTITLE_ARIB_B24:
-            return DTV_SUB_DTVKIT_ARIB24;
+            return DTV_SUB_ARIB24;
         case TYPE_SUBTITLE_TTML:
-            return DTV_SUB_DTVKIT_TTML;
+            return DTV_SUB_DVB_TTML;
     }
     //default:
     return type;
@@ -205,8 +231,6 @@ static bool __eraseFromContext(SubtitleContext *ctx) {
 }
 
 
-
-
 AmlSubtitleHnd amlsub_Create() {
     SUBTITLE_LOGI("call>> %s", __func__);
     sp<SubtitleContext> ctx = new SubtitleContext();
@@ -255,24 +279,21 @@ AmlSubtitleStatus amlsub_Destroy(AmlSubtitleHnd handle) {
  */
 AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         SUBTITLE_LOGE("Error! invalid handle, uninitialized?");
         return SUB_STAT_INV;
     }
-
     if (!__checkInContextMap(ctx)) {
         SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
-
     if (param == nullptr) {
         SUBTITLE_LOGE("Error! invalid input param, param=%p", param);
         return SUB_STAT_INV;
     }
     ctx->mClient->userDataOpen();
-
-    // Here, we support all the parameters from client to server
+    // Here, we support all the parametes from client to server
     // server will filter the parameter, select to use according from the type.
     ctx->mClient->setSubType(__mapApiType2SubtitleType(param->subtitleType));
     ctx->mClient->setSubPid(param->pid);
@@ -296,8 +317,6 @@ AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
         ctx->mClient->setClosedCaptionLang(param->lang);
     }
     bool r = ctx->mClient->open(param->fd, ioType);
-
-
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 
@@ -380,7 +399,7 @@ AmlSubtitleStatus amlsub_TeletextControl(AmlSubtitleHnd handle, AmlTeletextCtrlP
         return SUB_STAT_INV;
     }
 
-    ctx->mClient->ttControl(param->event, param->magazine, param->page, param->regionid, param->subpagedir);
+    ctx->mClient->ttControl(param->event, param->magazine, param->page, param->regionid, param->subPageDir);
     return SUB_STAT_OK;
 }
 
@@ -400,13 +419,14 @@ AmlSubtitleStatus amlsub_SelectCcChannel(AmlSubtitleHnd handle, int ch) {
 }
 
 
-
 ////////////////////////////////////////////////////////////
 ////// Regist callbacks for subtitle Event and data ////////
+////// Will be directed display when listener is   ////////
+////// null or not called this.                    ////////
 ////////////////////////////////////////////////////////////
 AmlSubtitleStatus amlsub_RegistOnDataCB(AmlSubtitleHnd handle, AmlSubtitleDataCb listener) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
@@ -422,7 +442,7 @@ AmlSubtitleStatus amlsub_RegistOnDataCB(AmlSubtitleHnd handle, AmlSubtitleDataCb
 
 AmlSubtitleStatus amlsub_RegistOnChannelUpdateCb(AmlSubtitleHnd handle, AmlChannelUpdateCb listener) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
@@ -436,7 +456,7 @@ AmlSubtitleStatus amlsub_RegistOnChannelUpdateCb(AmlSubtitleHnd handle, AmlChann
 
 AmlSubtitleStatus amlsub_RegistOnSubtitleAvailCb(AmlSubtitleHnd handle, AmlSubtitleAvailCb listener) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
@@ -450,7 +470,7 @@ AmlSubtitleStatus amlsub_RegistOnSubtitleAvailCb(AmlSubtitleHnd handle, AmlSubti
 
 AmlSubtitleStatus amlsub_RegistAfdEventCB(AmlSubtitleHnd handle, AmlAfdEventCb listener) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
@@ -464,7 +484,7 @@ AmlSubtitleStatus amlsub_RegistAfdEventCB(AmlSubtitleHnd handle, AmlAfdEventCb l
 
 AmlSubtitleStatus amlsub_RegistGetDimensionCb(AmlSubtitleHnd handle, AmlSubtitleDimensionCb listener) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
@@ -478,7 +498,7 @@ AmlSubtitleStatus amlsub_RegistGetDimensionCb(AmlSubtitleHnd handle, AmlSubtitle
 
 AmlSubtitleStatus amlsub_RegistOnSubtitleLanguageCb(AmlSubtitleHnd handle, AmlSubtitleLanguageCb listener) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
@@ -492,7 +512,7 @@ AmlSubtitleStatus amlsub_RegistOnSubtitleLanguageCb(AmlSubtitleHnd handle, AmlSu
 
 AmlSubtitleStatus amlsub_RegistOnSubtitleInfoCB(AmlSubtitleHnd handle, AmlSubtitleInfoCb listener) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
@@ -509,7 +529,7 @@ AmlSubtitleStatus amlsub_RegistOnSubtitleInfoCB(AmlSubtitleHnd handle, AmlSubtit
 
 AmlSubtitleStatus amlsub_UiShow(AmlSubtitleHnd handle) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
@@ -518,13 +538,13 @@ AmlSubtitleStatus amlsub_UiShow(AmlSubtitleHnd handle) {
         return SUB_STAT_INV;
     }
 
-    bool r  = ctx->mClient->uiShow();
+    bool r = ctx->mClient->uiShow();
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 
 AmlSubtitleStatus amlsub_UiHide(AmlSubtitleHnd handle) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
@@ -533,14 +553,14 @@ AmlSubtitleStatus amlsub_UiHide(AmlSubtitleHnd handle) {
         return SUB_STAT_INV;
     }
 
-    bool r  = ctx->mClient->uiHide();
+    bool r = ctx->mClient->uiHide();
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 
 /* Only available for text subtitle */
 AmlSubtitleStatus amlsub_UiSetTextColor(AmlSubtitleHnd handle, int color) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
@@ -549,12 +569,13 @@ AmlSubtitleStatus amlsub_UiSetTextColor(AmlSubtitleHnd handle, int color) {
         return SUB_STAT_INV;
     }
 
-    bool r  = ctx->mClient->uiSetTextColor(color);
+    bool r = ctx->mClient->uiSetTextColor(color);
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
+
 AmlSubtitleStatus amlsub_UiSetTextSize(AmlSubtitleHnd handle, int sp) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
@@ -563,12 +584,13 @@ AmlSubtitleStatus amlsub_UiSetTextSize(AmlSubtitleHnd handle, int sp) {
         return SUB_STAT_INV;
     }
 
-    bool r  = ctx->mClient->uiSetTextSize(sp);
+    bool r = ctx->mClient->uiSetTextSize(sp);
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
+
 AmlSubtitleStatus amlsub_UiSetGravity(AmlSubtitleHnd handle, int gravity) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
@@ -576,13 +598,13 @@ AmlSubtitleStatus amlsub_UiSetGravity(AmlSubtitleHnd handle, int gravity) {
         SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
-    bool r  = ctx->mClient->uiSetGravity(gravity);
+    bool r = ctx->mClient->uiSetGravity(gravity);
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 
 AmlSubtitleStatus amlsub_UiSetPosHeight(AmlSubtitleHnd handle, int yOffset) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
@@ -591,13 +613,13 @@ AmlSubtitleStatus amlsub_UiSetPosHeight(AmlSubtitleHnd handle, int yOffset) {
         return SUB_STAT_INV;
     }
 
-    bool r  = ctx->mClient->uiSetYOffset(yOffset);
+    bool r = ctx->mClient->uiSetYOffset(yOffset);
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 
 AmlSubtitleStatus amlsub_UiSetImgRatio(AmlSubtitleHnd handle, float ratioW, float ratioH, int maxW, int maxH) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
@@ -606,13 +628,13 @@ AmlSubtitleStatus amlsub_UiSetImgRatio(AmlSubtitleHnd handle, float ratioW, floa
         return SUB_STAT_INV;
     }
 
-    bool r  = ctx->mClient->uiSetImageRatio(ratioW, ratioH, maxW, maxH);
+    bool r = ctx->mClient->uiSetImageRatio(ratioW, ratioH, maxW, maxH);
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 
 AmlSubtitleStatus amlsub_UiSetSurfaceViewRect(AmlSubtitleHnd handle, int x, int y, int width, int height) {
     SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
-    SubtitleContext *ctx = (SubtitleContext *)handle;
+    SubtitleContext *ctx = (SubtitleContext *) handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
@@ -621,7 +643,7 @@ AmlSubtitleStatus amlsub_UiSetSurfaceViewRect(AmlSubtitleHnd handle, int x, int 
         return SUB_STAT_INV;
     }
 
-    bool r  = ctx->mClient->uiSetSurfaceViewRect(x, y, width, height);
+    bool r = ctx->mClient->uiSetSurfaceViewRect(x, y, width, height);
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 
@@ -640,5 +662,3 @@ AmlSubtitleStatus amlsub_UpdateVideoPos(AmlSubtitleHnd handle, int64_t pos) {
     bool r  = ctx->mClient->updateVideoPos(pos);
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
-
-

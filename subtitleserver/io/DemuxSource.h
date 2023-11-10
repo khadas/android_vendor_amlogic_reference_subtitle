@@ -34,10 +34,11 @@
 #include <thread>
 
 #include "Segment.h"
-#include "sub_types2.h"
+#include "SubtitleTypes.h"
 #include "DataSource.h"
 
 #define DEMUX_SOURCE_ID 0//0
+#define SCTE27_TID 0xC6
 
 class DemuxSource : public DataSource {
 
@@ -73,7 +74,7 @@ private:
     int mRdFd;
     std::shared_ptr<std::thread> mRenderTimeThread;
     std::shared_ptr<std::thread> mReadThread;
-//    std::shared_ptr<BufferSegment> mSegment;
+    // std::shared_ptr<BufferSegment> mSegment;
     // for poping and parsing
     std::shared_ptr<BufferItem> mCurrentItem;
 

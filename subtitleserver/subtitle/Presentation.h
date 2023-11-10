@@ -27,13 +27,12 @@
 #ifndef __SUBTITLE_PRESENTATION_H__
 #define __SUBTITLE_PRESENTATION_H__
 #include <thread>
-#include <utils/Looper.h>
 #include <mutex>
 // maybe we can use std::chrono::steady_clock
 // how to program it with longlong time?
 #include <utils/Timers.h>
 #include <utils/Mutex.h>
-
+#include <utils/Looper.h>
 #include "Parser.h"
 
 #include "Render.h"
@@ -111,7 +110,5 @@ private:
 
 
 };
-
-
 
 #endif

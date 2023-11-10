@@ -1,3 +1,32 @@
+/*
+ * Copyright (C) 2014-2019 Amlogic, Inc. All rights reserved.
+ *
+ * All information contained herein is Amlogic confidential.
+ *
+ * This software is provided to you pursuant to Software License Agreement
+ * (SLA) with Amlogic Inc ("Amlogic"). This software may be used
+ * only in accordance with the terms of this agreement.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification is strictly prohibited without prior written permission from
+ * Amlogic.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef __SUBTITLE_NAVTIVE_API_H__
+#define __SUBTITLE_NAVTIVE_API_H__
+
 #pragma once
 
 #ifdef __cplusplus
@@ -16,6 +45,7 @@ typedef enum {
     E_SUBTITLE_SOCK,      /* deprecated, android not permit to use anymore */
     E_SUBTITLE_DEMUX,     /* use aml hwdemux as the data source */
     E_SUBTITLE_VBI,       /* use /dev/vbi as the IO source */
+    E_SUBTITLE_USERDATA,  /* use Userdata as the data source */
 } AmlSubtitleIOType;
 
 typedef enum {
@@ -28,7 +58,6 @@ typedef enum {
     SUB_DATA_TYPE_CC_JSON = 1,
     SUB_DATA_TYPE_BITMAP = 2,
     SUB_DATA_TYPE_POSITION_BITMAP = 4,
-
     SUB_DATA_TYPE_QTONE = 0xAAAA,
 } AmlSubDataType;
 
@@ -39,20 +68,15 @@ typedef enum {
     TYPE_SUBTITLE_MKV_STR,
     TYPE_SUBTITLE_SSA,
     TYPE_SUBTITLE_MKV_VOB,
-    TYPE_SUBTITLE_DVB,
-    TYPE_SUBTITLE_TMD_TXT   = 7,
+    TYPE_SUBTITLE_TMD_TXT   = 5,
     TYPE_SUBTITLE_IDX_SUB,  //now discard
+    TYPE_SUBTITLE_DVB,
     TYPE_SUBTITLE_DVB_TELETEXT,
+    TYPE_SUBTITLE_TTML,
     TYPE_SUBTITLE_CLOSED_CAPTION,
     TYPE_SUBTITLE_SCTE27,
-    TYPE_SUBTITLE_DTVKIT_DVB, //12
-    TYPE_SUBTITLE_DTVKIT_TELETEXT,
-    TYPE_SUBTITLE_DTVKIT_SCTE27,
-    TYPE_SUBTITLE_EXTERNAL,
     TYPE_SUBTITLE_ARIB_B24,
-    TYPE_SUBTITLE_DTVKIT_ARIB_B24,
-    TYPE_SUBTITLE_TTML,
-    TYPE_SUBTITLE_DTVKIT_TTML,
+    TYPE_SUBTITLE_EXTERNAL,
     TYPE_SUBTITLE_MAX,
 } AmlSubtitletype;
 
@@ -149,13 +173,15 @@ typedef struct {
     const char *lang;
 } AmlSubtitleParam;
 
-
 typedef struct {
-    int magazine = 0;
-    int page = 0;
-    AmlTeletextEvent event;
-    int regionid;
-    int subpagedir;
+   int magazine   = -1; // Teletext usually uses magazines to organize information. There are at most 8 different magazines, 100-199 (M=1), 200-299 (M=2), 300-399 (M=3), 400-499 (M =4), 500-599 (M=5), 600-699 (M=6), 700-799 (M=7), 800-899 (M=0)
+   int page       = -1; // Home page number
+   int subPageNo  = -1; // Subpage page number
+   int pageDir    =  0; // +1:next page, -1: last page
+   int subPageDir =  0; // +1:next sub page, -1: last sub page
+   int regionid   = -1; // Country subset specification, range (0~87), default G0 and G2
+   int flag       = -1; // Flag of whether to encrypt or not, 0 means unencrypted, 1 means encrypted
+   AmlTeletextEvent event;
 } AmlTeletextCtrlParam;
 
 
@@ -255,4 +281,6 @@ AmlSubtitleStatus amlsub_UpdateVideoPos(AmlSubtitleHnd handle, int64_t pos);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

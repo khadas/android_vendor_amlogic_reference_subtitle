@@ -385,7 +385,7 @@ Presentation::MessageProcess::~MessageProcess() {
 
 void Presentation::MessageProcess::join() {
     mRequestThreadExit = true;
-    if (mLooper) {
+    if (mLooper != nullptr) {
         mLooper->removeMessages(this, MSG_PTS_TIME_CHECK_SPU);
         mLooper->wake();
     }
@@ -397,7 +397,7 @@ void Presentation::MessageProcess::join() {
 }
 
 bool Presentation::MessageProcess::notifyMessage(int what) {
-    if (mLooper) {
+    if (mLooper != nullptr) {
         mLooper->sendMessage(this, Message(what));
     }
     return true;
@@ -497,7 +497,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
     switch (message.what) {
         case MSG_PTS_TIME_CHECK_SPU: {
             mLooper->removeMessages(this, MSG_PTS_TIME_CHECK_SPU);
-            if (mPresent->mParser == nullptr) {
+            if (mPresent->mParser == nullptr || mPresent == nullptr) {
                 SUBTITLE_LOGE("[%s:%d] Error! parser is nullptr", __func__, __LINE__);
                 return;
             }

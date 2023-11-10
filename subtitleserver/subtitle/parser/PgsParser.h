@@ -28,7 +28,7 @@
 #define __SUBTITLE_PGS_PARSER_H__
 #include "Parser.h"
 #include "DataSource.h"
-#include "sub_types.h"
+#include "SubtitleTypes.h"
 
 #define OSD_HALF_SIZE 1920*1280/8
 

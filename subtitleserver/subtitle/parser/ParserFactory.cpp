@@ -44,9 +44,9 @@ std::shared_ptr<Parser> ParserFactory::create(
 
 
     // TODO: unless we can determine CC type, or default start CC parser
-            if (type == TYPE_SUBTITLE_INVALID) {
+    if (type == TYPE_SUBTITLE_INVALID) {
         type = TYPE_SUBTITLE_CLOSED_CAPTION;
-     }
+    }
 
     switch (type) {
         case TYPE_SUBTITLE_VOB:
@@ -64,47 +64,36 @@ std::shared_ptr<Parser> ParserFactory::create(
         case TYPE_SUBTITLE_SSA:
             return std::shared_ptr<Parser>(new AssParser(source));
 
-        case TYPE_SUBTITLE_DVB:
-        case TYPE_SUBTITLE_DTVKIT_DVB:
-            return std::shared_ptr<Parser>(new DvbParser(source));
-
-        case TYPE_SUBTITLE_ARIB_B24:
-        case TYPE_SUBTITLE_DTVKIT_ARIB_B24:
-            return std::shared_ptr<Parser>(new AribB24Parser(source));
-
-        case TYPE_SUBTITLE_TTML:
-        case TYPE_SUBTITLE_DTVKIT_TTML:
-            return std::shared_ptr<Parser>(new TtmlParser(source));
-
         case TYPE_SUBTITLE_TMD_TXT:
             return std::shared_ptr<Parser>(new AssParser(source));
 
         case TYPE_SUBTITLE_IDX_SUB:
             return std::shared_ptr<Parser>(new AssParser(source));
 
+        case TYPE_SUBTITLE_DVB:
+            return std::shared_ptr<Parser>(new DvbParser(source));
+
         case TYPE_SUBTITLE_DVB_TELETEXT:
-        case TYPE_SUBTITLE_DTVKIT_TELETEXT:
             return std::shared_ptr<Parser>(new TeletextParser(source));
+
+        case TYPE_SUBTITLE_DVB_TTML:
+            return std::shared_ptr<Parser>(new TtmlParser(source));
+
+        case TYPE_SUBTITLE_ARIB_B24:
+            return std::shared_ptr<Parser>(new AribB24Parser(source));
 
         case TYPE_SUBTITLE_CLOSED_CAPTION: {
             std::shared_ptr<Parser> p = std::shared_ptr<Parser>(new ClosedCaptionParser(source));
             if (p != nullptr) {
-                p->updateParameter(type, &subParam->ccParam);
+                p->updateParameter(type, &subParam->closedCaptionParam);
                 p->setPipId(PIP_PLAYER_ID, subParam->playerId);
                 p->setPipId(PIP_MEDIASYNC_ID, subParam->mediaId);
             }
             return p;
         }
 
-        case TYPE_SUBTITLE_DTVKIT_SCTE27:
-        case TYPE_SUBTITLE_SCTE27: {
-            std::shared_ptr<Parser> p = std::shared_ptr<Parser>(new Scte27Parser(source));
-            if (p != nullptr) {
-                p->updateParameter(type, &subParam->scteParam);
-                p->setPipId(PIP_MEDIASYNC_ID, subParam->mediaId);
-            }
-            return p;
-        }
+        case TYPE_SUBTITLE_SCTE27:
+            return std::shared_ptr<Parser>(new Scte27Parser(source));
 
         case TYPE_SUBTITLE_EXTERNAL:
             return std::shared_ptr<Parser>(new ExtParser(source, subParam->idxSubTrackId));
@@ -129,7 +118,7 @@ DisplayType ParserFactory::getDisplayType(int type)
         case TYPE_SUBTITLE_MKV_STR:
         case TYPE_SUBTITLE_TMD_TXT:
         case TYPE_SUBTITLE_ARIB_B24:
-        case TYPE_SUBTITLE_TTML:
+        case TYPE_SUBTITLE_DVB_TTML:
         case  TYPE_SUBTITLE_SSA:
             return SUBTITLE_TEXT_DISPLAY;
 

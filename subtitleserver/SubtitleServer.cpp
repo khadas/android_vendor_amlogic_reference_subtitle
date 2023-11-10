@@ -24,7 +24,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// FIXME: your file license if you have one
 #define LOG_TAG "SubtitleServer"
 #include <fmq/EventFlag.h>
 
@@ -316,7 +315,6 @@ Return<void> SubtitleServer::getLanguage(int32_t sId, getLanguage_cb _hidl_cb) {
 Return<Result> SubtitleServer::setLanguage(int32_t sId, const hidl_string& lang) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
     SUBTITLE_LOGI("%s ss=%p setLanguage=%s", __func__, ss.get(), lang.c_str());
-
     if (ss != nullptr) {
         ss->setLanguage(lang);
     }
@@ -326,7 +324,6 @@ Return<Result> SubtitleServer::setLanguage(int32_t sId, const hidl_string& lang)
 Return<Result> SubtitleServer::setSubType(int32_t sId, int32_t type) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
     SUBTITLE_LOGI("%s ss=%p subType=%d", __func__, ss.get(), type);
-
     if (ss != nullptr) {
         ss->setSubType(type);
     }
@@ -396,14 +393,14 @@ Return<Result> SubtitleServer::setClosedCaptionLang(int32_t sId, const hidl_stri
     return Result {};
 }
 
-Return<Result> SubtitleServer::ttControl(int32_t sId, int cmd, int magazine, int page, int regionId, int param) {
+Return<Result> SubtitleServer::ttControl(int32_t sId, int cmd, int magazine, int pageNo, int regionId, int param) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
     if (ss == nullptr) {
         return Result::FAIL;
     }
     SUBTITLE_LOGI("%s ss=%p cmd=%d", __func__, ss.get(), cmd);
 
-    bool r = ss->ttControl(cmd, magazine, page, regionId, param);
+    bool r = ss->ttControl(cmd, magazine, pageNo, regionId, param);
     return r ? Result::OK : Result::FAIL;
 }
 
@@ -449,10 +446,10 @@ Return<Result> SubtitleServer::setPipId(int32_t sId, int32_t mode, int32_t id) {
     if (ss == nullptr) {
         return Result::FAIL;
     }
-    if ((1 != mode) && (2 != mode)) {
+    if ((PIP_PLAYER_ID != mode) && (PIP_MEDIASYNC_ID != mode)) {
         return Result::FAIL;
     }
-    SUBTITLE_LOGE(" setPipId mode=%d, id=%d",mode, id);
+    SUBTITLE_LOGI(" setPipId mode=%d, id=%d", mode, id);
     ss->setPipId(mode, id);
     return Result::OK;
 }
@@ -489,7 +486,7 @@ Return<void> SubtitleServer::prepareWritingQueue(int32_t sId, int32_t size, prep
 
     // Create message queues.
     if (mDataMQ) {
-        SUBTITLE_LOGI("the client attempts to call prepareForWriting twice");
+        SUBTITLE_LOGE("the client attempts to call prepareForWriting twice");
     } else {
         std::unique_ptr<DataMQ> tempDataMQ(new DataMQ(size, true /* EventFlag */));
         if (!tempDataMQ->isValid()) {
@@ -757,10 +754,10 @@ void SubtitleServer::sendSubtitleEventNotify(SubtitleHidlParcel &event) {
         }
     } else {
         // No client connected, try fallback display.
-        //if (mFallbackDisplayClient != nullptr) {
-        //    if (ENABLE_LOG_PRINT) SUBTITLE_LOGI("fallback display event:%d, client size:%d", parcel.msgType, clientSize);
-        //    mFallbackDisplayClient->notifyDisplayCallback(parcel);
-        //}
+        /*if (mFallbackDisplayClient != nullptr) {
+            if (ENABLE_LOG_PRINT) SUBTITLE_LOGI("fallback display event:%d, client size:%d", parcel.msgType, clientSize);
+            mFallbackDisplayClient->notifyDisplayCallback(parcel);
+        }*/
     }
 }
 
@@ -800,7 +797,6 @@ Return<void> SubtitleServer::debug(const hidl_handle& handle, const hidl_vec<hid
 void SubtitleServer::dump(int fd, const std::vector<std::string>& args) {
     android::Mutex::Autolock lock(mLock);
     SUBTITLE_LOGI("%s", __func__);
-
     int len = args.size();
     for (int i = 0; i < len; i ++) {
         std::string debugInfoAll("-a");
@@ -875,11 +871,12 @@ bool SubtitleServer::ClientMessageHandlerImpl::onSubtitleDisplayNotify(SubtitleH
     mSubtitleServer->sendSubtitleDisplayNotify(event);
     return false;
 }
+
 bool SubtitleServer::ClientMessageHandlerImpl::onSubtitleEventNotify(SubtitleHidlParcel &event) {
-        SUBTITLE_LOGE("CallbackHandlerImpl onSubtitleDataEvent");
-        mSubtitleServer->sendSubtitleEventNotify(event);
-        return false;
-    }
+    SUBTITLE_LOGE("CallbackHandlerImpl onSubtitleDataEvent");
+    mSubtitleServer->sendSubtitleEventNotify(event);
+    return false;
+}
 
 void SubtitleServer::handleServiceDeath(uint32_t cookie) {
     SUBTITLE_LOGI("%s", __func__);

@@ -11,9 +11,9 @@
 #define __SUBTITLE_TTML_PARSER_H__
 #include "Parser.h"
 #include "DataSource.h"
-#include "sub_types.h"
+#include "SubtitleTypes.h"
 
-#include "dvbCommon.h"
+#include "DvbCommon.h"
 
 //#include <aribcaption/aribcaption.h>
 //#include <aribcaption/decoder.h>

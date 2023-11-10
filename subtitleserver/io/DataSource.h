@@ -28,7 +28,7 @@
 #define __SUBTITLE_DATASOURCE_H__
 #include <list>
 #include <mutex>
-
+#include <memory>
 #include "SubtitleLog.h"
 
 #include "InfoChangeListener.h"
@@ -41,6 +41,7 @@ typedef enum {
     E_SUBTITLE_SOCK, /*deprecated*/
     E_SUBTITLE_DEMUX,
     E_SUBTITLE_VBI,
+    E_SUBTITLE_USERDATA,
 } SubtitleIOType;
 
 typedef enum {

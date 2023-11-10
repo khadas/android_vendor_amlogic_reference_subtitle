@@ -1,3 +1,29 @@
+/*
+ * Copyright (C) 2014-2019 Amlogic, Inc. All rights reserved.
+ *
+ * All information contained herein is Amlogic confidential.
+ *
+ * This software is provided to you pursuant to Software License Agreement
+ * (SLA) with Amlogic Inc ("Amlogic"). This software may be used
+ * only in accordance with the terms of this agreement.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification is strictly prohibited without prior written permission from
+ * Amlogic.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #define LOG_TAG "SubtitleServer"
 #include <thread>
 #include "AndroidCallbackMessageQueue.h"
@@ -32,7 +58,7 @@ AndroidCallbackMessageQueue::AndroidCallbackMessageQueue(sp<AndroidCallbackHandl
 
 AndroidCallbackMessageQueue::~AndroidCallbackMessageQueue() {
     mStopped = true;
-    if (mLooper) {
+    if (mLooper != nullptr) {
         mLooper->wake();
     }
     // post a message to wakeup and exit.
@@ -47,8 +73,13 @@ void AndroidCallbackMessageQueue::looperLoop() {
     mLooper = new Looper(false);
     mLooper->sendMessageDelayed(100LL, this, Message(MSG_CHECK_SUBDATA));
     // never exited
-    while (!mStopped) {
+    while (!mStopped && mLooper != nullptr) {
         mLooper->pollAll(-1);
+        //If mLooper is set to nullptr at some point within the loop, ensure proper handling and exit the loop
+        if (mLooper == nullptr) {
+            ALOGE("looperLoop mLooper is Null.");
+            break;
+        }
     }
     mLooper = nullptr;
 }
@@ -251,12 +282,11 @@ bool AndroidCallbackMessageQueue::postDisplayData(const char *data,  int type,
 
     bool allocRes = false;
 
-
     Return<void> r = ashmemAllocator->allocate(size+1024, [&](bool success, const hidl_memory& _mem) {
             if (success) {
                 mem  = HidlMemory::getInstance(_mem);
                 sp<IMemory> memory = mapMemory(_mem);
-                if (memory == NULL) {
+                if (memory == nullptr) {
                     SUBTITLE_LOGE("map Memory Failed!!");
                     return; // we may need  status!
                 }

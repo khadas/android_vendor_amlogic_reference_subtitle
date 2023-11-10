@@ -34,9 +34,9 @@
 #include <functional>
 
 #include "SubtitleLog.h"
-#include "streamUtils.h"
+#include "StreamUtils.h"
 
-#include "sub_types.h"
+#include "SubtitleTypes.h"
 #include "PgsParser.h"
 #include "ParserFactory.h"
 #include "VideoInfo.h"

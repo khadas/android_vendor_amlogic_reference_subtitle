@@ -19,7 +19,6 @@
 #include <string.h>
 #include <time.h>
 #include <limits.h>
-#include "bprint.h"
 #include <utils/CallStack.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -28,9 +27,12 @@
 #include <algorithm>
 #include <functional>
 
-#include "ParserFactory.h"
-#include "streamUtils.h"
+
+#include "bprint.h"
+#include "StreamUtils.h"
 #include "VideoInfo.h"
+
+#include "ParserFactory.h"
 #include "TtmlParser.h"
 #include "tinyxml2.h"
 
@@ -96,21 +98,9 @@ static int64_t ttml_parse_timecode(const char * beginTimeString, const char * en
   return time;
 }
 
-/* Draw a page as bitmap */
-static int genSubBitmap(TtmlContext *ctx, AVSubtitleRect *subRect, vbi_page *page, int chopTop)
-{
-    int resx = page->columns * BITMAP_CHAR_WIDTH;
-    int resy;
-    int height;
-
-    uint8_t ci;
-    subRect->type = SUBTITLE_BITMAP;
-    return 0;
-}
-
 TtmlParser::TtmlParser(std::shared_ptr<DataSource> source) {
     mDataSource = source;
-    mParseType = TYPE_SUBTITLE_TTML;
+    mParseType = TYPE_SUBTITLE_DVB_TTML;
     mIndex = 0;
     mDumpSub = 0;
     mPendingAction = -1;
@@ -184,8 +174,8 @@ static inline int generateNormalDisplay(AVSubtitleRect *subRect, unsigned char *
  *  This function main for this. the control interface.not called in parser thread, need protect.
  */
 bool TtmlParser::updateParameter(int type, void *data) {
-    if (TYPE_SUBTITLE_TTML == type) {
-        DtvKitTtmlParam *pTtmlParam = (DtvKitTtmlParam* )data;
+    if (TYPE_SUBTITLE_DVB_TTML == type) {
+        TtmlParam *pTtmlParam = (TtmlParam* )data;
     }
     return true;
 }
@@ -202,12 +192,14 @@ int TtmlParser::initContext() {
 }
 
 void TtmlParser::checkDebug() {
+    #ifdef NEED_DUMP_ANDROID
     char value[PROPERTY_VALUE_MAX] = {0};
     memset(value, 0, PROPERTY_VALUE_MAX);
     property_get("vendor.subtitle.dump", value, "false");
     if (!strcmp(value, "true")) {
         mDumpSub = true;
     }
+    #endif
 }
 
 int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, int srcLen) {
@@ -474,7 +466,7 @@ int TtmlParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
                 SUBTITLE_LOGE("dvb packet is too big\n\n");
                 return -1;
             }
-            spu->subtitle_type = TYPE_SUBTITLE_TTML;
+            spu->subtitle_type = TYPE_SUBTITLE_DVB_TTML;
             spu->pts = dvbPts;
             if (isMore32Bit(spu->pts) && !isMore32Bit(mDataSource->getSyncTime())) {
                 SUBTITLE_LOGI("SUB PTS is greater than 32 bits, before subpts: %lld, vpts:%lld", spu->pts, mDataSource->getSyncTime());
@@ -537,7 +529,7 @@ int TtmlParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
         dvbPts  = subPeekAsInt64(tmpbuf + 7);
         ptsDiff = subPeekAsInt32(tmpbuf + 15);
 
-        spu->subtitle_type = TYPE_SUBTITLE_TTML;
+        spu->subtitle_type = TYPE_SUBTITLE_DVB_TTML;
         spu->pts = dvbPts;
         if (mDumpSub) SUBTITLE_LOGI("## %s spu-> pts:%lld,dvPts:%lld\n", __FUNCTION__, spu->pts, dvbPts);
         if (mDumpSub) SUBTITLE_LOGI("## %s datalen=%d,pts=%llx,delay=%llx,diff=%llx, data: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
@@ -587,7 +579,7 @@ int TtmlParser::atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
         // read package header info
         if (mDataSource->read(tmpbuf, 4) == 4) {
-            spu->subtitle_type = TYPE_SUBTITLE_TTML;
+            spu->subtitle_type = TYPE_SUBTITLE_DVB_TTML;
             data = (char *)malloc(ATV_TTML_DATA_LEN);
             if (!data) {
                 SUBTITLE_LOGE("[%s::%d]malloc error! \n", __FUNCTION__,__LINE__);

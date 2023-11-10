@@ -95,7 +95,7 @@ public:
     Return<Result> setClosedCaptionVfmt(int32_t sId, int32_t vfmt) override;
     Return<Result> setClosedCaptionLang(int32_t sId, const hidl_string& lang) override;
 
-    Return<Result> ttControl(int32_t sId, int cmd, int magazine, int page, int regionId, int param) override;
+    Return<Result> ttControl(int32_t sId, int cmd, int magazine, int pageNo, int regionId, int param) override;
     Return<Result> ttGoHome(int32_t sId) override;
     Return<Result> ttNextPage(int32_t sId, int32_t dir) override;
     Return<Result> ttNextSubPage(int32_t sId, int32_t dir) override;

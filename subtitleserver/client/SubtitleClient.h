@@ -92,7 +92,6 @@ enum {
 }
 
 /**
- * \brief
  * don't need report Available and Unavailable event
  */
 class SubtitleClient : public RefBase
@@ -159,19 +158,16 @@ public:
     ~SubtitleClient();
 
     /**
-     * \brief getVersion
+     *  getVersion
      *
-     * \return
      */
     uint32_t getVersion() const;
 
     /**
-     * \brief connect to subtitle server
+     * connect to subtitle server
      * should be asynchronous
-     *
-     * \param attachMode
-     *
-     * \return 0, success,
+     * attachMode
+     * 0, success,
      *      -EAGAIN, need try again,
      *      other errors.
      */
@@ -179,14 +175,11 @@ public:
     void disconnect();
 
     /**
-     * \brief set subtitle view show position
-     *
-     * \param x
-     * \param y
-     * \param width
-     * \param height
-     *
-     * \return
+     * set subtitle view show position
+     * x
+     * y
+     * width
+     * height
      */
     status_t setViewWindow(int x, int y, int width, int height);
 
@@ -194,46 +187,36 @@ public:
     bool isVisible() const;
 
     /**
-     * \brief set subtitle view attribute
-     *
-     * \param attr
-     *          opaque: let view become opaque if true.
-     *
-     * \return
+     * set subtitle view attribute
+     * attr opaque: let view become opaque if true.
      */
     status_t setViewAttribute(const ViewAttribute& attr);
 
     status_t init(const subtitle::Subtitle_Param& param);
 
     /**
-     * \brief get subtitle's attribute
-     *
-     * \param param
-     *
-     * \return
+     * get subtitle's attribute
+     * param
      */
     status_t getSourceAttribute(subtitle::Subtitle_Param* param);
 
     /**
-     * \brief registerCallback
-     *
-     * \param cbParam
+     * registerCallback
+     * cbParam
      */
     void registerCallback(const CallbackParam& cbParam);
 
     /**
-     * \brief setInputSource
+     * setInputSource
      * subtitle data provided by user or polled by ourself
-     *
-     * \param source
+     * source
      */
     void setInputSource(InputSource source);
     InputSource getInputSource() const;
 
     /**
-     * \brief get subtitle raw data's default transfer type
-     *
-     * \return TransferType, default is TRANSFER_BY_SOCKET.
+     * get subtitle raw data's default transfer type
+     * TransferType, default is TRANSFER_BY_SOCKET.
      */
     TransferType getDefaultTransferType() const;
 
@@ -242,44 +225,33 @@ public:
     bool isTransferChannelOpened() const;
 
     /**
-     * \brief get smallest buffer size needed for header
-     *
-     * \return
+     * get smallest buffer size needed for header
      */
     size_t getHeaderSize() const;
 
     /**
-     * \brief constructPacketHeader
-     *
-     * \param header
-     * \param headerBufferSize
-     * \param attr
-     *
-     * \return
+     * constructPacketHeader
+     * header
+     * headerBufferSize
+     * attr
      */
     status_t constructPacketHeader(void* header, size_t headerBufferSize, const PackHeaderAttribute& attr) const;
 
     ssize_t send(const void* buf, size_t len);
 
     /**
-     * \brief flush
+     * flush
      * need be called when switch subtitle
-     *
-     * \return
      */
     status_t flush();
 
     /**
-     * \brief start decode and displaying
-     *
-     * \return
+     * start decode and displaying
      */
     status_t start();
 
     /**
-     * \brief stop decode and displaying
-     *
-     * \return
+     * stop decode and displaying
      */
     status_t stop();
 
@@ -289,10 +261,8 @@ public:
     status_t nextSubPage(int direction);
 
     /**
-     * \brief whether subtitle is decoding and displaying
-     *      don't care subtitle view is visible or not.
-     *
-     * \return
+     * whether subtitle is decoding and displaying
+     * don't care subtitle view is visible or not.
      */
     bool isPlaying() const;
 
