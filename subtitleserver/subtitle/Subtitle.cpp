@@ -30,12 +30,12 @@
 #include <fcntl.h>
 #include <string.h>
 #include <utils/CallStack.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <chrono>
 #include <thread>
 
 #include <utils/CallStack.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "Subtitle.h"
 #include "Parser.h"
@@ -53,7 +53,7 @@ Subtitle::Subtitle() :
     mIsExtSub(false),
     mIdxSubTrack(-1)
  {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
 }
 
 Subtitle::Subtitle(bool isExtSub, int trackId, ParserEventNotifier *notifier) :
@@ -64,7 +64,7 @@ Subtitle::Subtitle(bool isExtSub, int trackId, ParserEventNotifier *notifier) :
         mThread(nullptr),
         mPendingAction(-1)
 {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     mParserNotifier = notifier;
     mIsExtSub = isExtSub;
     mIdxSubTrack = trackId;
@@ -85,7 +85,7 @@ Subtitle::Subtitle(bool isExtSub, int trackId, ParserEventNotifier *notifier) :
 
 
 Subtitle::~Subtitle() {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     //android::CallStack(LOG_TAG);
     mExitRequested = true;
     mCv.notify_all();
@@ -103,11 +103,11 @@ Subtitle::~Subtitle() {
         mParser = nullptr;
     }
 
-    ALOGD("%s end", __func__);
+    SUBTITLE_LOGI("%s end", __func__);
 }
 
 void Subtitle::attachDataSource(std::shared_ptr<DataSource> source, std::shared_ptr<InfoChangeListener>listener) {
-     ALOGD("%s", __func__);
+     SUBTITLE_LOGI("%s", __func__);
     mDataSource = source;
     mDataSource->registerInfoListener(listener);
     mDataSource->start();
@@ -120,7 +120,7 @@ void Subtitle::dettachDataSource(std::shared_ptr<InfoChangeListener>listener) {
 
 void Subtitle::onSubtitleChanged(int newTotal) {
     if (newTotal == mSubtitleTracks) return;
-    ALOGD("onSubtitleChanged:%d", newTotal);
+    SUBTITLE_LOGI("onSubtitleChanged:%d", newTotal);
     mSubtitleTracks = newTotal;
 }
 
@@ -132,7 +132,7 @@ void Subtitle::onRenderStartTimestamp(int64_t startTime) {
 }
 
 void Subtitle::onRenderTimeChanged(int64_t renderTime) {
-    //ALOGD("onRenderTimeChanged:%lld", renderTime);
+    //SUBTITLE_LOGI("onRenderTimeChanged:%lld", renderTime);
     mRenderTime = renderTime;
     if (mPresentation != nullptr) {
         mPresentation->syncCurrentPresentTime(mRenderTime);
@@ -149,9 +149,9 @@ void Subtitle::onTypeChanged(int newType) {
 
     if (newType == mCurrentSubtitleType) return;
 
-    ALOGD("onTypeChanged:%d", newType);
+    SUBTITLE_LOGI("onTypeChanged:%d", newType);
     if (newType <= TYPE_SUBTITLE_INVALID || newType >= TYPE_SUBTITLE_MAX) {
-        ALOGD("Error! invalid type!%d", newType);
+        SUBTITLE_LOGI("Error! invalid type!%d", newType);
         return;
     }
     if (newType == TYPE_SUBTITLE_DTVKIT_SCTE27) {
@@ -222,7 +222,7 @@ bool Subtitle::resetForSeek() {
 
 // TODO: actually, not used now
 void Subtitle::scheduleStart() {
-    ALOGD("scheduleStart:%d", mSubPrams->subType);
+    SUBTITLE_LOGI("scheduleStart:%d", mSubPrams->subType);
     if (nullptr != mDataSource) {
         mDataSource->start();
     }
@@ -234,7 +234,7 @@ void Subtitle::scheduleStart() {
 void Subtitle::run() {
     // check exit
     bool ret = false;
-    ALOGD("run mExitRequested:%d, mSubPrams->subType:%d", mExitRequested, mSubPrams->subType);
+    SUBTITLE_LOGI("run mExitRequested:%d, mSubPrams->subType:%d", mExitRequested, mSubPrams->subType);
 
     while (!mExitRequested) {
         //std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -248,7 +248,7 @@ void Subtitle::run() {
             mSubPrams->idxSubTrackId = mIdxSubTrack;
             mParser = ParserFactory::create(mSubPrams, mDataSource);
             if (mParser == nullptr) {
-                ALOGE("Parser creat failed, break!");
+                SUBTITLE_LOGE("Parser creat failed, break!");
                 break;
             } else {
                 mParser->startParser(mParserNotifier, mPresentation.get());
@@ -270,7 +270,7 @@ void Subtitle::run() {
             mSubPrams->idxSubTrackId = mIdxSubTrack;
             mParser = ParserFactory::create(mSubPrams, mDataSource);
             if (mParser == nullptr) {
-                ALOGE("Parser creat failed, break!");
+                SUBTITLE_LOGE("Parser creat failed, break!");
                 break;
             }
             mParser->startParser(mParserNotifier, mPresentation.get());
@@ -298,7 +298,7 @@ void Subtitle::run() {
                     createAndStart = true;
                     mParser = ParserFactory::create(mSubPrams, mDataSource);
                 }
-                ALOGD("run ACTION_SUBTITLE_SET_PARAM %d %d", mSubPrams->subType, TYPE_SUBTITLE_CLOSED_CAPTION);
+                SUBTITLE_LOGI("run ACTION_SUBTITLE_SET_PARAM %d %d", mSubPrams->subType, TYPE_SUBTITLE_CLOSED_CAPTION);
                 if (mParser != nullptr) {
                     if (mSubPrams->subType == TYPE_SUBTITLE_DTVKIT_DVB) {
                         mParser->updateParameter(TYPE_SUBTITLE_DTVKIT_DVB, &mSubPrams->dtvkitDvbParam);
@@ -329,15 +329,15 @@ void Subtitle::run() {
             }
             break;
             case ACTION_SUBTITLE_RECEIVED_SUBTYPE: {
-                ALOGD("ACTION_SUBTITLE_RECEIVED_SUBTYPE, type:%d", mSubPrams->subType);
+                SUBTITLE_LOGI("ACTION_SUBTITLE_RECEIVED_SUBTYPE, type:%d", mSubPrams->subType);
                 if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CAPTION || mSubPrams->subType == TYPE_SUBTITLE_INVALID) {
-                    ALOGD("CC type or invalid type, break, do nothings!");
+                    SUBTITLE_LOGI("CC type or invalid type, break, do nothings!");
                     break;
                 } else if (mSubPrams->subType == TYPE_SUBTITLE_DVB_TELETEXT && mParser != nullptr && mParser->getParseType() == TYPE_SUBTITLE_DVB_TELETEXT) {
-                    ALOGD("Already create TeletextParser,break do nothing");
+                    SUBTITLE_LOGI("Already create TeletextParser,break do nothing");
                     break;
                 } else if (mSubPrams->subType == TYPE_SUBTITLE_DVB && mParser != nullptr && mParser->getParseType() == TYPE_SUBTITLE_DVB) {
-                    ALOGD("Already create DvbParser,break do nothing");
+                    SUBTITLE_LOGI("Already create DvbParser,break do nothing");
                     break;
                  }
                 if (mParser != nullptr) {
@@ -390,11 +390,11 @@ void Subtitle::run() {
 
         // wait100ms, still no parser, then start default CC
         if (mParser == nullptr) {
-            ALOGD("No parser found, create default!");
+            SUBTITLE_LOGI("No parser found, create default!");
             // start default parser, normally, this is CC
             mParser = ParserFactory::create(mSubPrams, mDataSource);
             if (mParser == nullptr) {
-                ALOGE("Parser creat failed, break!");
+                SUBTITLE_LOGE("Parser creat failed, break!");
                 break;
             } else {
                 mParser->startParser(mParserNotifier, mPresentation.get());

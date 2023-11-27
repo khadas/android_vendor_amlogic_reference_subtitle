@@ -1,6 +1,6 @@
 #define LOG_TAG "SubtitleDisplay"
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <core/SkBitmap.h>
 #include <core/SkStream.h>
 #include <core/SkCanvas.h>
@@ -22,7 +22,7 @@ void *BitmapDisplay::lockDisplayBuffer(int *width, int *height, int *stride, int
     *height = 1080;
     *stride = dst->rowBytes()/dst->bytesPerPixel();
     *bpp = dst->bytesPerPixel();
-    ALOGD("lockDisplayBuffer called here");
+    SUBTITLE_LOGI("lockDisplayBuffer called here");
     return dst->getPixels();
 }
 
@@ -34,11 +34,11 @@ bool BitmapDisplay::unlockAndPostDisplayBuffer(void *buffer) {
 
     SkFILEWStream stream(name);
     if (!stream.isValid()) {
-        ALOGE("Can't write %s.", name);
+        SUBTITLE_LOGE("Can't write %s.", name);
         return false;
     }
     if (!SkEncodeImage(&stream, *dst, SkEncodedImageFormat::kPNG, 100)) {
-        ALOGE("Can't encode a PNG.");
+        SUBTITLE_LOGE("Can't encode a PNG.");
         return false;
     }
 

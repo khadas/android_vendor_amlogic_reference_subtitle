@@ -26,7 +26,7 @@
 
 #ifndef _PGS_SUB_H
 #define _PGS_SUB_H
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 
 // TODO: impl as a class item, optimize the structure[currently direct borrow from old impl]

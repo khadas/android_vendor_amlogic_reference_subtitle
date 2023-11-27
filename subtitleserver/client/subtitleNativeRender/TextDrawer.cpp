@@ -10,9 +10,9 @@ TextDrawer::TextDrawer() {
     // TODO: initialize CJK fonts.
     mTypeFace =SkTypeface::MakeFromFile("/system/fonts/NotoSansCJK-Regular.ttc");
     if (mTypeFace == nullptr) {
-        ALOGE("Error! cannot initialize typeface");
+        SUBTITLE_LOGE("Error! cannot initialize typeface");
     } else {
-        ALOGD("initialized typeface");
+        SUBTITLE_LOGI("initialized typeface");
     }
 }
 
@@ -69,7 +69,7 @@ bool TextDrawer::drawLine(SkCanvas &canvas, const char *data) {
 
     SkRect bounds;
     box.getBox(&bounds);
-    ALOGD("%d [%f %f %f %f] [%d %d] %s",
+    SUBTITLE_LOGI("%d [%f %f %f %f] [%d %d] %s",
         box.countLines(), bounds.fLeft, bounds.fTop, bounds.fRight, bounds.fBottom, info.width(), info.height(), data);
 
     return true;

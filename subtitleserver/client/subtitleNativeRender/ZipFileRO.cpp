@@ -19,7 +19,7 @@
 //
 #define LOG_TAG "ZipFileRO"
 #include "ZipFileRO.h"
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/Compat.h>
 #include <utils/misc.h>
 #include <utils/threads.h>
@@ -68,7 +68,7 @@ ZipFileRO::~ZipFileRO() {
     ZipArchiveHandle handle;
     const int32_t error = OpenArchive(zipFileName, &handle);
     if (error) {
-        ALOGW("Error opening archive %s: %s", zipFileName, ErrorCodeString(error));
+        SUBTITLE_LOGI("Error opening archive %s: %s", zipFileName, ErrorCodeString(error));
         CloseArchive(handle);
         return NULL;
     }
@@ -83,7 +83,7 @@ ZipFileRO::~ZipFileRO() {
     ZipArchiveHandle handle;
     const int32_t error = OpenArchiveFd(fd, debugFileName, &handle, assume_ownership);
     if (error) {
-        ALOGW("Error opening archive fd %d %s: %s", fd, debugFileName, ErrorCodeString(error));
+        SUBTITLE_LOGI("Error opening archive fd %d %s: %s", fd, debugFileName, ErrorCodeString(error));
         CloseArchive(handle);
         return NULL;
     }
@@ -151,7 +151,7 @@ bool ZipFileRO::startIteration(void** cookie, const char* prefix, const char* su
     int32_t error = StartIteration(mHandle, &(ze->cookie),
                                    prefix ? prefix : "", suffix ? suffix : "");
     if (error) {
-        ALOGW("Could not start iteration over %s: %s", mFileName != NULL ? mFileName : "<null>",
+        SUBTITLE_LOGI("Could not start iteration over %s: %s", mFileName != NULL ? mFileName : "<null>",
                 ErrorCodeString(error));
         delete ze;
         return false;
@@ -167,7 +167,7 @@ ZipEntryRO ZipFileRO::nextEntry(void* cookie)
     int32_t error = Next(ze->cookie, &(ze->entry), &(ze->name));
     if (error) {
         if (error != -1) {
-            ALOGW("Error iteration over %s: %s", mFileName != NULL ? mFileName : "<null>",
+            SUBTITLE_LOGI("Error iteration over %s: %s", mFileName != NULL ? mFileName : "<null>",
                     ErrorCodeString(error));
         }
         return NULL;
@@ -196,7 +196,7 @@ int ZipFileRO::getEntryFileName(ZipEntryRO entry, char* buffer, size_t bufLen)
     const uint16_t requiredSize = zipEntry->name.length() + 1;
 
     if (bufLen < requiredSize) {
-        ALOGW("Buffer too short, requires %d bytes for entry name", requiredSize);
+        SUBTITLE_LOGI("Buffer too short, requires %d bytes for entry name", requiredSize);
         return requiredSize;
     }
 
@@ -243,7 +243,7 @@ bool ZipFileRO::uncompressEntry(ZipEntryRO entry, void* buffer, size_t size) con
     const int32_t error = ExtractToMemory(mHandle, &(zipEntry->entry),
         (uint8_t*) buffer, size);
     if (error) {
-        ALOGW("ExtractToMemory failed with %s", ErrorCodeString(error));
+        SUBTITLE_LOGI("ExtractToMemory failed with %s", ErrorCodeString(error));
         return false;
     }
 
@@ -260,7 +260,7 @@ bool ZipFileRO::uncompressEntry(ZipEntryRO entry, int fd) const
     _ZipEntryRO *zipEntry = reinterpret_cast<_ZipEntryRO*>(entry);
     const int32_t error = ExtractEntryToFile(mHandle, &(zipEntry->entry), fd);
     if (error) {
-        ALOGW("ExtractToMemory failed with %s", ErrorCodeString(error));
+        SUBTITLE_LOGI("ExtractToMemory failed with %s", ErrorCodeString(error));
         return false;
     }
 

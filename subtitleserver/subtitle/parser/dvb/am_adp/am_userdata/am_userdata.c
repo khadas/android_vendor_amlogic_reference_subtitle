@@ -42,7 +42,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include <errno.h>
 #include <sys/types.h>
@@ -99,7 +99,7 @@ static AM_INLINE AM_ErrorCode_t userdata_get_dev(int dev_no, AM_USERDATA_Device_
 {
     if ((dev_no<0) || (dev_no >= USERDATA_DEV_COUNT))
     {
-        ALOGE("invalid userdata device number %d, must in(%d~%d)", dev_no, 0, USERDATA_DEV_COUNT-1);
+        SUBTITLE_LOGE("invalid userdata device number %d, must in(%d~%d)", dev_no, 0, USERDATA_DEV_COUNT-1);
         return AM_USERDATA_ERR_INVALID_DEV_NO;
     }
 
@@ -114,7 +114,7 @@ static AM_INLINE AM_ErrorCode_t userdata_get_opened_dev(int dev_no, AM_USERDATA_
 
     if (!(*dev)->open_cnt)
     {
-        ALOGE("userdata device %d has not been opened", dev_no);
+        SUBTITLE_LOGE("userdata device %d has not been opened", dev_no);
         return AM_USERDATA_ERR_INVALID_DEV_NO;
     }
 
@@ -133,7 +133,7 @@ static void dump_user_data(const uint8_t *buff, int size)
         sprintf(buf+i*3, "%02x ", buff[i]);
     }
 
-    ALOGI("%s", buf);
+    SUBTITLE_LOGI("%s", buf);
 }
 
 int userdata_ring_buf_init(AM_USERDATA_RingBuffer_t *ringbuf, size_t len)
@@ -244,7 +244,7 @@ static void read_unused_data(AM_USERDATA_RingBuffer_t *ringbuf, size_t len)
 
     if (buf != NULL)
     {
-        //ALOGE("read %d bytes unused data", len);
+        //SUBTITLE_LOGE("read %d bytes unused data", len);
         userdata_ring_buf_read(ringbuf, buf, len);
         free(buf);
     }
@@ -257,7 +257,7 @@ static int userdata_package_write(AM_USERDATA_Device_t *dev, const uint8_t *buf,
     cnt = userdata_ring_buf_free(&dev->pkg_buf);
     if (cnt < (int)(size+sizeof(cnt)))
     {
-        ALOGE("write userdata error: data size to large, %d > %d", size+sizeof(cnt), cnt);
+        SUBTITLE_LOGE("write userdata error: data size to large, %d > %d", size+sizeof(cnt), cnt);
         ret = 0;
     }
     else
@@ -269,7 +269,7 @@ static int userdata_package_write(AM_USERDATA_Device_t *dev, const uint8_t *buf,
     }
     pthread_mutex_unlock(&dev->lock);
 
-    //ALOGI("write %d bytes\n", ret);
+    //SUBTITLE_LOGI("write %d bytes\n", ret);
     dump_user_data(buf, size);
     return ret;
 }
@@ -287,7 +287,7 @@ static int userdata_package_read(AM_USERDATA_Device_t *dev, uint8_t *buf, int si
         if (cnt < ud_cnt)
         {
             /* this case must not happen */
-            //ALOGI("read userdata error: expect %d bytes, but only %d bytes avail", ud_cnt, cnt);
+            //SUBTITLE_LOGI("read userdata error: expect %d bytes, but only %d bytes avail", ud_cnt, cnt);
             cnt = 0;
             read_unused_data(&dev->pkg_buf, cnt);
         }
@@ -296,7 +296,7 @@ static int userdata_package_read(AM_USERDATA_Device_t *dev, uint8_t *buf, int si
             cnt = 0;
             if (ud_cnt > size)
             {
-                //ALOGI("read userdata error: source buffer not enough, bufsize %d , datasize %d", size, ud_cnt);
+                //SUBTITLE_LOGI("read userdata error: source buffer not enough, bufsize %d , datasize %d", size, ud_cnt);
                 read_unused_data(&dev->pkg_buf, ud_cnt);
             }
             else if (ud_cnt > 0)
@@ -308,7 +308,7 @@ static int userdata_package_read(AM_USERDATA_Device_t *dev, uint8_t *buf, int si
     }
     else
     {
-        //ALOGI("read userdata error: count = %d < 4", cnt);
+        //SUBTITLE_LOGI("read userdata error: count = %d < 4", cnt);
         cnt = 0;
         read_unused_data(&dev->pkg_buf, cnt);
     }
@@ -335,7 +335,7 @@ static AM_ErrorCode_t userdata_package_poll(AM_USERDATA_Device_t *dev, int timeo
         rv = pthread_cond_timedwait(&dev->pkg_buf.cond, &dev->lock, &rt);
         if (rv == ETIMEDOUT)
         {
-            //ALOGE("poll userdata timeout, timeout = %d ms", timeout);
+            //SUBTITLE_LOGE("poll userdata timeout, timeout = %d ms", timeout);
             ret = AM_FAILURE;
         }
         else
@@ -343,7 +343,7 @@ static AM_ErrorCode_t userdata_package_poll(AM_USERDATA_Device_t *dev, int timeo
             cnt = userdata_ring_buf_avail(&dev->pkg_buf);
             if (cnt <= 0)
             {
-                ALOGE("poll error, unexpected error");
+                SUBTITLE_LOGE("poll error, unexpected error");
                 ret = AM_FAILURE;
             }
         }
@@ -375,7 +375,7 @@ AM_ErrorCode_t AM_USERDATA_Open(int dev_no, const AM_USERDATA_OpenPara_t *para)
 
     if (dev->open_cnt)
     {
-        ALOGE("userdata device %d has already been opened", dev_no);
+        SUBTITLE_LOGE("userdata device %d has already been opened", dev_no);
         dev->open_cnt++;
         goto final;
     }
@@ -434,7 +434,7 @@ AM_ErrorCode_t AM_USERDATA_Close(int dev_no)
             {
                 dev->drv->close(dev);
             }
-            ALOGE("AM_USERDATA_Close pthread_mutex_destroy");
+            SUBTITLE_LOGE("AM_USERDATA_Close pthread_mutex_destroy");
             pthread_mutex_destroy(&dev->lock);
 
             userdata_ring_buf_deinit(&dev->pkg_buf);

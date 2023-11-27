@@ -29,7 +29,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "AndroidHidlRemoteRender.h"
 #include "AndroidCallbackMessageQueue.h"
@@ -51,13 +51,13 @@ bool AndroidHidlRemoteRender::postSubtitleData() {
     if (mShowingSubs.size() <= 0) {
         if (queue != nullptr) {
             for (int i=0; i<=mCurrentMaxObjectId; i++) {
-                ALOGD("AndroidHidlRemoteRender:%s objectId=%d",__func__, i);
+                SUBTITLE_LOGI("AndroidHidlRemoteRender:%s objectId=%d",__func__, i);
                 queue->postDisplayData(nullptr, mParseType, 0, 0, 0, 0, 0, 0, 0, FADING_SUB, i);
             }
             mCurrentMaxObjectId = 0;
             return true;
         } else {
-            ALOGE("Error! should not null here!");
+            SUBTITLE_LOGE("Error! should not null here!");
             return false;
         }
     }
@@ -68,13 +68,13 @@ bool AndroidHidlRemoteRender::postSubtitleData() {
         if (((*it)->spu_data) == nullptr) {
             if ((*it)->dynGen) {
                 (*it)->genSubtitle();
-                ALOGD("dynamic gen and return!");
+                SUBTITLE_LOGI("dynamic gen and return!");
                 if (((*it)->spu_data) == nullptr) {
-                    ALOGE("Error! why still no decoded spu_data???");
+                    SUBTITLE_LOGE("Error! why still no decoded spu_data???");
                     continue;
                 }
             } else {
-                ALOGE("Error! why not decoded spu_data, but push to show???");
+                SUBTITLE_LOGE("Error! why not decoded spu_data, but push to show???");
                 continue;
             }
         }
@@ -93,7 +93,7 @@ bool AndroidHidlRemoteRender::postSubtitleData() {
         if (mCurrentMaxObjectId < objectSegmentId) mCurrentMaxObjectId = objectSegmentId;
         size = (*it)->buffer_size;
 
-        ALOGD(" in AndroidHidlRemoteRender:%s type:%d, width=%d, height=%d data=%p size=%d",
+        SUBTITLE_LOGI(" in AndroidHidlRemoteRender:%s type:%d, width=%d, height=%d data=%p size=%d",
             __func__, mParseType,  width, height, (*it)->spu_data, (*it)->buffer_size);
         DisplayType  displayType = ParserFactory::getDisplayType(mParseType);
         if ((SUBTITLE_IMAGE_DISPLAY == displayType) && ((0 == width) || (0 == height))) {
@@ -130,7 +130,7 @@ bool AndroidHidlRemoteRender::postSubtitleData() {
 // TODO: the subtitle may has some params, config how to render
 //       Need impl later.
 bool AndroidHidlRemoteRender::showSubtitleItem(std::shared_ptr<AML_SPUVAR> spu, int type) {
-    ALOGD("showSubtitleItem");
+    SUBTITLE_LOGI("showSubtitleItem");
     mShowingSubs.push_back(spu);
     mParseType = type;
 
@@ -145,7 +145,7 @@ void AndroidHidlRemoteRender::resetSubtitleItem() {
 }
 
 bool AndroidHidlRemoteRender::hideSubtitleItem(std::shared_ptr<AML_SPUVAR> spu) {
-    ALOGD("hideSubtitleItem");
+    SUBTITLE_LOGI("hideSubtitleItem");
     //some stream is special.some subtitles have pts, but some subtitles don't have pts.
     //In this situation if use the remove() function,it may cause the subtitle contains
     //pts don't hide until the subtitle without pts disappear.
@@ -155,7 +155,7 @@ bool AndroidHidlRemoteRender::hideSubtitleItem(std::shared_ptr<AML_SPUVAR> spu) 
 }
 
 void AndroidHidlRemoteRender::removeSubtitleItem(std::shared_ptr<AML_SPUVAR> spu)  {
-    ALOGD("removeSubtitleItem");
+    SUBTITLE_LOGI("removeSubtitleItem");
     mShowingSubs.remove(spu);
 }
 

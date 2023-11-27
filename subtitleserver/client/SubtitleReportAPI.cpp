@@ -5,7 +5,7 @@
 #include <fmq/EventFlag.h>
 #include <fmq/MessageQueue.h>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/CallStack.h>
 
 #include <vendor/amlogic/hardware/subtitleserver/1.0/ISubtitleServer.h>
@@ -93,15 +93,15 @@ static bool prepareWritingQueueLocked(SubtitleContext *ctx) {
                     tempDataMQ.reset(new DataMQ(dataMQ));
                 }
             });
-    ALOGD("prepareWritingQueueLocked");
+    SUBTITLE_LOGI("prepareWritingQueueLocked");
 
     if (!ret.isOk() || retval != Result::OK) {
-        ALOGE("Error! prepare message Queue failed!");
+        SUBTITLE_LOGE("Error! prepare message Queue failed!");
         return false;
     }
 
     if (!tempDataMQ || !tempDataMQ->isValid()) {
-        ALOGE("Error! cannot get valid message Queue from service");
+        SUBTITLE_LOGE("Error! cannot get valid message Queue from service");
         return false;
     }
     ctx->mDataMQ = std::move(tempDataMQ);
@@ -111,19 +111,19 @@ static bool prepareWritingQueueLocked(SubtitleContext *ctx) {
 static bool fmqSendDataLocked(SubtitleContext *ctx, const char *data, size_t size) {
     size_t wrote = 0;
     size_t remainSize = size;
-    //ALOGD("fmqSendDataLocked %p %d", ctx->mDataMQ.get(), size);
+    //SUBTITLE_LOGI("fmqSendDataLocked %p %d", ctx->mDataMQ.get(), size);
     if (data != nullptr) {
         while (wrote < size) {
             size_t availableToWrite = ctx->mDataMQ->availableToWrite();
             size_t needWrite = (remainSize > availableToWrite) ? availableToWrite : remainSize;
 
             if (!ctx->mDataMQ->writeBlocking((uint8_t *)data, needWrite, 100*1000*1000LL)) {
-                ALOGE("data message queue write failed!");
+                SUBTITLE_LOGE("data message queue write failed!");
                 return false;
             } else {
                 remainSize -= needWrite;
                 wrote += needWrite;
-                //ALOGD("availableToWrite:%d needWrite:%d", availableToWrite, needWrite);
+                //SUBTITLE_LOGI("availableToWrite:%d needWrite:%d", availableToWrite, needWrite);
                 // TODO: notify!!!
             }
         }
@@ -137,7 +137,7 @@ static bool fmqSendDataLocked(SubtitleContext *ctx, const char *data, size_t siz
 SubSourceHandle SubSource_Create(int sId) {
     SubtitleContext *ctx = new SubtitleContext();
     if (ctx == nullptr) return nullptr;
-    ALOGD("SubSource Create %d", sId);
+    SUBTITLE_LOGI("SubSource Create %d", sId);
     ctx->mLock.lock();
     sp<ISubtitleServer> service =  ISubtitleServer::tryGetService();
     int retry = 0;
@@ -148,7 +148,7 @@ SubSourceHandle SubSource_Create(int sId) {
         service = ISubtitleServer::tryGetService();
     }
     if (service == nullptr) {
-        ALOGE("Error, Cannot connect to remote Subtitle Service");
+        SUBTITLE_LOGE("Error, Cannot connect to remote Subtitle Service");
         ctx->mLock.unlock();
         delete ctx;
         return nullptr;
@@ -158,7 +158,7 @@ SubSourceHandle SubSource_Create(int sId) {
     ctx->sId = sId;
 
     if (!prepareWritingQueueLocked(ctx)) {
-        ALOGE("Error, Cannot get MessageQueue from remote Subtitle Service");
+        SUBTITLE_LOGE("Error, Cannot get MessageQueue from remote Subtitle Service");
         ctx->mLock.unlock();
         delete ctx;
         return nullptr;
@@ -172,7 +172,7 @@ SubSourceStatus SubSource_Destroy(SubSourceHandle handle) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    ALOGD("SubSource destroy %d", ctx->sId);
+    SUBTITLE_LOGI("SubSource destroy %d", ctx->sId);
 
     ctx->mLock.lock();
     ctx->mRemote = nullptr;
@@ -188,12 +188,12 @@ SubSourceStatus SubSource_Reset(SubSourceHandle handle) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    ALOGD("SubSource reset %d", ctx->sId);
+    SUBTITLE_LOGI("SubSource reset %d", ctx->sId);
 
     std::lock_guard<std::mutex> guard(ctx->mLock);
 
     if (ctx->mRemote == nullptr) {
-        ALOGE("Error! not connect to Remote Service!");
+        SUBTITLE_LOGE("Error! not connect to Remote Service!");
         return SUB_STAT_INV;
     }
 
@@ -209,7 +209,7 @@ SubSourceStatus SubSource_Stop(SubSourceHandle handle) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    ALOGD("SubSource destroy %d", ctx->sId);
+    SUBTITLE_LOGI("SubSource destroy %d", ctx->sId);
     std::lock_guard<std::mutex> guard(ctx->mLock);
     char buffer[64];
     memset(buffer, 0, 64);
@@ -226,7 +226,7 @@ SubSourceStatus SubSource_ReportRenderTime(SubSourceHandle handle, int64_t timeU
     if (ctx == nullptr) return SUB_STAT_INV;
 
     {
-        if (count++ %1000 == 0) ALOGD("SubSource ReportRenderTime %d 0x%llx", ctx->sId, timeUs);
+        if (count++ %1000 == 0) SUBTITLE_LOGI("SubSource ReportRenderTime %d 0x%llx", ctx->sId, timeUs);
     }
 
     std::lock_guard<std::mutex> guard(ctx->mLock);
@@ -241,7 +241,7 @@ SubSourceStatus SubSource_ReportStartPts(SubSourceHandle handle, int64_t pts) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    ALOGD("SubSource ReportStartPts %d 0x%llx", ctx->sId, pts);
+    SUBTITLE_LOGI("SubSource ReportStartPts %d 0x%llx", ctx->sId, pts);
 
     std::lock_guard<std::mutex> guard(ctx->mLock);
     char buffer[64];
@@ -256,7 +256,7 @@ SubSourceStatus SubSource_ReportTotalTracks(SubSourceHandle handle, int trackNum
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    ALOGD("SubSource ReportTotalTracks %d 0x%x", ctx->sId, trackNum);
+    SUBTITLE_LOGI("SubSource ReportTotalTracks %d 0x%x", ctx->sId, trackNum);
 
     std::lock_guard<std::mutex> guard(ctx->mLock);
     char buffer[64];
@@ -272,7 +272,7 @@ SubSourceStatus SubSource_ReportType(SubSourceHandle handle, int type) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
 
-    ALOGD("SubSource ReportType %d 0x%x", ctx->sId, type);
+    SUBTITLE_LOGI("SubSource ReportType %d 0x%x", ctx->sId, type);
 
     std::lock_guard<std::mutex> guard(ctx->mLock);
     char buffer[64];
@@ -292,7 +292,7 @@ SubSourceStatus SubSource_ReportSubTypeString(SubSourceHandle handle, const char
     char *buffer = new char[strlen(type)+1+HEADER_SIZE]();
     if (buffer == nullptr) return SUB_STAT_INV;
 
-    ALOGD("SubSource ReportTypeString %d %s", ctx->sId, type);
+    SUBTITLE_LOGI("SubSource ReportTypeString %d %s", ctx->sId, type);
 
     makeHeader(buffer, ctx->sId, SUBTITLE_TYPE_STRING, strlen(type)+1);
     memcpy(buffer+HEADER_SIZE, type, strlen(type));
@@ -305,7 +305,7 @@ SubSourceStatus SubSource_ReportLanguageString(SubSourceHandle handle, const cha
     SubtitleContext *ctx = (SubtitleContext *)handle;
     std::lock_guard<std::mutex> guard(ctx->mLock);
     if (ctx == nullptr) return SUB_STAT_INV;
-    ALOGD("SubSource ReportLangString %d %s", ctx->sId, lang);
+    SUBTITLE_LOGI("SubSource ReportLangString %d %s", ctx->sId, lang);
 
     char *buffer = new char[strlen(lang)+1+HEADER_SIZE]();
     if (buffer == nullptr) return SUB_STAT_INV;
@@ -322,14 +322,14 @@ SubSourceStatus SubSource_ReportLanguageString(SubSourceHandle handle, const cha
 SubSourceStatus SubSource_SendData(SubSourceHandle handle, const char *data, int size) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) return SUB_STAT_INV;
-    ALOGD("SubSource SubSource_SendData %d %d", ctx->sId, size);
+    SUBTITLE_LOGI("SubSource SubSource_SendData %d %d", ctx->sId, size);
 
     std::lock_guard<std::mutex> guard(ctx->mLock);
     char buffer[64];
     makeHeader(buffer, ctx->sId, SUBTITLE_SUB_DATA, size);
     fmqSendDataLocked(ctx, buffer, HEADER_SIZE);
     fmqSendDataLocked(ctx, data, size);
-    ALOGD("SubSource SubSource_SendData end %d %d", ctx->sId, size);
+    SUBTITLE_LOGI("SubSource SubSource_SendData end %d %d", ctx->sId, size);
 
     return SUB_STAT_OK;
 }

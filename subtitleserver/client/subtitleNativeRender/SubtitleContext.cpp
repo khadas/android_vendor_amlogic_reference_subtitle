@@ -1,5 +1,5 @@
 #define LOG_TAG "SubtitleContext"
-#include  "MyLog.h"
+#include "SubtitleLog.h"
 #include "SubtitleContext.h"
 
 // need same as server side
@@ -65,7 +65,7 @@ SubtitleContext& SubtitleContext::GetInstance() {
 }
 
 SubtitleContext::SubtitleContext() {
-    ALOGD("SubtitleContext");
+    SUBTITLE_LOGI("SubtitleContext");
 
 /*     AmlSubtitleParam param;
     param.subtitleType = TYPE_SUBTITLE_DVB;
@@ -75,7 +75,7 @@ SubtitleContext::SubtitleContext() {
 }
 
 SubtitleContext::~SubtitleContext() {
-   ALOGD("~~SubtitleContext ");
+   SUBTITLE_LOGI("~~SubtitleContext ");
 }
 
 bool SubtitleContext::processSubtitleCallback(int sessionId,
@@ -84,12 +84,12 @@ bool SubtitleContext::processSubtitleCallback(int sessionId,
                 int x, int y, int width, int height,
                 int videoWidth, int videoHeight,
                 int showing) {
-    ALOGE("processSubtitleCallback id:%d data:%p, size=%d, type:%d x:%d y:%d, width:%d height:%d",
+    SUBTITLE_LOGE("processSubtitleCallback id:%d data:%p, size=%d, type:%d x:%d y:%d, width:%d height:%d",
         sessionId, data, size, type, x, y, width, height);
     std::unique_lock<std::mutex> autolock(mMutex);
 
     if (type == TYPE_SUBTITLE_Q_TONE_DATA) {
-        ALOGD("QToneDataReceived: %d %p %d", sessionId, data, size);
+        SUBTITLE_LOGI("QToneDataReceived: %d %p %d", sessionId, data, size);
 
         if (mQToneCb[sessionId] != nullptr) {
             mQToneCb[sessionId](sessionId, data, size);
@@ -99,10 +99,10 @@ bool SubtitleContext::processSubtitleCallback(int sessionId,
 
     // TODO: Post to a Queue, and create a new thread to handle this.
     if (showing) {
-        ALOGD("showing...");
+        SUBTITLE_LOGI("showing...");
         mSubtitle[sessionId].mRender->render(data, size, type, x, y, width, height, videoWidth, videoHeight);
     } else {
-        ALOGD("clear...");
+        SUBTITLE_LOGI("clear...");
         mSubtitle[sessionId].mRender->clear();
     }
     return true;
@@ -113,7 +113,7 @@ bool SubtitleContext::registerQtoneDataCb(int sessionId, QToneDataCallback cb) {
     std::unique_lock<std::mutex> autolock(mMutex);
 
     if (sessionId != PLAYER_HANDLE_ID_MAIN) {
-        ALOGE("currently, only support main stream");
+        SUBTITLE_LOGE("currently, only support main stream");
     }
     mQToneCb[sessionId] = cb;
 
@@ -126,7 +126,7 @@ bool SubtitleContext::addSubWindow(int sessionId, SubNativeRenderHnd win) {
     std::unique_lock<std::mutex> autolock(mMutex);
 
     if (sessionId != PLAYER_HANDLE_ID_MAIN) {
-        ALOGE("currently, only support main stream");
+        SUBTITLE_LOGE("currently, only support main stream");
     }
     mSubtitle[sessionId].mWin = win;
 
@@ -138,9 +138,9 @@ bool SubtitleContext::addSubWindow(int sessionId, SubNativeRenderHnd win) {
 bool SubtitleContext::startPlaySubtitle(int sessionId, const char *lang) {
     std::unique_lock<std::mutex> autolock(mMutex);
     if (sessionId != PLAYER_HANDLE_ID_MAIN) {
-        ALOGE("currently, only support main stream");
+        SUBTITLE_LOGE("currently, only support main stream");
     }
-    ALOGD("mSubtitle[%d].mExtFd=%d", sessionId, mSubtitle[sessionId].mExtFd);
+    SUBTITLE_LOGI("mSubtitle[%d].mExtFd=%d", sessionId, mSubtitle[sessionId].mExtFd);
 
     AmlSubtitleHnd hnd = amlsub_Create();
     mSubtitle[sessionId].mHandle = hnd;
@@ -165,7 +165,7 @@ bool SubtitleContext::startPlaySubtitle(int sessionId, const char *lang) {
 
     mSubtitle[sessionId].mSubStarted = true;
 
-    ALOGD("mSubtitle[%d].mExtFd=%d", sessionId, mSubtitle[sessionId].mExtFd);
+    SUBTITLE_LOGI("mSubtitle[%d].mExtFd=%d", sessionId, mSubtitle[sessionId].mExtFd);
     if (mSubtitle[sessionId].mExtFd > 0) {
         close(mSubtitle[sessionId].mExtFd);
         mSubtitle[sessionId].mExtFd = -1;
@@ -201,12 +201,12 @@ bool SubtitleContext::stopPlaySubtitle(int sessionId) {
 bool SubtitleContext::setupExternalFd(int sessionId, int fd) {
     std::unique_lock<std::mutex> autolock(mMutex);
     if (fd <= 0) {
-        ALOGE("Error! invalid file descriptor:%d", fd);
+        SUBTITLE_LOGE("Error! invalid file descriptor:%d", fd);
         return false;
     }
 
     if (mSubtitle[sessionId].mExtFd > 0) {
-        ALOGD("previous fd not use and close! close it");
+        SUBTITLE_LOGI("previous fd not use and close! close it");
         close(mSubtitle[sessionId].mExtFd);
     }
 
@@ -216,7 +216,7 @@ bool SubtitleContext::setupExternalFd(int sessionId, int fd) {
 
 extern int64_t NativeWindowGetPts(int sessionId);
 void SubtitleContext::pollPts(struct PtsThreadData *data, int sessionId) {
-    ALOGD("pollPts for %d, data->_exited=%d", sessionId, data->_exited);
+    SUBTITLE_LOGI("pollPts for %d, data->_exited=%d", sessionId, data->_exited);
     const int dvbTimeMultiply = 90; // convert ms to DVB time.
     while (!data->_exited) {
         std::unique_lock<std::mutex> autolock(data->_mutex);
@@ -225,7 +225,7 @@ void SubtitleContext::pollPts(struct PtsThreadData *data, int sessionId) {
         int64_t pos = NativeWindowGetPts(sessionId);
         amlsub_UpdateVideoPos(mSubtitle[sessionId].mHandle, pos*dvbTimeMultiply);
     }
-    ALOGD("pollPts for %d, data->_exited=%d,exit", sessionId, data->_exited);
+    SUBTITLE_LOGI("pollPts for %d, data->_exited=%d,exit", sessionId, data->_exited);
 }
 
 

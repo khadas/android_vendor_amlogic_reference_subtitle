@@ -42,7 +42,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -104,10 +104,10 @@ static AM_ErrorCode_t am_init_syscontrol_api()
 #endif
         if (handle == NULL)
         {
-            //ALOGE("open lib error--%s\r\n",dlerror());
+            //SUBTITLE_LOGE("open lib error--%s\r\n",dlerror());
             return AM_FAILURE;
         }
-        ALOGE("open lib ok--\r\n");
+        SUBTITLE_LOGE("open lib ok--\r\n");
         Write_Sysfs_ptr = dlsym(handle, "AM_SystemControl_Write_Sysfs");
         ReadNum_Sysfs_ptr = dlsym(handle, "AM_SystemControl_ReadNum_Sysfs");
         Read_Sysfs_ptr = dlsym(handle, "AM_SystemControl_Read_Sysfs");
@@ -115,15 +115,15 @@ static AM_ErrorCode_t am_init_syscontrol_api()
         AM_SYSTEMCONTROL_INIT=1;
         if (Write_Sysfs_ptr == NULL)
         {
-            ALOGE("cannot get write sysfs api\r\n");
+            SUBTITLE_LOGE("cannot get write sysfs api\r\n");
         }
         if (ReadNum_Sysfs_ptr == NULL)
         {
-            ALOGE("cannot get read num sysfs api\r\n");
+            SUBTITLE_LOGE("cannot get read num sysfs api\r\n");
         }
         if (Read_Sysfs_ptr == NULL)
         {
-            ALOGE("cannot get read sysfs api\r\n");
+            SUBTITLE_LOGE("cannot get read sysfs api\r\n");
         }
     }
 #endif
@@ -198,7 +198,7 @@ void AM_RegisterRWSysfsFun(AM_Read_Sysfs_Cb RCb, AM_Write_Sysfs_Cb WCb)
     if (!rwSysfsCb.writeSysfsCb)
         rwSysfsCb.writeSysfsCb = WCb;
 
-    ALOGE("AM_RegisterRWSysfsFun !!");
+    SUBTITLE_LOGE("AM_RegisterRWSysfsFun !!");
 #endif
 }
 
@@ -230,7 +230,7 @@ void AM_RegisterRWPropFun(AM_Read_Prop_Cb RCb, AM_Write_Prop_Cb WCb)
     if (!rwPropCb.writePropCb)
         rwPropCb.writePropCb = WCb;
 
-    ALOGE("AM_RegisterRWSysfsFun !!");
+    SUBTITLE_LOGE("AM_RegisterRWSysfsFun !!");
 #endif
 }
 
@@ -276,7 +276,7 @@ AM_ErrorCode_t AM_FileEcho(const char *name, const char *cmd)
     fd = open(name, O_WRONLY);
     if (fd == -1)
     {
-        ALOGE("cannot open file \"%s\"", name);
+        SUBTITLE_LOGE("cannot open file \"%s\"", name);
         return AM_FAILURE;
     }
 
@@ -285,7 +285,7 @@ AM_ErrorCode_t AM_FileEcho(const char *name, const char *cmd)
     ret = write(fd, cmd, len);
     if (ret != len)
     {
-        ALOGE("write failed file:\"%s\" cmd:\"%s\" error:\"%s\"", name, cmd, strerror(errno));
+        SUBTITLE_LOGE("write failed file:\"%s\" cmd:\"%s\" error:\"%s\"", name, cmd, strerror(errno));
         close(fd);
         return AM_FAILURE;
     }
@@ -315,13 +315,13 @@ AM_ErrorCode_t AM_FileRead(const char *name, char *buf, int len)
     if (fd >= 0) {
         c = read(fd, buf, len);
         if (c > 0) {
-            //ALOGI("read success val:%s", buf);
+            //SUBTITLE_LOGI("read success val:%s", buf);
         } else {
-            ALOGI("read failed!file %s,err: %s", name, strerror(errno));
+            SUBTITLE_LOGI("read failed!file %s,err: %s", name, strerror(errno));
         }
         close(fd);
     } else {
-        ALOGI("unable to open file %s,err: %s", name, strerror(errno));
+        SUBTITLE_LOGI("unable to open file %s,err: %s", name, strerror(errno));
     }
 
 #else
@@ -347,14 +347,14 @@ AM_ErrorCode_t AM_FileRead(const char *name, char *buf, int len)
     fp = fopen(name, "r");
     if (!fp)
     {
-        ALOGE("cannot open file \"%s\"", name);
+        SUBTITLE_LOGE("cannot open file \"%s\"", name);
         return AM_FAILURE;
     }
 
     ret = fgets(buf, len, fp);
     if (!ret)
     {
-        ALOGE("read the file:\"%s\" error:\"%s\" failed", name, strerror(errno));
+        SUBTITLE_LOGE("read the file:\"%s\" error:\"%s\" failed", name, strerror(errno));
     }
 
     fclose(fp);
@@ -429,7 +429,7 @@ AM_ErrorCode_t AM_LocalServer(const char *name, int *fd)
     s = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (s == -1)
     {
-        ALOGE("cannot create local socket \"%s\"", strerror(errno));
+        SUBTITLE_LOGE("cannot create local socket \"%s\"", strerror(errno));
         return AM_FAILURE;
     }
 
@@ -439,7 +439,7 @@ AM_ErrorCode_t AM_LocalServer(const char *name, int *fd)
     ret = bind(s, (struct sockaddr*)&addr, SUN_LEN(&addr));
     if (ret == -1)
     {
-        ALOGE("bind to \"%s\" failed \"%s\"", name, strerror(errno));
+        SUBTITLE_LOGE("bind to \"%s\" failed \"%s\"", name, strerror(errno));
         close(s);
         return AM_FAILURE;
     }
@@ -447,7 +447,7 @@ AM_ErrorCode_t AM_LocalServer(const char *name, int *fd)
     ret = listen(s, 5);
     if (ret == -1)
     {
-        ALOGE("listen failed \"%s\" (%s)", name, strerror(errno));
+        SUBTITLE_LOGE("listen failed \"%s\" (%s)", name, strerror(errno));
         close(s);
         return AM_FAILURE;
     }
@@ -476,7 +476,7 @@ AM_ErrorCode_t AM_LocalConnect(const char *name, int *fd)
     s = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (s == -1)
     {
-        ALOGE("cannot create local socket \"%s\"", strerror(errno));
+        SUBTITLE_LOGE("cannot create local socket \"%s\"", strerror(errno));
         return AM_FAILURE;
     }
 
@@ -486,7 +486,7 @@ AM_ErrorCode_t AM_LocalConnect(const char *name, int *fd)
         ret = connect(s, (struct sockaddr*)&addr, SUN_LEN(&addr));
         if (ret == -1)
         {
-            ALOGE("connect to \"%s\" failed \"%s\"", name, strerror(errno));
+            SUBTITLE_LOGE("connect to \"%s\" failed \"%s\"", name, strerror(errno));
             close(s);
         return AM_FAILURE;
         }
@@ -516,18 +516,18 @@ AM_ErrorCode_t AM_LocalSendCmd(int fd, const char *cmd)
     ret = try_write(fd, (const char*)&len, sizeof(int));
     if (ret != AM_SUCCESS)
     {
-        ALOGE("write local socket failed");
+        SUBTITLE_LOGE("write local socket failed");
         return ret;
     }
 
     ret = try_write(fd, cmd, len);
     if (ret != AM_SUCCESS)
     {
-        ALOGE("write local socket failed");
+        SUBTITLE_LOGE("write local socket failed");
         return ret;
     }
 
-    ALOGI("write cmd: %s", cmd);
+    SUBTITLE_LOGI("write cmd: %s", cmd);
 #endif
     return AM_SUCCESS;
 }
@@ -551,20 +551,20 @@ AM_ErrorCode_t AM_LocalGetResp(int fd, char *buf, int len)
     ret = try_read(fd, (char*)&bytes, sizeof(int));
     if (ret != AM_SUCCESS)
     {
-        ALOGE("read local socket failed");
+        SUBTITLE_LOGE("read local socket failed");
         return ret;
     }
 
     if (len < bytes)
     {
-        ALOGE("respond buffer is too small");
+        SUBTITLE_LOGE("respond buffer is too small");
         return AM_FAILURE;
     }
 
     ret = try_read(fd, buf, bytes);
     if (ret != AM_SUCCESS)
     {
-        ALOGE("read local socket failed");
+        SUBTITLE_LOGE("read local socket failed");
         return ret;
     }
 #endif

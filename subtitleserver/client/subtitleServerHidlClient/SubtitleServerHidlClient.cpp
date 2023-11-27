@@ -23,7 +23,7 @@
 #include "SubtitleServerHidlClient.h"
 //#include <binder/Binder.h>
 #include <utils/Atomic.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/CallStack.h>
 
 #include <cutils/properties.h>
@@ -45,7 +45,7 @@ static sp<ISubtitleServer> service;
 static const int IOTYPE_AMSTREAM = 1;
 
 sp<ISubtitleServer> SubtitleServerHidlClient::getSubtitleService() {
-    ALOGE("SubtitleServerHidlClient getSubtitleService ...");
+    SUBTITLE_LOGE("SubtitleServerHidlClient getSubtitleService ...");
     Mutex::Autolock _l(amgLock);
     if (service == nullptr) {
         service = ISubtitleServer::tryGetService();
@@ -54,7 +54,7 @@ sp<ISubtitleServer> SubtitleServerHidlClient::getSubtitleService() {
             usleep(200*1000);//sleep 200ms
             amgLock.lock();
             service = ISubtitleServer::tryGetService();
-            ALOGE("tryGet ISubtitleServer daemon Service");
+            SUBTITLE_LOGE("tryGet ISubtitleServer daemon Service");
         };
     }
     return service;
@@ -62,7 +62,7 @@ sp<ISubtitleServer> SubtitleServerHidlClient::getSubtitleService() {
 
 SubtitleServerHidlClient::SubtitleServerHidlClient()
 {
-    ALOGE("SubtitleServerHidlClient creat ...");
+    SUBTITLE_LOGE("SubtitleServerHidlClient creat ...");
 
     char value[PROPERTY_VALUE_MAX] = {0};
     mDisabled = false;
@@ -81,7 +81,7 @@ SubtitleServerHidlClient::SubtitleServerHidlClient()
 
 SubtitleServerHidlClient::~SubtitleServerHidlClient()
 {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
 }
 
 int SubtitleServerHidlClient::subtitleGetTypeDetail()
@@ -93,7 +93,7 @@ int SubtitleServerHidlClient::subtitleGetTypeDetail()
         //ret = subser->getTypeDetail();
     //}
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
     return ret;
 }
 
@@ -102,14 +102,14 @@ void SubtitleServerHidlClient::subtitleShowSub(int pos)
     if (mDisabled) return;
     /*const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
-        ALOGE("subtitleShowSub pos:%d\n", pos);
+        SUBTITLE_LOGE("subtitleShowSub pos:%d\n", pos);
      if (pos > 0) {
             subser->showSub(pos);
      }
     }
     return;*/
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
 
 }
 
@@ -117,24 +117,24 @@ void *SubtitleServerHidlClient::thrSubtitleShow(void *pthis)
 {
 /*    int pos = 0;
     SubtitleServerHidlClient *ssh = (SubtitleServerHidlClient *) pthis;
-    //ALOGE("thrSubtitleShow pos:%d\n",pos);
+    //SUBTITLE_LOGE("thrSubtitleShow pos:%d\n",pos);
 
     do {
-        ALOGE("1thrSubtitleShow pos:%d\n", (ssh->gsubtitleCtx.ptscb)());
+        SUBTITLE_LOGE("1thrSubtitleShow pos:%d\n", (ssh->gsubtitleCtx.ptscb)());
         ssh->subtitleShowSub((ssh->gsubtitleCtx.ptscb)());
         usleep((300 - (pos % 300)) * 1000);
     }
     while (!mThreadStop);
 */
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
     return NULL;
 }
 
 void SubtitleServerHidlClient::subtitleShow()
 {
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
 //    pthread_create(&mSubtitleThread, NULL, thrSubtitleShow, (void *)this);
 }
 
@@ -142,7 +142,7 @@ void SubtitleServerHidlClient::switchSubtitle(SUB_Para_t *para)
 {
     if (mDisabled) return;
 
-    ALOGE("switchSubtitle tvType:%d\n", para->tvType);
+    SUBTITLE_LOGE("switchSubtitle tvType:%d\n", para->tvType);
     const sp<ISubtitleServer>& subser = getSubtitleService();
     subser->close(mSessionId);
     initSubtitle(para);
@@ -152,7 +152,7 @@ void SubtitleServerHidlClient::switchSubtitle(SUB_Para_t *para)
 void SubtitleServerHidlClient::initSubtitle(SUB_Para_t *para)
 {
     if (mDisabled) return;
-    ALOGE("initSubtitle tvType:%d\n", para->tvType);
+    SUBTITLE_LOGE("initSubtitle tvType:%d\n", para->tvType);
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
         subser->setSubType(mSessionId, para->tvType);
@@ -181,7 +181,7 @@ void SubtitleServerHidlClient::initSubtitle(SUB_Para_t *para)
 void SubtitleServerHidlClient::subtitleOpen(const std::string& path, getPtsCb cb, SUB_Para_t * para)
 {
     if (mDisabled) return;
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     //gsubtitleCtx = new subtitlectx();
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
@@ -192,7 +192,7 @@ void SubtitleServerHidlClient::subtitleOpen(const std::string& path, getPtsCb cb
     }
    gsubtitleCtx.ptscb = cb;
     //ctc_mp = static_cast<CTsPlayer *>(pthis);
-    ALOGE("subtitleOpen pos2:%d\n", gsubtitleCtx.ptscb());
+    SUBTITLE_LOGE("subtitleOpen pos2:%d\n", gsubtitleCtx.ptscb());
     return;
 }
 
@@ -200,7 +200,7 @@ void SubtitleServerHidlClient::subtitleOpenIdx(int idx)
 {
     if (mDisabled) return;
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
 }
 
 void SubtitleServerHidlClient::subtitleClose()
@@ -208,7 +208,7 @@ void SubtitleServerHidlClient::subtitleClose()
     if (mDisabled) return;
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
-        ALOGD("%s", __func__);
+        SUBTITLE_LOGI("%s", __func__);
         subser->close(mSessionId);
     }
     mThreadStop = true;
@@ -235,19 +235,19 @@ int SubtitleServerHidlClient::subtitleGetTotal()
 void SubtitleServerHidlClient::subtitleNext()
 {
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
 }
 
 void SubtitleServerHidlClient::subtitlePrevious()
 {
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
 }
 
 void SubtitleServerHidlClient::subtitleOption()
 {
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
 }
 
 int SubtitleServerHidlClient::subtitleGetType()
@@ -313,7 +313,7 @@ void SubtitleServerHidlClient::subtitleSetTextStyle(int style)
 
 void SubtitleServerHidlClient::subtitleSetPosHeight(int height)
 {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
         subser->setPosHeight(mSessionId, height);
@@ -323,7 +323,7 @@ void SubtitleServerHidlClient::subtitleSetPosHeight(int height)
 
 void SubtitleServerHidlClient::subtitleSetImgRatio(float ratioW, float ratioH, int maxW, int maxH)
 {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
         subser->setImgRatio(mSessionId, ratioW, ratioH, maxW, maxH);
@@ -334,9 +334,9 @@ void SubtitleServerHidlClient::subtitleSetImgRatio(float ratioW, float ratioH, i
 void SubtitleServerHidlClient::subtitleSetSurfaceViewParam(int x, int y, int w, int h)
 {
     const sp<ISubtitleServer>& subser = getSubtitleService();
-    ALOGE("subtitleSetSurfaceViewParam 00\n");
+    SUBTITLE_LOGE("subtitleSetSurfaceViewParam 00\n");
     if (subser != 0) {
-        ALOGE("subtitleSetSurfaceViewParam 01\n");
+        SUBTITLE_LOGE("subtitleSetSurfaceViewParam 01\n");
         subser->setSurfaceViewRect(mSessionId, x, y, w, h);
     }
     return;
@@ -345,12 +345,12 @@ void SubtitleServerHidlClient::subtitleSetSurfaceViewParam(int x, int y, int w, 
 void SubtitleServerHidlClient::subtitleClear()
 {
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
 }
 
 void SubtitleServerHidlClient::subtitleResetForSeek()
 {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
         subser->resetForSeek(mSessionId);
@@ -360,7 +360,7 @@ void SubtitleServerHidlClient::subtitleResetForSeek()
 
 void SubtitleServerHidlClient::subtitleHide()
 {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
         subser->hide(mSessionId);
@@ -370,7 +370,7 @@ void SubtitleServerHidlClient::subtitleHide()
 
 void SubtitleServerHidlClient::subtitleDisplay()
 {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
         subser->show(mSessionId);
@@ -381,7 +381,7 @@ void SubtitleServerHidlClient::subtitleDisplay()
 std::string SubtitleServerHidlClient::subtitleGetCurName()
 {
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
     std::string curName;
     return curName;
 }
@@ -389,14 +389,14 @@ std::string SubtitleServerHidlClient::subtitleGetCurName()
 std::string SubtitleServerHidlClient::subtitleGetName(int idx)
 {
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
     std::string name;
     return name;
 }
 
 std::string SubtitleServerHidlClient::subtitleGetLanguage(int idx)
 {
-    ALOGE("[subtitleGetLanguage]");
+    SUBTITLE_LOGE("[subtitleGetLanguage]");
     const sp<ISubtitleServer>& subser = getSubtitleService();
     std::string language;
     if (subser != 0) {
@@ -406,19 +406,19 @@ std::string SubtitleServerHidlClient::subtitleGetLanguage(int idx)
             }
         });
     }
-    //ALOGE("[subtitleGetLanguage]language:%s", language.c_str());
+    //SUBTITLE_LOGE("[subtitleGetLanguage]language:%s", language.c_str());
     return language;
 }
 
 void SubtitleServerHidlClient::subtitleLoad(const std::string& path)
 {
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
 }
 
 void SubtitleServerHidlClient::subtitleCreat()
 {
-    ALOGE("subtitleCreate: \n\n\n\n\n\n Not Impl\nNeed impl for get sessionId\n\n\n\n");
+    SUBTITLE_LOGE("subtitleCreate: \n\n\n\n\n\n Not Impl\nNeed impl for get sessionId\n\n\n\n");
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
         //subser->creat();
@@ -431,7 +431,7 @@ void SubtitleServerHidlClient::subtitleCreat()
 
 void SubtitleServerHidlClient::subtitleSetSubPid(int32_t pid, int32_t onid, int32_t tsid)
 {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
         subser->setSubPid(mSessionId, pid, onid, tsid);
@@ -442,20 +442,20 @@ void SubtitleServerHidlClient::subtitleSetSubPid(int32_t pid, int32_t onid, int3
 int SubtitleServerHidlClient::subtitleGetSubHeight()
 {
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
     return -1;
 }
 
 int SubtitleServerHidlClient::subtitleGetSubWidth()
 {
     CallStack stk(LOG_TAG);
-    ALOGE("Error, should not use!");
+    SUBTITLE_LOGE("Error, should not use!");
     return -1;
 }
 
 void SubtitleServerHidlClient::subtitleSetSubType(int type)
 {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
         subser->setSubType(mSessionId, type);
@@ -465,7 +465,7 @@ void SubtitleServerHidlClient::subtitleSetSubType(int type)
 
 void SubtitleServerHidlClient::subtitleDestroy()
 {
-    ALOGE("subtitleDestroy: need impl according to subtitleCreate");
+    SUBTITLE_LOGE("subtitleDestroy: need impl according to subtitleCreate");
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
         //subser->destroy();
@@ -475,7 +475,7 @@ void SubtitleServerHidlClient::subtitleDestroy()
 
 int SubtitleServerHidlClient::ttGoHome()
 {
-    ALOGE("ttGoHome");
+    SUBTITLE_LOGE("ttGoHome");
     int ret = -1;
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
@@ -487,7 +487,7 @@ int SubtitleServerHidlClient::ttGoHome()
 
 int SubtitleServerHidlClient::ttNextPage(int dir)
 {
-    ALOGE("ttNextPage");
+    SUBTITLE_LOGE("ttNextPage");
     int ret = -1;
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
@@ -499,7 +499,7 @@ int SubtitleServerHidlClient::ttNextPage(int dir)
 
 int SubtitleServerHidlClient::ttNextSubPage(int dir)
 {
-    ALOGE("ttNextSubPage");
+    SUBTITLE_LOGE("ttNextSubPage");
     int ret = -1;
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
@@ -511,7 +511,7 @@ int SubtitleServerHidlClient::ttNextSubPage(int dir)
 
 int SubtitleServerHidlClient::ttGotoPage(int pageNo, int subPageNo)
 {
-    ALOGE("ttGotoPage");
+    SUBTITLE_LOGE("ttGotoPage");
     int ret = -1;
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (subser != 0) {
@@ -526,34 +526,34 @@ int SubtitleServerHidlClient::ttGotoPage(int pageNo, int subPageNo)
 void SubtitleServerHidlClient::setListener(const sp<SubtitleMiddleListener> &listener)
 {
     if (mDisabled) return;
-    ALOGI("SubtitleServerHidlClient setListener");
+    SUBTITLE_LOGI("SubtitleServerHidlClient setListener");
     mListener = listener;
     const sp<ISubtitleServer>& subser = getSubtitleService();
     if (listener != NULL) {
         if (mSubtitleServerHidlCallback == NULL) {
             mSubtitleServerHidlCallback = new SubtitleServerHidlCallback(this);
-            ALOGI("SubtitleServerHidlClient setCallback");
+            SUBTITLE_LOGI("SubtitleServerHidlClient setCallback");
             subser->setCallback(mSubtitleServerHidlCallback, static_cast<ConnectType>(1)/*ConnectType:TYPE_EXTEND*/);
         }
     }
 }
 
 Return<void> SubtitleServerHidlClient::SubtitleServerHidlCallback::eventNotify(const SubtitleHidlParcel &hidlParcel) {
-    ALOGI("notifyCallback event type:%d", hidlParcel.msgType);
+    SUBTITLE_LOGI("notifyCallback event type:%d", hidlParcel.msgType);
 
     if (hidlParcel.msgType == EVENT_ON_SUBTITLEDATA_CALLBACK) {
-         ALOGD("notifyCallback notify parcel.msgType = %d, event:%d, id:%d", hidlParcel.msgType,hidlParcel.bodyInt[0], hidlParcel.bodyInt[1]);
+         SUBTITLE_LOGI("notifyCallback notify parcel.msgType = %d, event:%d, id:%d", hidlParcel.msgType,hidlParcel.bodyInt[0], hidlParcel.bodyInt[1]);
     } else if (hidlParcel.msgType == EVENT_ON_SUBTITLEAVAILABLE_CALLBACK) {
-         ALOGD("notifyCallback notify parcel.msgType = %d, available:%d", hidlParcel.msgType, hidlParcel.bodyInt[0]);
+         SUBTITLE_LOGI("notifyCallback notify parcel.msgType = %d, available:%d", hidlParcel.msgType, hidlParcel.bodyInt[0]);
     } else {
          return Void();
     }
 
     if (subtitleserverClient->mListener == NULL) {
-        ALOGI("listener is  null");
+        SUBTITLE_LOGI("listener is  null");
         return Void();
     } else {
-        ALOGI("listener not  null");
+        SUBTITLE_LOGI("listener not  null");
     }
 
     sp<SubtitleMiddleListener> listener;
@@ -580,7 +580,7 @@ Return<void> SubtitleServerHidlClient::SubtitleServerHidlCallback::eventNotify(c
 /*void SubtitleServerHidlClient::SubtitleServerDaemonDeathRecipient::serviceDied(uint64_t cookie __unused,
         const ::android::wp<::android::hidl::base::V1_0::IBase>& who __unused)
 {
-    ALOGE("tvserver daemon died.");
+    SUBTITLE_LOGE("tvserver daemon died.");
     Mutex::Autolock _l(amgLock);
 
     //usleep(200*1000);//sleep 200ms

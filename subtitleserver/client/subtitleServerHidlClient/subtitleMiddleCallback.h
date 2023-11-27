@@ -17,7 +17,7 @@
 #ifndef __COM_DROIDLOGIC_APP_SYSTEMCTRL_H__
 #define __COM_DROIDLOGIC_APP_SYSTEMCTRL_H__
 //#include <jni.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include "SubtitleServerHidlClient.h"
 
 using namespace android;

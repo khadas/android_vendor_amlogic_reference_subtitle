@@ -47,13 +47,13 @@ static inline void removeComments(std::string &s) {
 
 
 Jacosub::Jacosub(std::shared_ptr<DataSource> source): TextSubtitle(source) {
-    ALOGD("Jacosub");
+    SUBTITLE_LOGI("Jacosub");
     mShift = 0;
     mTimerRes = 30;
     parseHeaderInfo();
     bool r = mReader->rewindStream();
 
-    ALOGD("Jacosub mShift=%d mTimerRes=%d rewind:%d", mShift, mTimerRes, r);
+    SUBTITLE_LOGI("Jacosub mShift=%d mTimerRes=%d rewind:%d", mShift, mTimerRes, r);
 }
 
 Jacosub::~Jacosub() {
@@ -128,18 +128,18 @@ std::shared_ptr<ExtSubItem> Jacosub::decodedItem() {
     char *p, *q;
     char *line1 = (char *)MALLOC(LINE_LEN);
     if (!line1) {
-        ALOGE("[%s::%d]line1 malloc error!\n", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGE("[%s::%d]line1 malloc error!\n", __FUNCTION__, __LINE__);
         return nullptr;
     }
     char *line2 = (char *)MALLOC(LINE_LEN);
     if (!line2) {
         free(line1);
-        ALOGE("[%s::%d]line2 malloc error!\n", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGE("[%s::%d]line2 malloc error!\n", __FUNCTION__, __LINE__);
         return nullptr;
     }
     char *directive = (char *)MALLOC(LINE_LEN);
     if (!directive) {
-        ALOGE("[%s::%d] directive malloc error!\n", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGE("[%s::%d] directive malloc error!\n", __FUNCTION__, __LINE__);
         free(line1);
         free(line2);
         return nullptr;

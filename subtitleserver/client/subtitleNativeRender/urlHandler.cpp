@@ -15,7 +15,7 @@
 
 
 #include "utils_funcs.h"
-#include "MyLog.h"
+#include "SubtitleLog.h"
 #include "WebTask.h"
 
 
@@ -33,16 +33,16 @@ static inline const char *triml(const char *str, const char *whitespace) {
 static int handleLocalFile(const char *path) {
     int fd = open(path, O_RDONLY);
     if (fd <= 0) {
-        ALOGE("Error! cannot open file:%s %d", path, errno);
+        SUBTITLE_LOGE("Error! cannot open file:%s %d", path, errno);
     }
-    ALOGD("openfile:%s %d", path, fd);
+    SUBTITLE_LOGI("openfile:%s %d", path, fd);
     return fd;
 }
 
 static bool initDownloadPath(std::string fPath) {
     if (::access(fPath.c_str(), R_OK) != 0) {
         if (::mkdir(fPath.c_str(), 0775) != 0) {
-            ALOGE("Error, cannot create path!:%s %d", fPath.c_str(), errno);
+            SUBTITLE_LOGE("Error, cannot create path!:%s %d", fPath.c_str(), errno);
             return false;
         }
     }
@@ -56,12 +56,12 @@ static int handleHttpFile(const char *url) {
     int i = android_atomic_inc(&g_indicator);
     int fd = -1;
 
-    ALOGD("start:");
+    SUBTITLE_LOGI("start:");
 
     std::string path = getApplicationPath() + "/tmp";
-    ALOGD("save to:%s", path.c_str());
+    SUBTITLE_LOGI("save to:%s", path.c_str());
     if (!initDownloadPath(path)) {
-        ALOGE("Error! cannot initialize path:%s", path.c_str());
+        SUBTITLE_LOGE("Error! cannot initialize path:%s", path.c_str());
         return -1;
     }
 
@@ -76,10 +76,10 @@ static int handleHttpFile(const char *url) {
         fd = open(path.c_str(), O_RDONLY);
         unlink(path.c_str());
     } else {
-        ALOGE("Error! cannot download file %s", url);
+        SUBTITLE_LOGE("Error! cannot download file %s", url);
     }
 
-    ALOGD("end");
+    SUBTITLE_LOGI("end");
     return fd;
 }
 
@@ -110,7 +110,7 @@ int AmlUrl2Fd(const char *url) {
             break;
 
         case URL_TYPE_FTP:
-            ALOGE("Not support ftp yet");
+            SUBTITLE_LOGE("Not support ftp yet");
             break;
 
         default:

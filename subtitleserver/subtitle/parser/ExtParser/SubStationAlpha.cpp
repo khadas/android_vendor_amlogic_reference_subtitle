@@ -32,10 +32,10 @@
 #include <sstream>
 #include "SubStationAlpha.h"
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 SubStationAlpha::SubStationAlpha(std::shared_ptr<DataSource> source) : TextSubtitle(source) {
-    ALOGD("SubStationAlpha");
+    SUBTITLE_LOGI("SubStationAlpha");
 
     mSubData.format = "Sub Station Alpha";
 
@@ -79,7 +79,7 @@ std::shared_ptr<ExtSubItem> SubStationAlpha::decodedItem() {
         std::vector<std::string> items; // store the event sections in vector
         ss << line;
         int count = 0;
-        ALOGD("%s", line);
+        SUBTITLE_LOGI("%s", line);
         for (count=0; count<ASS_EVENT_SECTIONS; count++) {
             if (!getline(ss, str, ',')) break;
             items.push_back(str);

@@ -33,11 +33,11 @@ Lyrics::Lyrics(std::shared_ptr<DataSource> source): TextSubtitle(source) {
     mBuffer = (char *)MALLOC(LINE_LEN+1);
     memset(mBuffer, 0, LINE_LEN+1);
     mReuseBuffer = false;
-    ALOGD("Lyrics");
+    SUBTITLE_LOGI("Lyrics");
 }
 
 Lyrics::~Lyrics() {
-    ALOGD("~Lyrics--");
+    SUBTITLE_LOGI("~Lyrics--");
     free(mBuffer);
 }
 
@@ -53,7 +53,7 @@ std::shared_ptr<ExtSubItem> Lyrics::decodedItem() {
     while (true) {
         if (!mReuseBuffer) {
             if (mReader->getLine(mBuffer) == nullptr) {
-                ALOGD("return null");
+                SUBTITLE_LOGI("return null");
                 free(text);
                 free(text1);
                 return nullptr;
@@ -83,10 +83,10 @@ std::shared_ptr<ExtSubItem> Lyrics::decodedItem() {
         item->start = a1 * 6000 + a2 * 100 + a3;
         item->end = item->start + 400;
         item->lines.push_back(std::string(text));
-        //ALOGD("item start:%lld,end:%lld",item->start, item->end);
+        //SUBTITLE_LOGI("item start:%lld,end:%lld",item->start, item->end);
         //maybe such as this: [03:37.00][03:02.00][01:31.00] hello world
         if (cnt > 0) {
-            //ALOGD("mBuffer after copy:%s", mBuffer);
+            //SUBTITLE_LOGI("mBuffer after copy:%s", mBuffer);
             mReuseBuffer = true;
             free(text);
             free(text1);
@@ -94,7 +94,7 @@ std::shared_ptr<ExtSubItem> Lyrics::decodedItem() {
         } else {
         // get time End, maybe has end time, maybe not, handle this case.
             if (mReader->getLine(mBuffer) == nullptr) {
-                ALOGD("file end, read null");
+                SUBTITLE_LOGI("file end, read null");
                 free(text);
                 free(text1);
                 mReuseBuffer = false;//no this, may can't break while loop
@@ -104,13 +104,13 @@ std::shared_ptr<ExtSubItem> Lyrics::decodedItem() {
             pattenLen = sscanf(mBuffer, "[%lld:%lld.%lld]%[^\n\r]", &a1, &a2, &a3, text);
             if (pattenLen == 4) {
                 mReuseBuffer = true;
-                //ALOGD("reusebuffer,text:%s",text);
+                //SUBTITLE_LOGI("reusebuffer,text:%s",text);
                 free(text);
                 free(text1);
                 return item;
             } else if (pattenLen == 3) {
                 item->end = a1 * 6000 + a2 * 100 + a3;
-                //ALOGD("item end:%lld",item->end);
+                //SUBTITLE_LOGI("item end:%lld",item->end);
             }
 
             mReuseBuffer = false;

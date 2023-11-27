@@ -31,7 +31,7 @@
 #include <memory>
 #include <mutex>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "Segment.h"
 
@@ -59,7 +59,7 @@ bool BufferSegment::push(std::shared_ptr<char> buf, size_t size) {
     std::shared_ptr<BufferItem> item = std::shared_ptr<BufferItem>(new BufferItem(buf, size));
 
     std::unique_lock<std::mutex> autolock(mMutex);
-    ALOGD("BufferSegment:current size: %d", mSegments.size());
+    SUBTITLE_LOGI("BufferSegment:current size: %d", mSegments.size());
     mSegments.push_back(item);
     mAvailableDataSize += size;
     mCv.notify_all();

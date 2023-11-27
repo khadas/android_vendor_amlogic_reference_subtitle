@@ -117,7 +117,7 @@ std::shared_ptr<ExtSubItem> Sami::decodedItem() {
 
     while (state != 99) {
         //if (s != nullptr) s = triml(s, "\t ");
-        //ALOGD("state=%d %s", state, s);
+        //SUBTITLE_LOGI("state=%d %s", state, s);
 
         switch (state) {
             case 0: {/* find "START=" or "Slacktime:" */
@@ -302,9 +302,9 @@ std::shared_ptr<ExtSubItem> Sami::decodedItem() {
         }
     }
 /*
-    ALOGD("[%lld %lld]", item->start, item->end);
+    SUBTITLE_LOGI("[%lld %lld]", item->start, item->end);
     for (auto s :item->lines) {
-        ALOGD("    %s", s.c_str());
+        SUBTITLE_LOGI("    %s", s.c_str());
     }
 */
     free(line);

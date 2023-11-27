@@ -5,7 +5,7 @@
 #include <errno.h>
 #include "WebTask.h"
 #include <curl/curl.h>
-#include "MyLog.h"
+#include "SubtitleLog.h"
 
 
 static int get_filesize(const char* fpath) {
@@ -118,10 +118,10 @@ int WebTask::DoGetString() {
 int WebTask::WaitTaskDone() {
     /* get it! */
     CURLcode res = curl_easy_perform(mCURL);
-    ALOGD("curl_easy_perform:%s ret=%d", mCURL, res);
+    SUBTITLE_LOGI("curl_easy_perform:%s ret=%d", mCURL, res);
 
     res = (CURLcode)_on_work_done((int)res);
-    ALOGD("_on_work_done ret=%d", res);
+    SUBTITLE_LOGI("_on_work_done ret=%d", res);
 
     //clean up
     if (m_formpost) curl_formfree(m_formpost);
@@ -144,7 +144,7 @@ int WebTask::DoGetFile(const char *filename, const char* range) {
 
     mFILE = fopen(filename, "wb");
     if (mFILE == nullptr) {
-        ALOGE("Error! cannot open tmp file:%s errno=%d", filename, errno);
+        SUBTITLE_LOGE("Error! cannot open tmp file:%s errno=%d", filename, errno);
         return -1;
     }
     m_is_getfile = 1;

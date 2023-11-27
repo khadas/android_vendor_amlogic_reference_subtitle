@@ -42,7 +42,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <stdbool.h>
 
 #include <am_iconv.h>
@@ -70,7 +70,7 @@ void am_first_action(void)
         long status = 0;
         u_init(&status);
         if (status > 0)
-            ALOGE("icu init fail. [%ld]", status);
+            SUBTITLE_LOGE("icu init fail. [%ld]", status);
         actionFlag = true;
     }
 }
@@ -99,7 +99,7 @@ am_ucnv_dlink(void)
 
 #define CHECK_LOAD_SYMBOL(name)\
     if (!am_##name##_ptr) {\
-        ALOGE(#name" not found. ucnv init fail.");}
+        SUBTITLE_LOGE(#name" not found. ucnv init fail.");}
 #define CHECK_LOAD_SYMBOLS()\
     CHECK_LOAD_SYMBOL(ucnv_open)\
     CHECK_LOAD_SYMBOL(ucnv_close)\
@@ -124,7 +124,7 @@ am_ucnv_dlink(void)
         long status = 0;
         am_u_init_ptr(&status);
         if (status > 0) {
-            ALOGE("icu init fail. [%ld]", status);
+            SUBTITLE_LOGE("icu init fail. [%ld]", status);
         }
     }
 }

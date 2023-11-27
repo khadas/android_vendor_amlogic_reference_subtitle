@@ -2,14 +2,14 @@
 
 #include <cutils/properties.h>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "SubtitleClientPrivate.h"
 
 #define RETURN_VOID_IF(mode)                                                         \
     do {                                                                             \
         if (mode) {                                                                  \
-            ALOGD("%s:%d return <- %s", __FUNCTION__, __LINE__, #mode);              \
+            SUBTITLE_LOGI("%s:%d return <- %s", __FUNCTION__, __LINE__, #mode);              \
             return;                                                                  \
         }                                                                            \
     } while (0)
@@ -17,7 +17,7 @@
 #define RETURN_RET_IF(mode, ret)                                                     \
     do {                                                                             \
         if (mode) {                                                                  \
-            ALOGD("%s:%d return <- %s", __FUNCTION__, __LINE__, #mode);              \
+            SUBTITLE_LOGI("%s:%d return <- %s", __FUNCTION__, __LINE__, #mode);              \
             return ret;                                                              \
         }                                                                            \
     } while (0)
@@ -47,7 +47,7 @@ status_t SubtitleClientPrivate::connect(bool attachMode)
 {
 #if ANDROID_PLATFORM_SDK_VERSION > 27
     mAttachMode = false;// always use this. because all handled in subtitleserver
-    ALOGD("[%s:%d] High SDK_VERSION attachMode=%d", __FUNCTION__, __LINE__, attachMode);
+    SUBTITLE_LOGI("[%s:%d] High SDK_VERSION attachMode=%d", __FUNCTION__, __LINE__, attachMode);
 
     // if CTC want subtitle data callback, then register this!
     // currently, we support handle subtitle data in 3 ways!
@@ -58,10 +58,10 @@ status_t SubtitleClientPrivate::connect(bool attachMode)
     registerSubtitleMiddleListener();
     if (!mAttachMode) {
         subtitleCreat();
-        ALOGD("[%s:%d] ",__FUNCTION__, __LINE__);
+        SUBTITLE_LOGI("[%s:%d] ",__FUNCTION__, __LINE__);
     }
 #else
-    ALOGD("[%s:%d] Low SDK_VERSION", __FUNCTION__, __LINE__);
+    SUBTITLE_LOGI("[%s:%d] Low SDK_VERSION", __FUNCTION__, __LINE__);
 #endif
 
     return OK;
@@ -104,7 +104,7 @@ status_t SubtitleClientPrivate::setViewAttribute(const SubtitleClient::ViewAttri
 status_t SubtitleClientPrivate::init(const subtitle::Subtitle_Param& param)
 {
 #if ANDROID_PLATFORM_SDK_VERSION <= 27
-    ALOGD("[%s:%d] init Subtitle", __FUNCTION__, __LINE__);
+    SUBTITLE_LOGI("[%s:%d] init Subtitle", __FUNCTION__, __LINE__);
     return OK;
 #endif
 
@@ -128,14 +128,14 @@ status_t SubtitleClientPrivate::init(const subtitle::Subtitle_Param& param)
         msubtitleCtx.pageId     = param.dvb_sub_param.Composition_Page;
         break;
     case subtitle::TELETEXT:
-        ALOGD("[%s:%d] TELETEXT Subtitle type, unsupport now", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGI("[%s:%d] TELETEXT Subtitle type, unsupport now", __FUNCTION__, __LINE__);
         break;
     default:
-        ALOGD("[%s:%d] unknown Subtitle type", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGI("[%s:%d] unknown Subtitle type", __FUNCTION__, __LINE__);
         break;
     }
 
-    ALOGD("[%s:%d] type channelId:%d pid=%d", __FUNCTION__, __LINE__, param.sub_type, msubtitleCtx.pid);
+    SUBTITLE_LOGI("[%s:%d] type channelId:%d pid=%d", __FUNCTION__, __LINE__, param.sub_type, msubtitleCtx.pid);
 
     return OK;
 }
@@ -162,21 +162,21 @@ status_t SubtitleClientPrivate::getSourceAttribute(subtitle::Subtitle_Param* par
         param->dvb_sub_param.Composition_Page   = msubtitleCtx.pageId;
         break;
     case subtitle::TELETEXT:
-        ALOGD("[%s:%d] TELETEXT Subtitle type, unsupport now", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGI("[%s:%d] TELETEXT Subtitle type, unsupport now", __FUNCTION__, __LINE__);
         break;
     default:
-        ALOGD("[%s:%d] unknown Subtitle type", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGI("[%s:%d] unknown Subtitle type", __FUNCTION__, __LINE__);
         break;
     }
 
-    ALOGD("[%s:%d] type channelId:%d pid=%d", __FUNCTION__, __LINE__, param->sub_type, msubtitleCtx.pid);
+    SUBTITLE_LOGI("[%s:%d] type channelId:%d pid=%d", __FUNCTION__, __LINE__, param->sub_type, msubtitleCtx.pid);
 
     return OK;
 }
 
 void SubtitleClientPrivate::subtitle_evt_callback(SUBTITLE_EVENT evt, int index)
 {
-    ALOGD("[%s:%d] evt=%d index=%d", __FUNCTION__, __LINE__, evt, index);
+    SUBTITLE_LOGI("[%s:%d] evt=%d index=%d", __FUNCTION__, __LINE__, evt, index);
 
     RETURN_VOID_IF(mCallbackParam.eventCb == NULL);
     if (evt == SUBTITLE_EVENT_DATA) {
@@ -188,7 +188,7 @@ void SubtitleClientPrivate::subtitle_evt_callback(SUBTITLE_EVENT evt, int index)
 
 void SubtitleClientPrivate::subtitle_available_callback(SUBTITLE_STATE state, int val)
 {
-    ALOGD("[%s:%d] available=%d val=%d", __FUNCTION__, __LINE__, state, val);
+    SUBTITLE_LOGI("[%s:%d] available=%d val=%d", __FUNCTION__, __LINE__, state, val);
 
     RETURN_VOID_IF(mCallbackParam.eventCb == NULL);
     if (state == SUBTITLE_UNAVAILABLE) {
@@ -200,7 +200,7 @@ void SubtitleClientPrivate::subtitle_available_callback(SUBTITLE_STATE state, in
 
 void SubtitleClientPrivate::registerCallback(const SubtitleClient::CallbackParam& param)
 {
-    ALOGD("[%s:%d] registerCallback", __FUNCTION__, __LINE__);
+    SUBTITLE_LOGI("[%s:%d] registerCallback", __FUNCTION__, __LINE__);
 
     mCallbackParam = param;
     subtitle_register_event(subtitle_evt_callback);
@@ -217,7 +217,7 @@ void SubtitleClientPrivate::setInputSource(SubtitleClient::InputSource source)
 
 SubtitleClient::InputSource SubtitleClientPrivate::getInputSource() const
 {
-    ALOGD("[%s:%d] mInputSource=%d", __FUNCTION__, __LINE__, mInputSource);
+    SUBTITLE_LOGI("[%s:%d] mInputSource=%d", __FUNCTION__, __LINE__, mInputSource);
 
     return mInputSource;
 }
@@ -231,7 +231,7 @@ status_t SubtitleClientPrivate::openTransferChannel(SubtitleClient::TransferType
 {
     status_t ret = OK;
 
-    ALOGD("[%s:%d] openTransferChannel=%d", __FUNCTION__, __LINE__, transferType);
+    SUBTITLE_LOGI("[%s:%d] openTransferChannel=%d", __FUNCTION__, __LINE__, transferType);
 
     if (SubtitleClient::TransferType::TRANSFER_BY_SOCKET == transferType) {
         if (mSourceHandle == NULL) {
@@ -281,7 +281,7 @@ status_t SubtitleClientPrivate::convertSubTypeToSubDecodeType(subtitle::Subtitle
         decodeSubType = -1;
         break;
     default:
-        ALOGD("[%s:%d] unknown Subtitle type=%d", __FUNCTION__, __LINE__, type);
+        SUBTITLE_LOGI("[%s:%d] unknown Subtitle type=%d", __FUNCTION__, __LINE__, type);
         break;
     }
 
@@ -306,7 +306,7 @@ status_t SubtitleClientPrivate::convertSubTypeToFFmpegType(subtitle::SubtitleTyp
         ffmpegSubType = -1;
         break;
     default:
-        ALOGD("[%s:%d] unknown Subtitle type=%d", __FUNCTION__, __LINE__, type);
+        SUBTITLE_LOGI("[%s:%d] unknown Subtitle type=%d", __FUNCTION__, __LINE__, type);
         break;
     }
 
@@ -360,7 +360,7 @@ status_t SubtitleClientPrivate::constructPacketHeader(void* header, size_t heade
     sub_header[28] = (attr.duration >> 8) & 0xff;
     sub_header[29] = attr.duration & 0xff;
 
-    ALOGD("[%s:%d] subFFmpegType=0x%x, subDecodeType=%d, attr.rawDataSize=%d, attr.pts=%llu ", __FUNCTION__, __LINE__, subFFmpegType, subDecodeType, attr.rawDataSize, attr.pts);
+    SUBTITLE_LOGI("[%s:%d] subFFmpegType=0x%x, subDecodeType=%d, attr.rawDataSize=%d, attr.pts=%llu ", __FUNCTION__, __LINE__, subFFmpegType, subDecodeType, attr.rawDataSize, attr.pts);
 
     return OK;
 }
@@ -385,8 +385,8 @@ status_t SubtitleClientPrivate::start()
 #if ANDROID_PLATFORM_SDK_VERSION > 27
     if (!mAttachMode) {
         subtitleOpen("", nullptr, &msubtitleCtx);
-        ALOGD("[%s:%d] ",__FUNCTION__, __LINE__);
-        ALOGD("[%s:%d] msubtitleCtx.tvType=%d pid=%d",__FUNCTION__, __LINE__, msubtitleCtx.tvType, msubtitleCtx.pid);
+        SUBTITLE_LOGI("[%s:%d] ",__FUNCTION__, __LINE__);
+        SUBTITLE_LOGI("[%s:%d] msubtitleCtx.tvType=%d pid=%d",__FUNCTION__, __LINE__, msubtitleCtx.tvType, msubtitleCtx.pid);
     }
 #else
     subtitleSetSurfaceViewParam(s_video_axis[0], s_video_axis[1], s_video_axis[2], s_video_axis[3]);
@@ -400,7 +400,7 @@ status_t SubtitleClientPrivate::start()
 
 status_t SubtitleClientPrivate::stop()
 {
-    ALOGD("[%s:%d] mAttachMode=%d ", __FUNCTION__, __LINE__, mAttachMode);
+    SUBTITLE_LOGI("[%s:%d] mAttachMode=%d ", __FUNCTION__, __LINE__, mAttachMode);
     if (!mAttachMode) {
         subtitleClose();
     }

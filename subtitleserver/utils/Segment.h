@@ -83,7 +83,7 @@ public:
             for (int i = 0; i < needRead - 4; i++) {
                 char *p = ptr+mPtr + i;
                 if (E_SUBTITLE_DEMUX == type &&(p[0] == 0) && (p[1] == 0) && (p[2] == 1) && (p[3] == 0xbd)){
-                    ALOGD("read_l i:%d type:%d needRead:%d", i, type, needRead);
+                    SUBTITLE_LOGI("read_l i:%d type:%d needRead:%d", i, type, needRead);
                     *isReadItemEnd = -1;
                     needRead = i;
                     break;

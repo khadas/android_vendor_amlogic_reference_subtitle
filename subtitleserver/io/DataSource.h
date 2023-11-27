@@ -29,7 +29,7 @@
 #include <list>
 #include <mutex>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "InfoChangeListener.h"
 
@@ -62,7 +62,7 @@ public:
     DataSource() = default;
     DataSource& operator=(const DataSource&) = delete;
     virtual ~DataSource() {
-            ALOGD("%s", __func__);
+            SUBTITLE_LOGI("%s", __func__);
     }
 
     virtual SubtitleIOType type() = 0;

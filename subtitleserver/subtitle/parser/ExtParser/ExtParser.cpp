@@ -29,7 +29,7 @@
 #include <thread>
 #include <algorithm>
 #include <functional>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "ExtParser.h"
 #include "ParserFactory.h"
@@ -56,7 +56,7 @@ ExtParser::ExtParser(std::shared_ptr<DataSource> source, int trackId) {
 }
 
 ExtParser::~ExtParser() {
-    ALOGI("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     // call back may call parser, parser later destroy
     mSubIndex = 0;
 }

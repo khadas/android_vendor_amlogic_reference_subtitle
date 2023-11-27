@@ -19,7 +19,7 @@
 
 #define LOG_TAG "SubtitleClient"
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "SubtitleClient.h"
 #include "SubtitleClientPrivate.h"
@@ -31,12 +31,12 @@ using namespace subtitle;
 SubtitleClient::SubtitleClient()
 : mImpl(new SubtitleClientPrivate())
 {
-    ALOGD("construct SubtitleClient");
+    SUBTITLE_LOGI("construct SubtitleClient");
 }
 
 SubtitleClient::~SubtitleClient()
 {
-    ALOGD("destroy SubtitleClient");
+    SUBTITLE_LOGI("destroy SubtitleClient");
 }
 
 status_t SubtitleClient::connect(bool attachMode)

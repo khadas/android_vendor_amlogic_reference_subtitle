@@ -3,6 +3,7 @@
 #include <cutils/properties.h>
 #include "VobSubIndex.h"
 #include "VideoInfo.h"
+#include "SubtitleLog.h"
 #define MIN(a, b)    ((a)<(b)?(a):(b))
 #define MAX(a, b)    ((a)>(b)?(a):(b))
 #define UINT_MAX 0xFFFFFFFFFFFFFFFLL
@@ -117,7 +118,7 @@ static mpeg_t *mpeg_open(int fd) {
 
         err = res->stream == NULL;
         if (err)
-            ALOGI("fopen Vobsub file failed");
+            SUBTITLE_LOGI("fopen Vobsub file failed");
         if (err)
             free(res);
     }
@@ -168,7 +169,7 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
         buf[3] = c;
     }
 
-    //ALOGD("mpeg_run: %x %x %x [%x] %x", buf[0], buf[1], buf[2], buf[3], buf[4]);
+    //SUBTITLE_LOGI("mpeg_run: %x %x %x [%x] %x", buf[0], buf[1], buf[2], buf[3], buf[4]);
     switch (buf[3]) {
         case 0xb9:      /* System End Code */
             break;
@@ -181,10 +182,10 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
             } else if ((c & 0xf0) == 0x20) {
                 version = 2;
             } else if ((c & 0xf0) == 0) {
-                ALOGE("VobSub: Unsupported MPEG version: 0x%02x,try specifying version 2 to parse.\n", c);
+                SUBTITLE_LOGE("VobSub: Unsupported MPEG version: 0x%02x,try specifying version 2 to parse.\n", c);
                 version = 2;
             } else {
-                 ALOGE("VobSub: Unsupported MPEG version: 0x%02x\n", c);
+                 SUBTITLE_LOGE("VobSub: Unsupported MPEG version: 0x%02x\n", c);
                  return -1;
 
             }
@@ -231,7 +232,7 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                 hdrlen = c;
                 dataidx = mpeg_tell(mpeg) + hdrlen;
                 if (dataidx > idx + len) {
-                    ALOGE("Invalid header length: %d (total length: %d, idx: %d, dataidx: %d)\n",
+                    SUBTITLE_LOGE("Invalid header length: %d (total length: %d, idx: %d, dataidx: %d)\n",
                                         hdrlen, len, idx, dataidx);
                     return -1;
                 }
@@ -239,7 +240,7 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                     if (rar_read(buf, 5, 1, mpeg->stream) != 1)
                         return -1;
                     if (!(((buf[0] & 0xf0) == 0x20) && (buf[0] & 1) && (buf[2] & 1) && (buf[4] & 1))) {
-                        ALOGE("vobsub PTS error: 0x%02x %02x%02x %02x%02x \n",
+                        SUBTITLE_LOGE("vobsub PTS error: 0x%02x %02x%02x %02x%02x \n",
                                                     buf[0], buf[1], buf[2], buf[3], buf[4]);
                         mpeg->pts = 0;
                     } else
@@ -251,17 +252,17 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                 rar_seek(mpeg->stream, dataidx, SEEK_SET);
                 mpeg->aid = rar_getc(mpeg->stream);
                 if (mpeg->aid < 0) {
-                    ALOGE("Bogus aid %d\n", mpeg->aid);
+                    SUBTITLE_LOGE("Bogus aid %d\n", mpeg->aid);
                     return -1;
                 }
                 mpeg->packet_size = len - ((unsigned int)mpeg_tell(mpeg) - idx);
-                //ALOGD("package size: %d",  mpeg->packet_size);
+                //SUBTITLE_LOGI("package size: %d",  mpeg->packet_size);
                 if (read_flag) {
                     //if (mpeg->packet_reserve < mpeg->packet_size) {
                     if (mpeg->packet) free(mpeg->packet);
                     //for coverity
                     if (mpeg->packet_size < 0 || mpeg->packet_size > INT_MAX) {
-                        ALOGE("illegal mpeg->packet_size");
+                        SUBTITLE_LOGE("illegal mpeg->packet_size");
                         mpeg->packet_size = 0;
                         return -1;
                     }
@@ -270,7 +271,7 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                     //    mpeg->packet_reserve = mpeg->packet_size;
                     //}
                     if (mpeg->packet == NULL) {
-                        ALOGE("malloc failure");
+                        SUBTITLE_LOGE("malloc failure");
                         //mpeg->packet_reserve = 0;
                         mpeg->packet_size = 0;
                         return -1;
@@ -278,7 +279,7 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                     //for coverity
                     if (mpeg->packet_size > 0 && mpeg->packet_size < INT_MAX) {
                         if (rar_read(mpeg->packet, mpeg->packet_size, 1, mpeg->stream) != 1) {
-                            ALOGE("fread failure");
+                            SUBTITLE_LOGE("fread failure");
                             mpeg->packet_size = 0;
                             return -1;
                         }
@@ -308,7 +309,7 @@ static int mpeg_run(mpeg_t *mpeg, char read_flag) {
                 if (len > 0 && rar_seek(mpeg->stream, len, SEEK_CUR))
                     return -1;
             } else {
-                ALOGE("unknown header 0x%02X%02X%02X%02X\n",
+                SUBTITLE_LOGE("unknown header 0x%02X%02X%02X%02X\n",
                                 buf[0], buf[1], buf[2], buf[3]);
                 return -1;
             }
@@ -528,7 +529,7 @@ VobSubIndex::VobSubIndex(std::shared_ptr<DataSource> source): TextSubtitle(sourc
     mSubFd = source->getExtraFd();
 
     if (mSubFd <= 0) {
-        ALOGE("Error! no subtitle .sub files!");
+        SUBTITLE_LOGE("Error! no subtitle .sub files!");
     }
 
     mpg = mpeg_open(mSubFd);
@@ -555,12 +556,12 @@ std::shared_ptr<ExtSubItem> VobSubIndex::decodedItem() {
 
     while (mReader->getLine(line)) {
 
-        ALOGD("%s", line);
+        SUBTITLE_LOGI("%s", line);
         if (*line == 0 || *line == '\r' || *line == '\n' || *line == '#') {
             continue;
         }
 
-        //ALOGD(">> %s [%c %c %c %c] %d", line, line[0], line[1], line[2], line[3], strncmp("timestamp:", line, 10));
+        //SUBTITLE_LOGI(">> %s [%c %c %c %c] %d", line, line[0], line[1], line[2], line[3], strncmp("timestamp:", line, 10));
         if (strncmp("langidx:", line, 8) == 0) {
             vobsubId = atoi(line + 8);
             // use the default idx for playing
@@ -573,7 +574,7 @@ std::shared_ptr<ExtSubItem> VobSubIndex::decodedItem() {
             char lang[16]; // todo handle lang
 
             sscanf(line,"id: %2s, index: %d", lang, &vobsubId);
-            ALOGD("\n\n\n\n\n\n\n %s  vobsubId=%d\n\n\n\n\n", line, vobsubId);
+            SUBTITLE_LOGI("\n\n\n\n\n\n\n %s  vobsubId=%d\n\n\n\n\n", line, vobsubId);
             // No select, select the first we encounter.
             if (mIdxSubTrackId == -1) {
                 mSelectedTrackId = mIdxSubTrackId = vobsubId;
@@ -594,10 +595,10 @@ std::shared_ptr<ExtSubItem> VobSubIndex::decodedItem() {
                     &hour, &min, &sec, &ms, &pos) != 5) {
                 //continue;
             }
-            //ALOGD("%d %d %d %d %llx", hour, min, sec, ms, pos);
+            //SUBTITLE_LOGI("%d %d %d %d %llx", hour, min, sec, ms, pos);
 
             if (vobsubId != mSelectedTrackId) {
-                ALOGD("cur:%d sel:%d ignore", vobsubId, mSelectedTrackId);
+                SUBTITLE_LOGI("cur:%d sel:%d ignore", vobsubId, mSelectedTrackId);
                 continue;
             }
             std::shared_ptr<ExtSubItem> item = std::shared_ptr<ExtSubItem>(new ExtSubItem());
@@ -653,7 +654,7 @@ std::shared_ptr<AML_SPUVAR> VobSubIndex::popDecodedItem() {
 
     if (item ==  nullptr) return nullptr;
 
-//    ALOGD("%s item:[%lld %lld]", __func__, item->start, item->end);
+//    SUBTITLE_LOGI("%s item:[%lld %lld]", __func__, item->start, item->end);
     std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
 
     spu->pts = item->start;
@@ -772,7 +773,7 @@ unsigned int VobSubIndex::getDuration(int64_t pos, int trackId) {
         while (!mpeg_eof(mpg)) {
             if (mpeg_run(mpg, 1) < 0) {
                 if (!mpeg_eof(mpg))
-                    ALOGE("VobSub: mpeg_run error\n");
+                    SUBTITLE_LOGE("VobSub: mpeg_run error\n");
                 break;
             }
 
@@ -785,13 +786,13 @@ unsigned int VobSubIndex::getDuration(int64_t pos, int trackId) {
                 int sublen, len;
                 sublen = (mpg-> packet[0] << 8) | (mpg->packet[1]);
                 if (sublen < 0 || sublen > INT_MAX) { //for coverity
-                    ALOGE("illegal sublen");
+                    SUBTITLE_LOGE("illegal sublen");
                     break;
                 }
                 rawsubdata = (unsigned char *)malloc(sublen);
                 subdata_ptr =rawsubdata;
                 if (!rawsubdata) {
-                    ALOGE("Error! out of memory!!");
+                    SUBTITLE_LOGE("Error! out of memory!!");
                     return 0;
                 }
 
@@ -803,11 +804,11 @@ unsigned int VobSubIndex::getDuration(int64_t pos, int trackId) {
                 mpg->packet = NULL;
                 sublen -= len;
                 subdata_ptr += len;
-                ALOGD("sublen=%d", sublen);
+                SUBTITLE_LOGI("sublen=%d", sublen);
                 while ((!mpeg_eof(mpg)) && (sublen > 0)) {
                     if (mpeg_run(mpg, 1) < 0) {
                         if (!mpeg_eof(mpg)) {
-                            ALOGE("VobSub: mpeg_run error\n");
+                            SUBTITLE_LOGE("VobSub: mpeg_run error\n");
                             break;
                         }
                     }
@@ -841,7 +842,7 @@ unsigned int VobSubIndex::getDuration(int64_t pos, int trackId) {
 
 unsigned char *VobSubIndex::genSubBitmap(AML_SPUVAR *spu, size_t *size) {
     unsigned char *bitmap = nullptr;
-    ALOGD("genSubBitmap! pts:%lld pos:%lld\n\n\n", spu->pts, spu->pos);
+    SUBTITLE_LOGI("genSubBitmap! pts:%lld pos:%lld\n\n\n", spu->pts, spu->pos);
     memset(&VobSPU, 0, sizeof(VobSPU));
 
     if (rar_seek(mpg->stream, spu->pos, SEEK_SET) == 0) {
@@ -849,12 +850,12 @@ unsigned char *VobSubIndex::genSubBitmap(AML_SPUVAR *spu, size_t *size) {
             if (mpeg_run(mpg, 1) < 0) {
                 if (!mpeg_eof(mpg))
                 {
-                    ALOGE("VobSub: mpeg_run error\n");
+                    SUBTITLE_LOGE("VobSub: mpeg_run error\n");
                     break;
                 }
             }
 
-            ALOGD("seek to %d %lld package_size:%d ", mpg->stream->fd, spu->pos, mpg->packet_size);
+            SUBTITLE_LOGI("seek to %d %lld package_size:%d ", mpg->stream->fd, spu->pos, mpg->packet_size);
 
             if (mpg->packet_size)  {
                 // initialize, current sub duration.
@@ -867,7 +868,7 @@ unsigned char *VobSubIndex::genSubBitmap(AML_SPUVAR *spu, size_t *size) {
                     int sublen, len;
                     sublen = (mpg-> packet[0] << 8) | (mpg->packet[1]);
                     if (sublen < 0 || sublen > INT_MAX) {
-                        ALOGE("illegal sublen");
+                        SUBTITLE_LOGE("illegal sublen");
                         break;
                     }
                     rawsubdata = (unsigned char *)malloc(sublen);
@@ -881,11 +882,11 @@ unsigned char *VobSubIndex::genSubBitmap(AML_SPUVAR *spu, size_t *size) {
                         mpg->packet = NULL;
                         sublen -= len;
                         subdata_ptr += len;
-                        ALOGD("sublen=%d", sublen);
+                        SUBTITLE_LOGI("sublen=%d", sublen);
                         while ((!mpeg_eof(mpg)) && (sublen > 0)) {
                             if (mpeg_run(mpg, 1) < 0) {
                                 if (!mpeg_eof(mpg)) {
-                                    ALOGE("VobSub: mpeg_run error\n");
+                                    SUBTITLE_LOGE("VobSub: mpeg_run error\n");
                                     break;
                                 }
                             }
@@ -910,7 +911,7 @@ unsigned char *VobSubIndex::genSubBitmap(AML_SPUVAR *spu, size_t *size) {
                             }
                         }
                         if (do_vob_sub_cmd(rawsubdata) == SUCCESS) {
-                            ALOGD("do_vob_sub_cmd success");
+                            SUBTITLE_LOGI("do_vob_sub_cmd success");
                             unsigned char *vob_pixData = (unsigned char *)malloc(OSD_HALF_SIZE*2);
 
                             if (vob_pixData) {
@@ -950,7 +951,7 @@ unsigned char *VobSubIndex::genSubBitmap(AML_SPUVAR *spu, size_t *size) {
                                     spu->spu_origin_display_h = VideoInfo::Instance()->getVideoHeight();
                                 }
 
-                                ALOGD("get subtitle ---------------vob_pixData:%p spu:%p spu_data:%p\n", vob_pixData, spu, spu->spu_data);
+                                SUBTITLE_LOGI("get subtitle ---------------vob_pixData:%p spu:%p spu_data:%p\n", vob_pixData, spu, spu->spu_data);
                                 free(vob_pixData);
                             }
                         }
@@ -985,7 +986,7 @@ int VobSubIndex::do_vob_sub_cmd(unsigned char *packet) {
     while (pCmdData < pCmdEnd)
     {
         spu_cmd = *pCmdData++;
-        ALOGD("cmd: %d", spu_cmd);
+        SUBTITLE_LOGI("cmd: %d", spu_cmd);
         switch (spu_cmd)
         {
             case FSTA_DSP:
@@ -1067,11 +1068,11 @@ int VobSubIndex::do_vob_sub_cmd(unsigned char *packet) {
                    duration = 0;
                 }
 
-                ALOGD("spu_alpha:%d spu_color:0x%x p:%d spu_start(%d %d) width:%d height:%d top_pxd_addr:%x bottom_pxd_addr:%x",
+                SUBTITLE_LOGI("spu_alpha:%d spu_color:0x%x p:%d spu_start(%d %d) width:%d height:%d top_pxd_addr:%x bottom_pxd_addr:%x",
                     VobSPU.spu_alpha, VobSPU.spu_color, VobSPU.display_pending, VobSPU.spu_start_x, VobSPU.spu_start_y,
                     VobSPU.spu_width, VobSPU.spu_height, VobSPU.top_pxd_addr, VobSPU.bottom_pxd_addr);
 
-                ALOGD("duration:%d", duration);
+                SUBTITLE_LOGI("duration:%d", duration);
                 return SUCCESS;
 
             default:
@@ -1134,7 +1135,7 @@ void VobSubIndex::convert2bto32b(const unsigned char *source, long length, int b
         RGBA_Pal[2] = ((aAlpha[2] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[2]-1];//color of outline
     }
     RGBA_Pal[3] = ((aAlpha[3] == 0) ? 0xff000000 : 0x0) + mVobParam.palette[aPalette[3]-1];//background color
-    ALOGD("RAGB:%0x,%0x,%0x,%0x %0x %0x",RGBA_Pal[0],RGBA_Pal[1],RGBA_Pal[2],RGBA_Pal[3],aAlpha[1],aAlpha[2]);
+    SUBTITLE_LOGI("RAGB:%0x,%0x,%0x,%0x %0x %0x",RGBA_Pal[0],RGBA_Pal[1],RGBA_Pal[2],RGBA_Pal[3],aAlpha[1],aAlpha[2]);
 
     static int k = 0;
     char name[1024];
@@ -1143,12 +1144,12 @@ void VobSubIndex::convert2bto32b(const unsigned char *source, long length, int b
         sprintf(name, "/sdcard/subfrom-%d", k);
         int fd =open(name, O_WRONLY|O_CREAT);
         if (fd == NULL) {
-          ALOGE("fd ================NULL");
+          SUBTITLE_LOGE("fd ================NULL");
         }
         long bytes = write(fd, source,length );
         close(fd);
 
-      ALOGE("write bytes %d  / %d ",bytes, length);
+      SUBTITLE_LOGE("write bytes %d  / %d ",bytes, length);
 #endif
 
     for (int i = 0; i < length; i += 2) {
@@ -1177,12 +1178,12 @@ void VobSubIndex::convert2bto32b(const unsigned char *source, long length, int b
     sprintf(name, "/sdcard/subto-%d", k);
         int fdto =open(name, O_WRONLY|O_CREAT);
         if (fdto == NULL) {
-          ALOGE("fd ================NULL");
+          SUBTITLE_LOGE("fd ================NULL");
         }
         bytes = write(fdto, dist,length*16 );
         close(fdto);
 
-      ALOGE("write bytes %d  / %d ",bytes, length*16);
+      SUBTITLE_LOGE("write bytes %d  / %d ",bytes, length*16);
 #endif
       k++;
 }

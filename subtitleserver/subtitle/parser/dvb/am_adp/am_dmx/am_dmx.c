@@ -42,7 +42,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "am_dmx_internal.h"
 #include "am_adp_internal.h"
@@ -123,7 +123,7 @@ static AM_INLINE AM_ErrorCode_t dmx_get_dev(int dev_no, AM_DMX_Device_t **dev)
 {
     if ((dev_no < 0) || (dev_no >= DMX_DEV_COUNT))
     {
-        ALOGD("invalid demux device number %d, must in(%d~%d)", dev_no, 0, DMX_DEV_COUNT-1);
+        SUBTITLE_LOGI("invalid demux device number %d, must in(%d~%d)", dev_no, 0, DMX_DEV_COUNT-1);
         return AM_DMX_ERR_INVALID_DEV_NO;
     }
 
@@ -138,7 +138,7 @@ static AM_INLINE AM_ErrorCode_t dmx_get_opened_dev(int dev_no, AM_DMX_Device_t *
 
     if ((*dev)->open_count <= 0)
     {
-        ALOGD("demux device %d has not been opened", dev_no);
+        SUBTITLE_LOGI("demux device %d has not been opened", dev_no);
         return AM_DMX_ERR_INVALID_DEV_NO;
     }
 
@@ -152,7 +152,7 @@ static AM_INLINE AM_ErrorCode_t dmx_get_used_filter(AM_DMX_Device_t *dev, int fi
 
     if ((filter_id < 0) || (filter_id >= DMX_FILTER_COUNT))
     {
-        ALOGD("invalid filter id, must in %d~%d", 0, DMX_FILTER_COUNT-1);
+        SUBTITLE_LOGI("invalid filter id, must in %d~%d", 0, DMX_FILTER_COUNT-1);
         return AM_DMX_ERR_INVALID_ID;
     }
 
@@ -160,7 +160,7 @@ static AM_INLINE AM_ErrorCode_t dmx_get_used_filter(AM_DMX_Device_t *dev, int fi
 
     if (!filter->used)
     {
-        ALOGD("filter %d has not been allocated", filter_id);
+        SUBTITLE_LOGI("filter %d has not been allocated", filter_id);
         return AM_DMX_ERR_NOT_ALLOCATED;
     }
 
@@ -249,13 +249,13 @@ static void* dmx_data_thread(void *arg)
                 if (cb)
                 {
                     if (id && sec)
-                    ALOGD("filter %d data callback len fd:%ld len:%d, %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
+                    SUBTITLE_LOGI("filter %d data callback len fd:%ld len:%d, %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
                         id, (long)filter->drv_data, sec_len,
                         sec[0], sec[1], sec[2], sec[3], sec[4],
                         sec[5], sec[6], sec[7], sec[8], sec[9]);
                     cb(dev->dev_no, id, sec, sec_len, data);
                     if (id && sec)
-                    ALOGD("filter %d data callback ok", id);
+                    SUBTITLE_LOGI("filter %d data callback ok", id);
                 }
             }
 #if defined(DMX_WAIT_CB) || defined(DMX_SYNC)
@@ -367,7 +367,7 @@ AM_ErrorCode_t AM_DMX_Open(int dev_no, const AM_DMX_OpenPara_t *para)
 
     if (dev->open_count > 0)
     {
-        ALOGD("demux device %d has already been opened", dev_no);
+        SUBTITLE_LOGI("demux device %d has already been opened", dev_no);
         dev->open_count++;
         ret = AM_SUCCESS;
         goto final;
@@ -485,7 +485,7 @@ AM_ErrorCode_t AM_DMX_AllocateFilter(int dev_no, int *fhandle)
 
     if (fid >= DMX_FILTER_COUNT)
     {
-        ALOGD("no free section filter");
+        SUBTITLE_LOGI("no free section filter");
         ret = AM_DMX_ERR_NO_FREE_FILTER;
     }
 
@@ -532,7 +532,7 @@ AM_ErrorCode_t AM_DMX_SetSecFilter(int dev_no, int fhandle, const struct dmx_sct
 
     if (!dev->drv->set_sec_filter)
     {
-        ALOGD("demux do not support set_sec_filter");
+        SUBTITLE_LOGI("demux do not support set_sec_filter");
         return AM_DMX_ERR_NOT_SUPPORTED;
     }
 
@@ -550,7 +550,7 @@ AM_ErrorCode_t AM_DMX_SetSecFilter(int dev_no, int fhandle, const struct dmx_sct
     if (ret == AM_SUCCESS)
     {
         ret = dev->drv->set_sec_filter(dev, filter, params);
-        ALOGD("set sec filter %d PID: %d filter: %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x",
+        SUBTITLE_LOGI("set sec filter %d PID: %d filter: %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x %02x:%02x",
                 fhandle, params->pid,
                 params->filter.filter[0], params->filter.mask[0],
                 params->filter.filter[1], params->filter.mask[1],
@@ -588,7 +588,7 @@ AM_ErrorCode_t AM_DMX_SetPesFilter(int dev_no, int fhandle, const struct dmx_pes
 
     if (!dev->drv->set_pes_filter)
     {
-        ALOGD("demux do not support set_pes_filter");
+        SUBTITLE_LOGI("demux do not support set_pes_filter");
         return AM_DMX_ERR_NOT_SUPPORTED;
     }
 
@@ -606,7 +606,7 @@ AM_ErrorCode_t AM_DMX_SetPesFilter(int dev_no, int fhandle, const struct dmx_pes
     if (ret == AM_SUCCESS)
     {
         ret = dev->drv->set_pes_filter(dev, filter, params);
-        ALOGD("set pes filter %d PID %d flags %d", fhandle, params->pid, params->flags);
+        SUBTITLE_LOGI("set pes filter %d PID %d flags %d", fhandle, params->pid, params->flags);
     }
 
     pthread_mutex_unlock(&dev->lock);
@@ -745,7 +745,7 @@ AM_ErrorCode_t AM_DMX_SetBufferSize(int dev_no, int fhandle, int size)
 
     if (!dev->drv->set_buf_size)
     {
-        ALOGD("do not support set_buf_size");
+        SUBTITLE_LOGI("do not support set_buf_size");
         ret = AM_DMX_ERR_NOT_SUPPORTED;
     }
 
@@ -847,7 +847,7 @@ AM_ErrorCode_t AM_DMX_SetSource(int dev_no, AM_DMX_Source_t src)
     pthread_mutex_lock(&dev->lock);
     if (!dev->drv->set_source)
     {
-        ALOGD("do not support set_source");
+        SUBTITLE_LOGI("do not support set_source");
         ret = AM_DMX_ERR_NOT_SUPPORTED;
     }
 
@@ -910,7 +910,7 @@ AM_ErrorCode_t AM_DMX_GetScrambleStatus(int dev_no, AM_Bool_t dev_status[2])
                 dev_status[0] = vflag ? AM_TRUE : AM_FALSE;
             if (!dev_status[1])
                 dev_status[1] = aflag ? AM_TRUE : AM_FALSE;
-            //ALOGD("AM_DMX_GetScrambleStatus video scramble %d, audio scramble %d\n", vflag, aflag);
+            //SUBTITLE_LOGI("AM_DMX_GetScrambleStatus video scramble %d, audio scramble %d\n", vflag, aflag);
             if (dev_status[0] && dev_status[1])
             {
                 return AM_SUCCESS;
@@ -919,7 +919,7 @@ AM_ErrorCode_t AM_DMX_GetScrambleStatus(int dev_no, AM_Bool_t dev_status[2])
         }
         else
         {
-            ALOGD("AM_DMX_GetScrambleStatus read scramble status failed\n");
+            SUBTITLE_LOGI("AM_DMX_GetScrambleStatus read scramble status failed\n");
             return AM_FAILURE;
         }
     }

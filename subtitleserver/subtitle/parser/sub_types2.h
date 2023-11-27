@@ -26,7 +26,7 @@
 
 #ifndef _SUB_TYPE2_H
 #define _SUB_TYPE2_H
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 //#include <am_sub2.h>
 //#include <am_tt2.h>
@@ -42,7 +42,7 @@
 
 #include <stdlib.h>
 #include <pthread.h>
-#include <android/log.h>
+#include "SubtitleLog.h"
 #include <cutils/properties.h>
 
 #define CC_JSON_BUFFER_SIZE 8192

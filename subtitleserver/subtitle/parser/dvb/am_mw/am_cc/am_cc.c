@@ -42,7 +42,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -145,7 +145,7 @@ static AM_ErrorCode_t am_cc_calc_caption_size(int *w, int *h)
         sscanf(wbuf, "%d", &vw) != 1 ||
         sscanf(hbuf, "%d", &vh) != 1)
     {
-        ALOGI("Get video size failed, default set to 16:9");
+        SUBTITLE_LOGI("Get video size failed, default set to 16:9");
         vw = 1920;
         vh = 1080;
     }
@@ -164,7 +164,7 @@ static AM_ErrorCode_t am_cc_calc_caption_size(int *w, int *h)
     else if (rows > 42)
         rows = 42;
 
-    ALOGI("Video size: %d X %d, rows %d", vw, vh, rows);
+    SUBTITLE_LOGI("Video size: %d X %d, rows %d", vw, vh, rows);
 
     *w = rows * ROW_W;
     *h = SAFE_TITLE_AREA_HEIGHT;
@@ -252,7 +252,7 @@ static void am_cc_get_page_canvas(AM_CC_Decoder_t *cc, struct vbi_page *pg, int*
         r = x + dw->column_count * ROW_W;
         b = y + dw->row_count * ROW_H;
 
-        ALOGI("x %d, y %d, r %d, b %d", x, y, r, b);
+        SUBTITLE_LOGI("x %d, y %d, r %d, b %d", x, y, r, b);
 
         if (x < 0)
             x = 0;
@@ -267,7 +267,7 @@ static void am_cc_get_page_canvas(AM_CC_Decoder_t *cc, struct vbi_page *pg, int*
         //pg->columns = (r - x) / ROW_W;
         //pg->rows = (b - y) / ROW_H;
 
-        /* ALOGI("window prio(%d), row %d, cols %d ar %d, ah %d, av %d, "
+        /* SUBTITLE_LOGI("window prio(%d), row %d, cols %d ar %d, ah %d, av %d, "
             "ap %d, screen position(%d, %d), displayed rows/cols(%d, %d)",
             dw->priority, dw->row_count, dw->column_count, dw->anchor_relative,
             dw->anchor_horizontal, dw->anchor_vertical, dw->anchor_point,
@@ -419,7 +419,7 @@ static AM_ErrorCode_t am_auto_detect_data_pgno(AM_CC_Decoder_t *cc, int pgno) {
 
     if (cc->auto_detect_pgno_count >= MAX_DETECT_COUNTS) {
         cc->auto_set_play_flag = TRUE;
-        ALOGD("cc last play pgno:%d", cc->vbi_pgno);
+        SUBTITLE_LOGI("cc last play pgno:%d", cc->vbi_pgno);
         return AM_TRUE;
     }
 
@@ -429,7 +429,7 @@ static AM_ErrorCode_t am_auto_detect_data_pgno(AM_CC_Decoder_t *cc, int pgno) {
 
 static AM_ErrorCode_t am_q_tone_data_event(AM_CC_Decoder_t *cc, uint8_t * data, int left) {
     if (cc->cpara.q_tone_cb && left > 0) {
-        ALOGI("am_filter_q_tone_data: %s, size:%d", data, left);
+        SUBTITLE_LOGI("am_filter_q_tone_data: %s, size:%d", data, left);
         cc->cpara.q_tone_cb(cc, data, left);
         return AM_TRUE;
     }
@@ -457,11 +457,11 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data)
                 cc->decoder.dtvcc.index_q_tone = 0;
             }
             cc->decoder.dtvcc.index_q_tone = 0;
-            ALOGD("q_tone_data event, no need show!");
+            SUBTITLE_LOGI("q_tone_data event, no need show!");
             return;
         }
 
-        ALOGD("VBI Caption event: pgno %d, cur_pgno %d, cc->auto_detect_play:%d",
+        SUBTITLE_LOGI("VBI Caption event: pgno %d, cur_pgno %d, cc->auto_detect_play:%d",
             ev->ev.caption.pgno, cc->vbi_pgno, cc->auto_detect_play);
 
         pgno = ev->ev.caption.pgno;
@@ -474,7 +474,7 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data)
         }
 
         if (am_auto_detect_data_pgno(cc, pgno)) {
-            ALOGD("cc auto detect play pgno:%d", pgno);
+            SUBTITLE_LOGI("cc auto detect play pgno:%d", pgno);
         }
 
         pthread_mutex_lock(&cc->lock);
@@ -485,7 +485,7 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data)
             json_buffer = (char*)malloc(JSON_STRING_LENGTH);
             if (!json_buffer)
             {
-                ALOGI("json buffer malloc failed");
+                SUBTITLE_LOGI("json buffer malloc failed");
                 pthread_mutex_unlock(&cc->lock);
                 return;
             }
@@ -499,20 +499,20 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data)
             ret = tvcc_to_json (&cc->decoder, cc->vbi_pgno, json_buffer, JSON_STRING_LENGTH);
             if (ret == -1)
             {
-                ALOGI("tvcc_to_json failed");
+                SUBTITLE_LOGI("tvcc_to_json failed");
                 if (json_buffer)
                     free(json_buffer);
                 pthread_mutex_unlock(&cc->lock);
                 return;
             }
-            //ALOGE("---------json: %s %d", json_buffer, count);
+            //SUBTITLE_LOGE("---------json: %s %d", json_buffer, count);
             //count ++;
             /* Create one json node */
             node = (AM_CC_JsonChain_t*)malloc(sizeof(AM_CC_JsonChain_t));
             node->buffer = json_buffer;
             node->pts = cc->decoder_cc_pts;
 
-            ALOGD("vbi_event node_pts %x decoder_pts %x", node->pts, cc->decoder_cc_pts);
+            SUBTITLE_LOGI("vbi_event node_pts %x decoder_pts %x", node->pts, cc->decoder_cc_pts);
             /* TODO: Add node time */
             AM_TIME_GetTimeSpec(&node->decode_time);
 
@@ -560,7 +560,7 @@ static void dump_cc_data(uint8_t *buff, int size)
         sprintf(buf+i*3, "%02x ", buff[i]);
     }
 
-    ALOGD("debug-cc dump_cc_data len: %d data:%s", size, buf);
+    SUBTITLE_LOGI("debug-cc dump_cc_data len: %d data:%s", size, buf);
 }
 
 static void am_cc_check_flash(AM_CC_Decoder_t *cc)
@@ -607,7 +607,7 @@ static void am_cc_clear(AM_CC_Decoder_t *cc)
         tvcc_empty_json(cc->vbi_pgno, cc->cpara.json_buffer, 8096);
     if (cc->cpara.json_update)
         cc->cpara.json_update(cc);
-    ALOGD("am_cc_clear");
+    SUBTITLE_LOGI("am_cc_clear");
 }
 
 /*
@@ -652,7 +652,7 @@ static int am_cc_render(AM_CC_Decoder_t *cc)
 #if 0
             if (decode_time_gap<-200000 || decode_time_gap > 400000)
             {
-                ALOGI("render_thread pts gap too large, am_cc_clear, node 0x%x video 0x%x diff %d", node->pts,
+                SUBTITLE_LOGI("render_thread pts gap too large, am_cc_clear, node 0x%x video 0x%x diff %d", node->pts,
                     cc->video_pts, decode_time_gap);
                 has_data_to_render = 0;
                 goto NEXT_NODE;
@@ -662,12 +662,12 @@ static int am_cc_render(AM_CC_Decoder_t *cc)
             //do sync in 5secs time gap
             if (decode_time_gap > 0 && decode_time_gap < 450000)
             {
-                ALOGD("render_thread pts gap large than 0, value %d", decode_time_gap);
+                SUBTITLE_LOGI("render_thread pts gap large than 0, value %d", decode_time_gap);
                 has_data_to_render = 0;
                 node = node->json_chain_next;
                 break;
             }
-            ALOGD("render_thread pts in range, node->pts %x videopts %x", node->pts, cc->video_pts);
+            SUBTITLE_LOGI("render_thread pts in range, node->pts %x videopts %x", node->pts, cc->video_pts);
         }
 
         if (cc->cpara.json_buffer)
@@ -675,11 +675,11 @@ static int am_cc_render(AM_CC_Decoder_t *cc)
             memcpy(cc->cpara.json_buffer, node->buffer, JSON_STRING_LENGTH);
             has_data_to_render = 1;
         }
-        ALOGD("json--> %s", node->buffer);
+        SUBTITLE_LOGI("json--> %s", node->buffer);
         if (cc->cpara.json_update && has_data_to_render)
             cc->cpara.json_update(cc);
 
-        //ALOGE("Render json: %s, %d", node->buffer, count);
+        //SUBTITLE_LOGE("Render json: %s, %d", node->buffer, count);
         //count++;
 CLEAN_NODE:
         node_reset = node;
@@ -697,7 +697,7 @@ CLEAN_NODE:
 
     //if (cc->cpara.draw_end)
     //  cc->cpara.draw_end(cc, &draw_para);
-    ALOGD("render_thread render exit, has_data %d chain_left %d", has_data_to_render,json_chain_head->count);
+    SUBTITLE_LOGI("render_thread render exit, has_data %d chain_left %d", has_data_to_render,json_chain_head->count);
     return has_data_to_render;
 }
 
@@ -723,7 +723,7 @@ static void am_cc_set_tv(const uint8_t *buf, unsigned int n_bytes)
     cc_flag = buf[1] & 0x40;
     if (!cc_flag)
     {
-        ALOGI("cc_flag is invalid, %d", n_bytes);
+        SUBTITLE_LOGI("cc_flag is invalid, %d", n_bytes);
         return;
     }
     cc_count = buf[1] & 0x1f;
@@ -747,9 +747,9 @@ static void am_cc_set_tv(const uint8_t *buf, unsigned int n_bytes)
             cc_param.type = cc_type;
             cc_param.data1 = cc_data1;
             cc_param.data2 = cc_data2;
-            //ALOGI("cc_type:%#x, write cc data: %#x, %#x", cc_type, cc_data1, cc_data2);
+            //SUBTITLE_LOGI("cc_type:%#x, write cc data: %#x, %#x", cc_type, cc_data1, cc_data2);
             if (ioctl(vout_fd, VOUT_IOC_CC_DATA, &cc_param)== -1)
-                ALOGE("ioctl VOUT_IOC_CC_DATA failed, error:%s", strerror(errno));
+                SUBTITLE_LOGE("ioctl VOUT_IOC_CC_DATA failed, error:%s", strerror(errno));
 
             if (!cc_valid || i >= 3)
                 break;
@@ -771,7 +771,7 @@ static void solve_vbi_data (AM_CC_Decoder_t *cc, struct vbi_data_s *vbi)
     if (vbi->field_id == VBI_FIELD_2)
         line = 284;*/
 
-    ALOGD("VBI solve_vbi_data line %d: %02x %02x", line, vbi->b[0], vbi->b[1]);
+    SUBTITLE_LOGI("VBI solve_vbi_data line %d: %02x %02x", line, vbi->b[0], vbi->b[1]);
     vbi_decode_caption(cc->decoder.vbi, line, vbi->b);
 }
 
@@ -789,15 +789,15 @@ static void *am_vbi_data_thread(void *arg)
 
     fd = open(VBI_DEV_FILE, O_RDWR);
     if (fd == -1) {
-        ALOGE("cannot open \"%s\"", VBI_DEV_FILE);
+        SUBTITLE_LOGE("cannot open \"%s\"", VBI_DEV_FILE);
         return NULL;
     }
 
     if (ioctl(fd, VBI_IOC_SET_TYPE, &type )== -1)
-        ALOGI("VBI_IOC_SET_TYPE error:%s", strerror(errno));
+        SUBTITLE_LOGI("VBI_IOC_SET_TYPE error:%s", strerror(errno));
 
     if (ioctl(fd, VBI_IOC_START) == -1)
-        ALOGI("VBI_IOC_START error:%s", strerror(errno));
+        SUBTITLE_LOGI("VBI_IOC_START error:%s", strerror(errno));
 
     AM_TIME_GetClock(&last);
 
@@ -815,7 +815,7 @@ static void *am_vbi_data_thread(void *arg)
 
             ret = read(fd, vbi, sizeof(vbi));
             pd  = vbi;
-            //ALOGI("am_vbi_data_thread running read data == %d",ret);
+            //SUBTITLE_LOGI("am_vbi_data_thread running read data == %d",ret);
 
             if (ret >= (int)sizeof(struct vbi_data_s)) {
                 while (ret >= (int)sizeof(struct vbi_data_s)) {
@@ -855,7 +855,7 @@ static void *am_vbi_data_thread(void *arg)
                 if (cc->cpara.data_cb) {
                     cc->cpara.data_cb(cc, cc->curr_data_mask);
                 }
-                //ALOGI("CC data mask 0x%x -> 0x%x", last_data_mask, cc->curr_data_mask);
+                //SUBTITLE_LOGI("CC data mask 0x%x -> 0x%x", last_data_mask, cc->curr_data_mask);
                 last_data_mask = cc->curr_data_mask;
             }
             cc->curr_data_mask = 0;
@@ -867,7 +867,7 @@ static void *am_vbi_data_thread(void *arg)
         cc->process_update_flag = 0;
     }
 
-    ALOGI("am_vbi_data_thread exit");
+    SUBTITLE_LOGI("am_vbi_data_thread exit");
     ioctl(fd, VBI_IOC_STOP);
     close(fd);
     return NULL;
@@ -892,7 +892,7 @@ static void *am_cc_data_thread(void *arg)
     char display_buffer[8192];
     int i;
     int mode = 0;
-    ALOGE("CC data thread start.");
+    SUBTITLE_LOGE("CC data thread start.");
     memset(&para, 0, sizeof(para));
     para.vfmt = cc->vfmt;
     para.playerid = cc->player_id;
@@ -900,7 +900,7 @@ static void *am_cc_data_thread(void *arg)
     /* Start the cc data */
     if (AM_USERDATA_Open(ud_dev_no, &para) != AM_SUCCESS)
     {
-        ALOGE("Cannot open userdata device %d", ud_dev_no);
+        SUBTITLE_LOGE("Cannot open userdata device %d", ud_dev_no);
         return NULL;
     }
 
@@ -926,23 +926,23 @@ static void *am_cc_data_thread(void *arg)
         {
             cc_pts = cc_buffer;
             cc->decoder_cc_pts = *cc_pts;
-            ALOGD("cc_data_thread mpeg cc_count %d pts %x", cc_data_cnt,*cc_pts);
+            SUBTITLE_LOGI("cc_data_thread mpeg cc_count %d pts %x", cc_data_cnt,*cc_pts);
             //dump_cc_data(cc_data, cc_data_cnt);
 
             if (cc_data[4] != 0x03 /* 0x03 indicates cc_data */)
             {
 
-                ALOGD("Unprocessed user_data_type_code 0x%02x, we only expect 0x03", cc_data[4]);
+                SUBTITLE_LOGI("Unprocessed user_data_type_code 0x%02x, we only expect 0x03", cc_data[4]);
                 continue;
             }
 
             if (vout_fd != -1)
                 am_cc_set_tv(cc_data+4, cc_data_cnt-4);
-            ALOGD("debug-cc index:%d frame", index);
+            SUBTITLE_LOGI("debug-cc index:%d frame", index);
             dump_cc_data(cc_data, cc_data_cnt);
             /*decode this cc data*/
             tvcc_decode_data(&cc->decoder, 0, cc_data+4, cc_data_cnt-4);
-            ALOGD("debug-cc index:%d frame end !", index);
+            SUBTITLE_LOGI("debug-cc index:%d frame end !", index);
             index++;
         }
         else if (cc_data_cnt > 4 &&
@@ -954,7 +954,7 @@ static void *am_cc_data_thread(void *arg)
             //direct format
             if (cc_data[3] != 0x03 /* 0x03 indicates cc_data */)
             {
-                ALOGE("Unprocessed user_data_type_code 0x%02x, we only expect 0x03", cc_data[3]);
+                SUBTITLE_LOGE("Unprocessed user_data_type_code 0x%02x, we only expect 0x03", cc_data[3]);
                 continue;
             }
             cc_data[4] = cc_data[3];// use user_data_type_code in place of user_data_code_length  for extract code
@@ -991,7 +991,7 @@ static void *am_cc_data_thread(void *arg)
                 if (cc->cpara.data_cb) {
                     cc->cpara.data_cb(cc, cc->curr_data_mask);
                 }
-                ALOGD("CC data mask 0x%x -> 0x%x", last_data_mask, cc->curr_data_mask);
+                SUBTITLE_LOGI("CC data mask 0x%x -> 0x%x", last_data_mask, cc->curr_data_mask);
                 last_data_mask = cc->curr_data_mask;
             }
             cc->curr_data_mask = 0;
@@ -1002,10 +1002,10 @@ static void *am_cc_data_thread(void *arg)
             if (last_switch_mask != cc->curr_switch_mask) {
                 if (!(cc->curr_switch_mask & (1 << cc->vbi_pgno))) {
                     if ((cc->vbi_pgno == cc->spara.caption1) && (cc->spara.caption2 != AM_CC_CAPTION_NONE)) {
-                        ALOGI("CC switch %d -> %d", cc->vbi_pgno, cc->spara.caption2);
+                        SUBTITLE_LOGI("CC switch %d -> %d", cc->vbi_pgno, cc->spara.caption2);
                         cc->vbi_pgno = cc->spara.caption2;
                     } else if ((cc->vbi_pgno == cc->spara.caption2) && (cc->spara.caption1 != AM_CC_CAPTION_NONE)) {
-                        ALOGI("CC switch %d -> %d", cc->vbi_pgno, cc->spara.caption1);
+                        SUBTITLE_LOGI("CC switch %d -> %d", cc->vbi_pgno, cc->spara.caption1);
                         cc->vbi_pgno = cc->spara.caption1;
                     }
                 }
@@ -1019,7 +1019,7 @@ static void *am_cc_data_thread(void *arg)
     /*Stop the cc data*/
     AM_USERDATA_Close(ud_dev_no);
 
-    ALOGE("CC data thread exit now");
+    SUBTITLE_LOGE("CC data thread exit now");
     return NULL;
 }
 
@@ -1087,13 +1087,13 @@ static void *am_cc_render_thread(void *arg)
             pts_gap_cc_video = (int32_t)(node->pts - vpts);
             if (pts_gap_cc_video <= 0)
             {
-                ALOGD("pts gap less than 0, node pts %x vpts %x, gap %x", node->pts, vpts, pts_gap_cc_video);
+                SUBTITLE_LOGI("pts gap less than 0, node pts %x vpts %x, gap %x", node->pts, vpts, pts_gap_cc_video);
                 timeout = 0;
             }
             else
             {
                 timeout = pts_gap_cc_video*1000/90000;
-                ALOGD("render_thread timeout node_pts %x vpts %x gap %d calculate %d", node->pts, vpts, pts_gap_cc_video, timeout);
+                SUBTITLE_LOGI("render_thread timeout node_pts %x vpts %x gap %d calculate %d", node->pts, vpts, pts_gap_cc_video, timeout);
                 // Set timeout to 1 second If pts gap is more than 1 second.
                 // We need to judge if video is continuous
                 timeout = (timeout>10)?10:timeout;
@@ -1101,7 +1101,7 @@ static void *am_cc_render_thread(void *arg)
         }
         else
         {
-            ALOGD("render_thread no node in chain, timeout set to 1000");
+            SUBTITLE_LOGI("render_thread no node in chain, timeout set to 1000");
             timeout = 10;
         }
 
@@ -1118,14 +1118,14 @@ static void *am_cc_render_thread(void *arg)
         if (node)
         {
             vpts_gap = (int32_t)(node->pts - cc->video_pts);
-            ALOGD("render_thread after timeout node_pts %x vpts %x gap %d calculate %d",
+            SUBTITLE_LOGI("render_thread after timeout node_pts %x vpts %x gap %d calculate %d",
                 node->pts, vpts, vpts_gap, timeout);
         }
         //If gap time is large than 5 secs, clean cc
 #if 0
         if (abs(vpts_gap) > 500000)
         {
-            ALOGI("Video pts gap too large, clean cc, gap: %d", vpts_gap);
+            SUBTITLE_LOGI("Video pts gap too large, clean cc, gap: %d", vpts_gap);
             am_cc_clear(cc);
             continue;
         }
@@ -1153,7 +1153,7 @@ static void *am_cc_render_thread(void *arg)
             last   = now;
         } else if ((now - last) > 10000 && nodata ==0) {
             last = now;
-            ALOGI("cc render thread: No data now.");
+            SUBTITLE_LOGI("cc render thread: No data now.");
             if ((cc->vbi_pgno < AM_CC_CAPTION_TEXT1) || (cc->vbi_pgno > AM_CC_CAPTION_TEXT4)) {
                 am_cc_clear(cc);
                 if (cc->vbi_pgno < AM_CC_CAPTION_TEXT1)
@@ -1170,7 +1170,7 @@ static void *am_cc_render_thread(void *arg)
     pthread_mutex_unlock(&cc->lock);
 
     //close(fd);
-    ALOGE("CC rendering thread exit now");
+    SUBTITLE_LOGE("CC rendering thread exit now");
     return NULL;
 }
 
@@ -1199,7 +1199,7 @@ AM_ErrorCode_t AM_CC_Create(AM_CC_CreatePara_t *para, AM_CC_Handle_t *handle)
         vout_fd= open("/dev/tv", O_RDWR);
         if (vout_fd == -1)
         {
-            ALOGI("open vdin error");
+            SUBTITLE_LOGI("open vdin error");
         }
     }
 
@@ -1270,7 +1270,7 @@ AM_ErrorCode_t AM_CC_Destroy(AM_CC_Handle_t handle)
         free(cc->json_chain_head);
     free(cc);
 
-    ALOGI("am_cc_destroy ok");
+    SUBTITLE_LOGI("am_cc_destroy ok");
     return AM_SUCCESS;
 }
 
@@ -1337,7 +1337,7 @@ AM_ErrorCode_t AM_CC_Start(AM_CC_Handle_t handle, AM_CC_StartPara_t *para)
         para->auto_detect_play = 1;
     }
 
-    ALOGE("AM_CC_Start vfmt %d para->caption1=%d para->caption2=%d",
+    SUBTITLE_LOGE("AM_CC_Start vfmt %d para->caption1=%d para->caption2=%d",
         para->vfmt, para->caption1, para->caption2);
 
     cc->vfmt = para->vfmt;
@@ -1360,7 +1360,7 @@ AM_ErrorCode_t AM_CC_Start(AM_CC_Handle_t handle, AM_CC_StartPara_t *para)
     if (rc)
     {
         cc->running = AM_FALSE;
-        ALOGI("%s:%s", __func__, strerror(rc));
+        SUBTITLE_LOGI("%s:%s", __func__, strerror(rc));
         ret = AM_CC_ERR_SYS;
     }
     else
@@ -1376,7 +1376,7 @@ AM_ErrorCode_t AM_CC_Start(AM_CC_Handle_t handle, AM_CC_StartPara_t *para)
         {
             cc->running = AM_FALSE;
             pthread_join(cc->render_thread, NULL);
-            ALOGI("%s:%s", __func__, strerror(rc));
+            SUBTITLE_LOGI("%s:%s", __func__, strerror(rc));
             ret = AM_CC_ERR_SYS;
         }
     }
@@ -1401,9 +1401,9 @@ AM_ErrorCode_t AM_CC_Stop(AM_CC_Handle_t handle)
     if (cc == NULL)
         return AM_CC_ERR_INVALID_PARAM;
 
-    ALOGI("am_cc_stop wait lock");
+    SUBTITLE_LOGI("am_cc_stop wait lock");
     pthread_mutex_lock(&cc->lock);
-    ALOGI("am_cc_stop enter lock");
+    SUBTITLE_LOGI("am_cc_stop enter lock");
     if (cc->running)
     {
         cc->running = AM_FALSE;
@@ -1419,7 +1419,7 @@ AM_ErrorCode_t AM_CC_Stop(AM_CC_Handle_t handle)
         pthread_join(cc->data_thread, NULL);
         pthread_join(cc->render_thread, NULL);
     }
-    ALOGI("am_cc_stop ok");
+    SUBTITLE_LOGI("am_cc_stop ok");
     return ret;
 }
 

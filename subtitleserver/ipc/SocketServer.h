@@ -32,7 +32,7 @@
 #include <thread>
 #include<vector>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/Thread.h>
 
 #include "IpcDataTypes.h"
@@ -62,7 +62,7 @@ public:
     static bool registClient(DataListener *client) {
         std::lock_guard<std::mutex> guard(GetInstance()->mLock);
         GetInstance()->mClients.push_back(client);
-        ALOGD("registClient: %p size=%d", client, GetInstance()->mClients.size());
+        SUBTITLE_LOGI("registClient: %p size=%d", client, GetInstance()->mClients.size());
         return true;
     }
 
@@ -82,7 +82,7 @@ public:
             }
 
             //GetInstance()->mClients.pop_back();
-            ALOGD("unregisterClient: %p size=%d", client, GetInstance()->mClients.size());
+            SUBTITLE_LOGI("unregisterClient: %p size=%d", client, GetInstance()->mClients.size());
         }
         return true;
     }

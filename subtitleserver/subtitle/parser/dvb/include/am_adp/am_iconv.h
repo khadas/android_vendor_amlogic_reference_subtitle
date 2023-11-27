@@ -48,7 +48,7 @@ extern "C"
 #include <unicode/ucnv.h>
 #include <unicode/putil.h>
 #include <unicode/uclean.h>
-#include <android/log.h>
+#include "SubtitleLog.h"
 #include <dlfcn.h>
 #include <assert.h>
 #include <errno.h>
@@ -84,7 +84,7 @@ static inline void am_first_action(void)
         long status = 0;
         u_init(&status);
         if (status > 0)
-            AM_DEBUG(1, "icu init fail. [%ld]", status);
+            SUBTITLE_LOGI("icu init fail. [%ld]", status);
         actionFlag = 1;
     }
 }
@@ -140,9 +140,9 @@ iconv_open(const char *tocode, const char *fromcode)
         goto error;
 
     cd->target = (UConverter *)am_ucnv_open(tocode, &err1);
-    AM_DEBUG(0, "target %s [%p]", tocode, cd->target);
+    SUBTITLE_LOGI("target %s [%p]", tocode, cd->target);
     cd->source = (UConverter *)am_ucnv_open(fromcode, &err2);
-    AM_DEBUG(0, "source %s [%p]", fromcode, cd->source);
+    SUBTITLE_LOGI("source %s [%p]", fromcode, cd->source);
     if ((!U_SUCCESS(err1)) || (!U_SUCCESS(err2)))
         goto error;
 

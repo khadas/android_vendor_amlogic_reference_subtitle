@@ -29,7 +29,7 @@
 #include <fcntl.h>
 #include <string>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/CallStack.h>
 
 #include "SocketSource.h"
@@ -70,7 +70,7 @@ SocketSource::SocketSource(const std::string url) : mTotalSubtitle(-1),
 }
 
 SocketSource::~SocketSource() {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
 
     // TODO: no ring ref?
     SubSocketServer::unregisterClient(this);
@@ -107,34 +107,34 @@ bool SocketSource::notifyInfoChange_l(int type) {
 
 int SocketSource::onData(const char *buffer, int len) {
     int type = make32bitValue(buffer);
-    //ALOGD("subtype=%x eTypeSubtitleRenderTime=%x size=%d", type, eTypeSubtitleRenderTime, len);
+    //SUBTITLE_LOGI("subtype=%x eTypeSubtitleRenderTime=%x size=%d", type, eTypeSubtitleRenderTime, len);
     switch (type) {
         case eTypeSubtitleRenderTime: {
             static int count = 0;
             mRenderTimeUs = (((int64_t)make32bitValue(buffer+8))<<32) | make32bitValue(buffer+4);//make32bitValue(buffer + 4);
 
             if (count++ %100 == 0)
-                ALOGD("mRenderTimeUs:%x(updated %d times) time:%llu %llx", type, count, mRenderTimeUs, mRenderTimeUs);
+                SUBTITLE_LOGI("mRenderTimeUs:%x(updated %d times) time:%llu %llx", type, count, mRenderTimeUs, mRenderTimeUs);
             break;
         }
         case eTypeSubtitleTotal: {
             mTotalSubtitle = make32bitValue(buffer + 4);
-            ALOGD("eTypeSubtitleTotal:%x total:%d", type, mTotalSubtitle);
+            SUBTITLE_LOGI("eTypeSubtitleTotal:%x total:%d", type, mTotalSubtitle);
             break;
         }
         case eTypeSubtitleStartPts: {
             mStartPts = (((int64_t)make32bitValue(buffer+8))<<32) | make32bitValue(buffer+4);
-            ALOGD("eTypeSubtitleStartPts:%x time:%llx", type, mStartPts);
+            SUBTITLE_LOGI("eTypeSubtitleStartPts:%x time:%llx", type, mStartPts);
             break;
         }
         case eTypeSubtitleType: {
             mSubtitleType = make32bitValue(buffer + 4);
-            ALOGD("eTypeSubtitleType:%x %x len=%d", type, mSubtitleType, len);
+            SUBTITLE_LOGI("eTypeSubtitleType:%x %x len=%d", type, mSubtitleType, len);
             break;
         }
 
         case eTypeSubtitleData:
-            ALOGD("eTypeSubtitleData: len=%d", len);
+            SUBTITLE_LOGI("eTypeSubtitleData: len=%d", len);
             if (mTotalSubtitle != -1 || mSubtitleType != -1)
                 mSegment->push(makeNewSpBuffer(buffer+4, len-4), len-4);
             break;
@@ -143,11 +143,11 @@ int SocketSource::onData(const char *buffer, int len) {
         case eTypeSubtitleLangString:
         case eTypeSubtitleResetServ:
         case eTypeSubtitleExitServ:
-            ALOGD("not handled message: %s", buffer+4);
+            SUBTITLE_LOGI("not handled message: %s", buffer+4);
             break;
 
         default: {
-            ALOGD("!!!!!!!!!SocketSource:onData(subtitleData): %d", /*buffer,*/ len);
+            SUBTITLE_LOGI("!!!!!!!!!SocketSource:onData(subtitleData): %d", /*buffer,*/ len);
             mSegment->push(makeNewSpBuffer(buffer, len), len);
             break;
         }
@@ -185,10 +185,10 @@ size_t SocketSource::read(void *buffer, size_t size) {
     while (read != size && mState == E_SOURCE_STARTED) {
         if (mCurrentItem != nullptr && !mCurrentItem->isEmpty()) {
             read += mCurrentItem->read_l(((char *)buffer+read), size-read);
-            //ALOGD("read:%d,size:%d", read, size);
+            //SUBTITLE_LOGI("read:%d,size:%d", read, size);
             if (read == size) break;
         } else {
-            ALOGD("mCurrentItem null, pop next buffer item");
+            SUBTITLE_LOGI("mCurrentItem null, pop next buffer item");
             mCurrentItem = mSegment->pop();
         }
     }
@@ -196,7 +196,7 @@ size_t SocketSource::read(void *buffer, size_t size) {
     if (mNeedDumpSource) {
         if (mDumpFd == -1) {
             mDumpFd = ::open("/data/local/traces/cur_sub.dump", O_RDWR | O_CREAT, 0666);
-            ALOGD("need dump Source: mDumpFd=%d %d", mDumpFd, errno);
+            SUBTITLE_LOGI("need dump Source: mDumpFd=%d %d", mDumpFd, errno);
         }
 
         if (mDumpFd > 0) {

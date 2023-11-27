@@ -1,6 +1,7 @@
 #define LOG_TAG "SubtitleServer"
 #include <thread>
 #include "AndroidCallbackMessageQueue.h"
+#include "SubtitleLog.h"
 
 #define EVENT_ON_SUBTITLEDATA_CALLBACK       0xA00000
 #define EVENT_ON_SUBTITLEAVAILABLE_CALLBACK  0xA00001
@@ -82,7 +83,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
                 parcel.bodyInt.resize(2);
                 parcel.bodyInt[0] = data->x;
                 parcel.bodyInt[1] = data->y;
-                ALOGD("onSubtitleDataEvent EVENT_ON_SUBTITLEDATA_CALLBACK: event:%d, id:%d", data->x, data->y);
+                SUBTITLE_LOGI("onSubtitleDataEvent EVENT_ON_SUBTITLEDATA_CALLBACK: event:%d, id:%d", data->x, data->y);
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
@@ -90,7 +91,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
             {
                 parcel.bodyInt.resize(1);
                 parcel.bodyInt[0] = data->x;
-                ALOGD("onSubtitleDataEvent EVENT_ON_SUBTITLEAVAILABLE_CALLBACK: available:%d", data->x);
+                SUBTITLE_LOGI("onSubtitleDataEvent EVENT_ON_SUBTITLEAVAILABLE_CALLBACK: available:%d", data->x);
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
@@ -99,7 +100,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
                 parcel.bodyInt.resize(2);
                 parcel.bodyInt[0] = data->x;
                 parcel.bodyInt[1] = data->y;
-                ALOGD("onSubtitleDataEvent EVENT_ON_VIDEOAFDCHANGE_CALLBACK:afd:%d, playerid = %d", data->x, data->y);
+                SUBTITLE_LOGI("onSubtitleDataEvent EVENT_ON_VIDEOAFDCHANGE_CALLBACK:afd:%d, playerid = %d", data->x, data->y);
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
@@ -108,7 +109,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
                 parcel.bodyInt.resize(2);
                 parcel.bodyInt[0] = data->x;
                 parcel.bodyInt[1] = data->y;
-                ALOGD("onSubtitleDataEvent EVENT_ON_SUBTITLE_DIMENSION_CALLBACK: width:%d, height:%d", data->x, data->y);
+                SUBTITLE_LOGI("onSubtitleDataEvent EVENT_ON_SUBTITLE_DIMENSION_CALLBACK: width:%d, height:%d", data->x, data->y);
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
@@ -116,7 +117,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
             {
                 parcel.bodyInt.resize(1);
                 parcel.bodyInt[0] = data->x;
-                ALOGD("onSubtitleDataEvent EVENT_ONMIXVIDEOEVENT_CALLBACK:%d", data->x);
+                SUBTITLE_LOGI("onSubtitleDataEvent EVENT_ONMIXVIDEOEVENT_CALLBACK:%d", data->x);
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
@@ -126,7 +127,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
                 lang = data->lang;
                 parcel.bodyString.resize(1);
                 parcel.bodyString[0] = lang.c_str();
-                ALOGD("onSubtitleDataEvent EVENT_ONSUBTITLE_LANGUAGE_CALLBACK:lang:%s", lang.c_str());
+                SUBTITLE_LOGI("onSubtitleDataEvent EVENT_ONSUBTITLE_LANGUAGE_CALLBACK:lang:%s", lang.c_str());
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
             }
@@ -135,7 +136,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
                 parcel.bodyInt.resize(2);
                 parcel.bodyInt[0] = data->x;
                 parcel.bodyInt[1] = data->y;
-                ALOGD("onSubtitleDataEvent EVENT_ONSUBTITLE_INFO_CALLBACK:what:%d, extra:%d", data->x, data->y);
+                SUBTITLE_LOGI("onSubtitleDataEvent EVENT_ONSUBTITLE_INFO_CALLBACK:what:%d, extra:%d", data->x, data->y);
                 mProxyHandler->onSubtitleEventNotify(parcel) ;
                 break;
 
@@ -153,7 +154,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
                 parcel.bodyInt[7] = data->videoHeight;
                 parcel.bodyInt[8] = data->objectSegmentId; //objectSegmentId: the current number object segment object.
                 parcel.mem = *(data->mem);
-                ALOGI("onSubtitleDataEvent, type:%d width:%d, height:%d, size:%d", data->type, data->width, data->height, data->size);
+                SUBTITLE_LOGI("onSubtitleDataEvent, type:%d width:%d, height:%d, size:%d", data->type, data->width, data->height, data->size);
                 mProxyHandler->onSubtitleDisplayNotify(parcel);
 
                 // some customer do not want the whole subtitle data
@@ -164,7 +165,7 @@ void AndroidCallbackMessageQueue::handleMessage(const Message& message) {
                     parcel.bodyInt.resize(2);
                     parcel.bodyInt[0] = data->width;
                     parcel.bodyInt[1] = data->height;
-                    ALOGD("onSubtitleDataEvent EVENT_ON_SUBTITLE_DIMENSION_CALLBACK:");
+                    SUBTITLE_LOGI("onSubtitleDataEvent EVENT_ON_SUBTITLE_DIMENSION_CALLBACK:");
                     mProxyHandler->onSubtitleEventNotify(parcel) ;
                 }*/
 
@@ -256,7 +257,7 @@ bool AndroidCallbackMessageQueue::postDisplayData(const char *data,  int type,
                 mem  = HidlMemory::getInstance(_mem);
                 sp<IMemory> memory = mapMemory(_mem);
                 if (memory == NULL) {
-                    ALOGE("map Memory Failed!!");
+                    SUBTITLE_LOGE("map Memory Failed!!");
                     return; // we may need  status!
                 }
 
@@ -265,7 +266,7 @@ bool AndroidCallbackMessageQueue::postDisplayData(const char *data,  int type,
                 memory->commit();
                 allocRes = true;
             } else {
-                ALOGE("alloc memory Fail");
+                SUBTITLE_LOGE("alloc memory Fail");
             }
         });
 
@@ -286,11 +287,11 @@ bool AndroidCallbackMessageQueue::postDisplayData(const char *data,  int type,
         mSubtitleData.push_back(std::move(subtitleData));
         mLooper->sendMessage(this, Message(MSG_CHECK_SUBDATA));
 
-    ALOGD(" in postDisplayData:%s type:%d, width=%d, height=%d size=%d objectSegmentId=%d",
+    SUBTITLE_LOGI(" in postDisplayData:%s type:%d, width=%d, height=%d size=%d objectSegmentId=%d",
         __func__, type,  width, height, size, objectSegmentId);
 
     } else {
-        ALOGE("Fail to process hidl memory!!");
+        SUBTITLE_LOGE("Fail to process hidl memory!!");
     }
 
 

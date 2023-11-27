@@ -29,7 +29,7 @@
 #include "TextSubtitle.h"
 #include "StreamReader.h"
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 TextSubtitle::TextSubtitle(std::shared_ptr<DataSource> source) {
     mSource = source;
@@ -44,7 +44,7 @@ bool TextSubtitle::decodeSubtitles(int idxSubTrackId) {
 
     mIdxSubTrackId = idxSubTrackId;
 
-    ALOGD("decodeSubtitles....");
+    SUBTITLE_LOGI("decodeSubtitles....");
     while (true) {
 
         std::shared_ptr<ExtSubItem> item = this->decodedItem();
@@ -71,7 +71,7 @@ std::shared_ptr<AML_SPUVAR> TextSubtitle::popDecodedItem() {
     if (totalItems() <= 0) {
         return nullptr;
     }
-    ALOGD("TextSubtitle::popDecodedItem");
+    SUBTITLE_LOGI("TextSubtitle::popDecodedItem");
     std::shared_ptr<ExtSubItem> item = mSubData.subtitles.front();
     mSubData.subtitles.pop_front();
     std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
@@ -102,11 +102,11 @@ int TextSubtitle::totalItems() {
 
 void TextSubtitle::dump(int fd, const char *prefix) {
     if (fd <= 0) {
-        ALOGD("Total: %d", mSubData.subtitles.size());
+        SUBTITLE_LOGI("Total: %d", mSubData.subtitles.size());
         for (auto i : mSubData.subtitles) {
-            ALOGD("[%08lld:%08lld]", sub_pts2ms(i->start), sub_pts2ms(i->end));
+            SUBTITLE_LOGI("[%08lld:%08lld]", sub_pts2ms(i->start), sub_pts2ms(i->end));
             for (auto s :i->lines) {
-                ALOGD("    %s", s.c_str());
+                SUBTITLE_LOGI("    %s", s.c_str());
             }
         }
     } else {

@@ -27,7 +27,7 @@
 #define LOG_TAG "Mircodvd"
 
 #include "Mircodvd.h"
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 
 Mircodvd::Mircodvd(std::shared_ptr<DataSource> source): TextSubtitle(source) {
@@ -41,12 +41,12 @@ Mircodvd::~Mircodvd() {
 std::shared_ptr<ExtSubItem> Mircodvd::decodedItem() {
     char *line = (char *)MALLOC(LINE_LEN+1);
     if (!line) {
-        ALOGE("[%s::%d] line malloc error!\n", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGE("[%s::%d] line malloc error!\n", __FUNCTION__, __LINE__);
         return nullptr;
     }
     char *line2 = (char *)MALLOC(LINE_LEN);
     if (!line2) {
-        ALOGE("[%s::%d] line2 malloc error!\n", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGE("[%s::%d] line2 malloc error!\n", __FUNCTION__, __LINE__);
         free(line);
         return nullptr;
     }

@@ -42,7 +42,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include <am_mem.h>
 
@@ -87,7 +87,7 @@ static void thread_init(void)
     th = malloc(sizeof(AM_Thread_t));
     if (!th)
     {
-        ALOGE("not enough memory");
+        SUBTITLE_LOGE("not enough memory");
         return;
     }
 
@@ -103,7 +103,7 @@ static void thread_init(void)
 
     threads = th;
 
-    ALOGE("Register thread \"main\"");
+    SUBTITLE_LOGE("Register thread \"main\"");
 }
 
 static void thread_remove(AM_Thread_t *th)
@@ -132,7 +132,7 @@ static void* thread_entry(void *arg)
     th->thread = pthread_self();
     pthread_mutex_unlock(&lock);
 
-    ALOGE("Register thread \"%s\" %p", th->name, (void*)th->thread);
+    SUBTITLE_LOGE("Register thread \"%s\" %p", th->name, (void*)th->thread);
 
     r = th->entry(th->arg);
 
@@ -182,7 +182,7 @@ int AM_pthread_create_name(pthread_t *thread,
     th = malloc(sizeof(AM_Thread_t));
     if (!th)
     {
-        ALOGE("not enough memory");
+        SUBTITLE_LOGE("not enough memory");
         return -1;
     }
 
@@ -205,7 +205,7 @@ int AM_pthread_create_name(pthread_t *thread,
     ret = pthread_create(thread, attr, thread_entry, th);
     if (ret)
     {
-        ALOGE("create thread failed");
+        SUBTITLE_LOGE("create thread failed");
         pthread_mutex_lock(&lock);
         thread_remove(th);
         pthread_mutex_unlock(&lock);
@@ -231,7 +231,7 @@ void AM_pthread_exit(void *r)
     if (th)
         thread_remove(th);
     else
-        ALOGE("thread %p is not registered", (void*)pthread_self());
+        SUBTITLE_LOGE("thread %p is not registered", (void*)pthread_self());
 
     pthread_mutex_unlock(&lock);
 
@@ -264,7 +264,7 @@ int AM_pthread_enter(const char *file, const char *func, int line)
             f = realloc(th->frame, sizeof(AM_ThreadFrame_t)*size);
             if (!f)
             {
-                ALOGE("not enough memory");
+                SUBTITLE_LOGE("not enough memory");
                 ret = -1;
                 goto error;
             }
@@ -279,7 +279,7 @@ int AM_pthread_enter(const char *file, const char *func, int line)
     }
     else
     {
-        ALOGE("thread %p is not registered", (void*)pthread_self());
+        SUBTITLE_LOGE("thread %p is not registered", (void*)pthread_self());
         ret = -1;
     }
 error:
@@ -305,13 +305,13 @@ int AM_pthread_leave(const char *file, const char *func, int line)
     if (th)
     {
         if (!th->frame_top)
-            ALOGE("AM_pthread_enter and AM_pthread_leave mismatch");
+            SUBTITLE_LOGE("AM_pthread_enter and AM_pthread_leave mismatch");
         else
             th->frame_top--;
     }
     else
     {
-        ALOGE("thread %p is not registered", (void*)pthread_self());
+        SUBTITLE_LOGE("thread %p is not registered", (void*)pthread_self());
     }
 
     pthread_mutex_unlock(&lock);

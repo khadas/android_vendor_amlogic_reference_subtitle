@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <functional>
 #include <mutex>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/CallStack.h>
 #include <future>
 
@@ -88,13 +88,13 @@ static void cc_rating_cb (AM_CC_Handle_t handle, vbi_rating *rating) {
     if (parser != nullptr) {
         int data = 0;
         data = rating->auth<<16|rating->id<<8| rating->dlsv;
-        ALOGD("CC_RATING_CB: auth: %d id:%d dlsv:%d", rating->auth, rating->id, rating->dlsv);
+        SUBTITLE_LOGI("CC_RATING_CB: auth: %d id:%d dlsv:%d", rating->auth, rating->id, rating->dlsv);
         parser->notifyChannelState(CC_EVENT_VCHIP_AUTH, data);
     }
 }
 
 static void q_tone_data_cb(AM_CC_Handle_t handle, char *buffer, int size) {
-    ALOGD("q_tone_data_cb data:%s, size:%d", buffer ,size);
+    SUBTITLE_LOGI("q_tone_data_cb data:%s, size:%d", buffer ,size);
     std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
     spu->spu_data = (unsigned char *)malloc(size);
     memset(spu->spu_data, 0, size);
@@ -112,7 +112,7 @@ static void q_tone_data_cb(AM_CC_Handle_t handle, char *buffer, int size) {
             spu->isImmediatePresent = true;
             parser->addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
         } else {
-            ALOGD("Report json string to a deleted cc parser!");
+            SUBTITLE_LOGI("Report json string to a deleted cc parser!");
         }
     }
 
@@ -127,11 +127,11 @@ static void cc_data_cb(AM_CC_Handle_t handle, int mask) {
         if (parser != nullptr) {
             parser->notifyChannelState(CC_EVENT_VCHIP_FLAG, mask);
         }
-        ALOGD("CC_DATA_CB: mask: %d lastMask:%d", mask, gHandle.mBackupMask);
+        SUBTITLE_LOGI("CC_DATA_CB: mask: %d lastMask:%d", mask, gHandle.mBackupMask);
         for (int i = 0; i<15; i++) {
             unsigned int curr = (mask >> i) & 0x1;
             unsigned int last = (gHandle.mBackupMask >> i) & 0x1;
-            ALOGD("CC_DATA_CB: curr: %d last:%d,index:%d", curr, last,i);
+            SUBTITLE_LOGI("CC_DATA_CB: curr: %d last:%d,index:%d", curr, last,i);
 
             if (curr != last) {
                 std::unique_lock<std::mutex> autolock(gLock);
@@ -153,7 +153,7 @@ static void cc_data_cb(AM_CC_Handle_t handle, int mask) {
 void json_update_cb(AM_CC_Handle_t handle) {
     (void)handle;
 
-    ALOGI("@@@@@@ cc json string: %s", ClosedCaptionParser::sJsonStr);
+    SUBTITLE_LOGI("@@@@@@ cc json string: %s", ClosedCaptionParser::sJsonStr);
     int mJsonLen = strlen(ClosedCaptionParser::sJsonStr);
     std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
     spu->spu_data = (unsigned char *)malloc(mJsonLen);
@@ -171,7 +171,7 @@ void json_update_cb(AM_CC_Handle_t handle) {
             spu->isImmediatePresent = true;
             parser->addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
         } else {
-            ALOGD("Report json string to a deleted cc parser!");
+            SUBTITLE_LOGI("Report json string to a deleted cc parser!");
         }
     }
     //saveJsonStr(ClosedCaptionParser::gJsonStr);
@@ -185,7 +185,7 @@ void ClosedCaptionParser::notifyAvailable(int avil) {
 
 void ClosedCaptionParser::notifyChannelState(int stat, int channelId) {
     if (mNotifier != nullptr) {
-        ALOGD("CC_DATA_CB: %d %d", stat, channelId);
+        SUBTITLE_LOGI("CC_DATA_CB: %d %d", stat, channelId);
         mNotifier->onSubtitleDataEvent(stat, channelId);
     }
 }
@@ -198,7 +198,7 @@ ClosedCaptionParser *ClosedCaptionParser::getCurrentInstance() {
 }
 
 ClosedCaptionParser::ClosedCaptionParser(std::shared_ptr<DataSource> source) {
-    ALOGI("creat ClosedCaption parser");
+    SUBTITLE_LOGI("creat ClosedCaption parser");
     mDataSource = source;
     mParseType = TYPE_SUBTITLE_CLOSED_CAPTION;
 
@@ -208,7 +208,7 @@ ClosedCaptionParser::ClosedCaptionParser(std::shared_ptr<DataSource> source) {
 }
 
 ClosedCaptionParser::~ClosedCaptionParser() {
-    ALOGI("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     {
         std::unique_lock<std::mutex> autolock(gLock);
         sInstance = nullptr;
@@ -228,7 +228,7 @@ bool ClosedCaptionParser::updateParameter(int type, void *data) {
       mLang = strdup(cc_param->lang);
   }
   //mVfmt = cc_param->vfmt;
-  ALOGI("@@@@@@ updateParameter mChannelId: %d, mVfmt:%d", mChannelId, mVfmt);
+  SUBTITLE_LOGI("@@@@@@ updateParameter mChannelId: %d, mVfmt:%d", mChannelId, mVfmt);
   return true;
 }
 
@@ -258,7 +258,7 @@ int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_c
 
     setDvbDebugLogLevel();
 
-    ALOGI("start cc: vfmt %d caption %d, fgc %d, bgc %d, fgo %d, bgo %d, fsize %d, fstyle %d mMediaSyncId:%d",
+    SUBTITLE_LOGI("start cc: vfmt %d caption %d, fgc %d, bgc %d, fgo %d, bgo %d, fsize %d, fstyle %d mMediaSyncId:%d",
             vfmt, caption, fg_color, bg_color, fg_opacity, bg_opacity, font_size, font_style, mMediaSyncId);
 
     memset(&cc_para, 0, sizeof(cc_para));
@@ -298,7 +298,7 @@ int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_c
     spara.user_options.font_size   = (AM_CC_FontSize_t)font_size;
     spara.user_options.font_style  = (AM_CC_FontStyle_t)font_style;
 
-    ALOGD("%s %s", mLang, cc_para.lang);
+    SUBTITLE_LOGI("%s %s", mLang, cc_para.lang);
     ret = AM_CC_Create(&cc_para, &mCcContext->cc_handle);
     if (ret != AM_SUCCESS) {
         goto error;
@@ -308,18 +308,18 @@ int ClosedCaptionParser::startAtscCc(int source, int vfmt, int caption, int fg_c
     if (ret != AM_SUCCESS) {
         goto error;
     }
-    ALOGI("start cc successfully!");
+    SUBTITLE_LOGI("start cc successfully!");
     return 0;
 error:
     if (mCcContext->cc_handle != NULL) {
         AM_CC_Destroy(mCcContext->cc_handle);
     }
-    ALOGI("start cc failed!");
+    SUBTITLE_LOGI("start cc failed!");
     return -1;
 }
 
 int ClosedCaptionParser::stopAmlCC() {
-    ALOGI("stop cc");
+    SUBTITLE_LOGI("stop cc");
     AM_CC_Destroy(mCcContext->cc_handle);
     pthread_mutex_lock(&mCcContext->lock);
     pthread_mutex_unlock(&mCcContext->lock);
@@ -342,7 +342,7 @@ int ClosedCaptionParser::startAmlCC() {
         sInstance = this;
     }
 
-    ALOGI(" start cc source:%d, channel:%d, mvfmt:%d", source, channel, mVfmt);
+    SUBTITLE_LOGI(" start cc source:%d, channel:%d, mvfmt:%d", source, channel, mVfmt);
     startAtscCc(source, mVfmt, channel, 0, 0, 0, 0, 0, 0);
 
     return 0;

@@ -6,7 +6,7 @@
 #include <SkPaint.h>
 #include <SkTypeface.h>
 
-#include "MyLog.h"
+#include "SubtitleLog.h"
 // TODO: maybe a Drawer and inherited xxDrawer?
 
 class TextDrawer {

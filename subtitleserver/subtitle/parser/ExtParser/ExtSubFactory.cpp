@@ -67,18 +67,18 @@ int ExtSubFactory::detect(std::shared_ptr<DataSource> source) {
 
     std::shared_ptr<ExtSubStreamReader> reader = std::shared_ptr<ExtSubStreamReader>(new ExtSubStreamReader(0, source));
     if (reader == NULL) {
-        ALOGD("can't get ext subtitle format");
+        SUBTITLE_LOGI("can't get ext subtitle format");
         return SUB_INVALID;
     }
 
 
     while (maxLineDetect-- > 0) {
-        ALOGD("%d", maxLineDetect);
+        SUBTITLE_LOGI("%d", maxLineDetect);
 
         if (!reader->getLine(line)) {
             return SUB_INVALID;
         }
-        ALOGD("%s", line);
+        SUBTITLE_LOGI("%s", line);
         if (sscanf(line, "{%d}{%d}", &i, &i) == 2) {
             return SUB_MICRODVD;
         }
@@ -198,7 +198,7 @@ int ExtSubFactory::detect(std::shared_ptr<DataSource> source) {
 // TODO: more....
 std::shared_ptr<TextSubtitle> ExtSubFactory::create(std::shared_ptr<DataSource> source) {
     int format = detect(source);
-    ALOGD("detect ext subtitle format = %d", format);
+    SUBTITLE_LOGI("detect ext subtitle format = %d", format);
 
    switch (format) {
 
@@ -269,7 +269,7 @@ std::shared_ptr<TextSubtitle> ExtSubFactory::create(std::shared_ptr<DataSource> 
         return std::shared_ptr<TextSubtitle>(new VobSubIndex(source));
 
         default:
-            ALOGD("ext subtitle format is invalid! format = %d", format);
+            SUBTITLE_LOGI("ext subtitle format is invalid! format = %d", format);
             return NULL;
     }
     return NULL;

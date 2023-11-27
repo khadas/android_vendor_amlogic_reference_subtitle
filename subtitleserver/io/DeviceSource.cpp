@@ -36,7 +36,7 @@
 #include <pthread.h>
 #include <string>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/CallStack.h>
 
 #include "DeviceSource.h"
@@ -74,7 +74,7 @@ static inline unsigned long sysfsReadInt(const char *path, int base) {
         if (c > 0) val = strtoul(bcmd, NULL, base);
         ::close(fd);
     } else {
-        ALOGE("unable to open file %s,err: %s", path, strerror(errno));
+        SUBTITLE_LOGE("unable to open file %s,err: %s", path, strerror(errno));
     }
     return val;
 }
@@ -85,11 +85,11 @@ DeviceSource::DeviceSource() {
     mNeedDumpSource = false;
     mDumpFd = -1;
     mRdFd = ::open(SUBTITLE_READ_DEVICE.c_str(), O_RDONLY);
-    ALOGD("DeviceSource: %s=%d", SUBTITLE_READ_DEVICE.c_str(), mRdFd);
+    SUBTITLE_LOGI("DeviceSource: %s=%d", SUBTITLE_READ_DEVICE.c_str(), mRdFd);
 }
 
 DeviceSource::~DeviceSource() {
-    ALOGD("~DeviceSource: %s=%d", SUBTITLE_READ_DEVICE.c_str(), mRdFd);
+    SUBTITLE_LOGI("~DeviceSource: %s=%d", SUBTITLE_READ_DEVICE.c_str(), mRdFd);
 
     mExitRequested = true;
     if (mRenderTimeThread != nullptr) {
@@ -142,7 +142,7 @@ void DeviceSource::loopRenderTime() {
             auto wk_listener = (*it);
 
             if (wk_listener.expired()) {
-                ALOGV("[threadLoop] lstn null.\n");
+                SUBTITLE_LOGI("[threadLoop] lstn null.\n");
                 continue;
             }
 
@@ -150,7 +150,7 @@ void DeviceSource::loopRenderTime() {
 
             static int i = 0;
             if (i++%300 == 0) {
-                ALOGD("read pts: %ld %lu", value, value);
+                SUBTITLE_LOGI("read pts: %ld %lu", value, value);
             }
             if (!mExitRequested) {
                 if (auto lstn = wk_listener.lock()) {
@@ -182,7 +182,7 @@ void DeviceSource::loopDriverData() {
 
 bool DeviceSource::start() {
     if (E_SOURCE_STARTED == mState) {
-        ALOGE("already stated");
+        SUBTITLE_LOGE("already stated");
         return false;
     }
     mState = E_SOURCE_STARTED;
@@ -250,7 +250,7 @@ size_t DeviceSource::readDriverData(void *buffer, size_t size) {
     if (mNeedDumpSource) {
         if (mDumpFd == -1) {
             mDumpFd = ::open("/data/local/traces/cur_sub.dump", O_RDWR | O_CREAT, 0666);
-            ALOGD("need dump Source: mDumpFd=%d %d", mDumpFd, errno);
+            SUBTITLE_LOGI("need dump Source: mDumpFd=%d %d", mDumpFd, errno);
         }
 
         if (mDumpFd > 0) {
@@ -276,10 +276,10 @@ size_t DeviceSource::read(void *buffer, size_t size) {
     while (read != size && mState == E_SOURCE_STARTED) {
         if (mCurrentItem != nullptr && !mCurrentItem->isEmpty()) {
             read += mCurrentItem->read_l(((char *)buffer+read), size-read);
-            //ALOGD("read:%d,size:%d", read, size);
+            //SUBTITLE_LOGI("read:%d,size:%d", read, size);
             if (read == size) return read;
         } else {
-            //ALOGD("mCurrentItem null, pop next buffer item");
+            //SUBTITLE_LOGI("mCurrentItem null, pop next buffer item");
             mCurrentItem = mSegment->pop();
         }
     }

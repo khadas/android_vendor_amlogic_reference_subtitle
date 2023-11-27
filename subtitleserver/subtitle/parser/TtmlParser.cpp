@@ -51,14 +51,14 @@ bool static inline isMore32Bit(int64_t pts) {
 
 static void save2BitmapFile(const char *filename, uint32_t *bitmap, int w, int h)
 {
-    ALOGI("png_save2:%s\n",filename);
+    SUBTITLE_LOGI("png_save2:%s\n",filename);
     FILE *f;
     char fname[40];
 
     snprintf(fname, sizeof(fname), "%s.bmp", filename);
     f = fopen(fname, "w");
     if (!f) {
-        ALOGE("Error cannot open file %s!", fname);
+        SUBTITLE_LOGE("Error cannot open file %s!", fname);
         return;
     }
     fprintf(f, "P6\n%d %d\n%d\n", w, h, 255);
@@ -80,19 +80,19 @@ static int64_t ttml_parse_timecode(const char * beginTimeString, const char * en
             endHours = 0, endMinutes = 0, endSeconds = 0, endMilliseconds = 0,
             time = 0;
 
-  ALOGI("%s begin time string: %s, end time string: %s\n",__FUNCTION__, beginTimeString, endTimeString);
+  SUBTITLE_LOGI("%s begin time string: %s, end time string: %s\n",__FUNCTION__, beginTimeString, endTimeString);
   bool beginSuccess = sscanf(beginTimeString, "%d:%d:%d.%d", &beginHours, &beginMinutes, &beginSeconds, &beginMilliseconds) == 4;
   bool endSuccess = sscanf(endTimeString, "%d:%d:%d.%d", &endHours, &endMinutes, &endSeconds, &endMilliseconds) == 4;
   if (!beginSuccess || beginHours < 0 || beginHours > 23 || beginMinutes < 0 || beginMinutes > 59 || beginSeconds < 0 || beginSeconds > 59 || beginMilliseconds < 0 || beginMilliseconds > 999) {
-    ALOGE ("%s invalid begin time string.", __FUNCTION__, beginTimeString);
+    SUBTITLE_LOGE ("%s invalid begin time string.", __FUNCTION__, beginTimeString);
   }
 
   if (!endSuccess || endHours < 0 || endHours > 23 || endMinutes < 0 || endMinutes > 59 || endSeconds < 0 || endSeconds > 59 || endMilliseconds < 0 || endMilliseconds > 999) {
-    ALOGE ("%s invalid end time string.", __FUNCTION__, endTimeString);
+    SUBTITLE_LOGE ("%s invalid end time string.", __FUNCTION__, endTimeString);
   }
 
   time = ((endHours - beginHours) * 3600 + (endMinutes - beginMinutes) * 60 + (endSeconds - beginSeconds) ) * 1000+ (endMilliseconds - beginMilliseconds);
-  ALOGI("%s time:%lld   end\n",__FUNCTION__, time);
+  SUBTITLE_LOGI("%s time:%lld   end\n",__FUNCTION__, time);
   return time;
 }
 
@@ -128,7 +128,7 @@ TtmlParser *TtmlParser::getCurrentInstance() {
 }
 
 TtmlParser::~TtmlParser() {
-    ALOGI("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     stopParser();
     sInstance = nullptr;
 
@@ -149,7 +149,7 @@ TtmlParser::~TtmlParser() {
 }
 
 static inline int generateNormalDisplay(AVSubtitleRect *subRect, unsigned char *des, uint32_t *src, int width, int height) {
-    ALOGE(" generateNormalDisplay width = %d, height=%d\n",width, height);
+    SUBTITLE_LOGE(" generateNormalDisplay width = %d, height=%d\n",width, height);
     int mt =0, mb =0;
     int ret = -1;
     TtmlParser *parser = TtmlParser::getCurrentInstance();
@@ -194,7 +194,7 @@ int TtmlParser::initContext() {
     std::unique_lock<std::mutex> autolock(mMutex);
     mContext = new TtmlContext();
     if (!mContext) {
-        ALOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGE("[%s::%d]malloc error! \n", __FUNCTION__, __LINE__);
     }
     mContext->formatId = 0;
     mContext->pts = AV_NOPTS_VALUE;
@@ -229,17 +229,17 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
     for (int i = 0; i<bufSize; i++) {
         buf[i] = srcData[i];
     }
-    ALOGD("%s bufSize:%d buf:%s ", __FUNCTION__, bufSize, buf);
+    SUBTITLE_LOGI("%s bufSize:%d buf:%s ", __FUNCTION__, bufSize, buf);
 
     tinyxml2::XMLDocument doc;
     int ret = doc.Parse(buf, bufSize);
     if (ret != tinyxml2::XML_SUCCESS) {
-        ALOGD("%s ret:%d Failed to parse XML", __FUNCTION__, ret);
+        SUBTITLE_LOGI("%s ret:%d Failed to parse XML", __FUNCTION__, ret);
         return -1;
     }
     tinyxml2::XMLElement* root = doc.RootElement();
     if (root == NULL) {
-        ALOGD("%s Failed to load file: No root element.", __FUNCTION__);
+        SUBTITLE_LOGI("%s Failed to load file: No root element.", __FUNCTION__);
         doc.Clear();
         return -1;
     }
@@ -249,14 +249,14 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
     tinyxml2::XMLElement *head = root->FirstChildElement("head");
     if (head == nullptr) head = root->FirstChildElement("tt:head");
     if (head == nullptr) {
-        ALOGD("%s Error. no head found!", __FUNCTION__);
+        SUBTITLE_LOGI("%s Error. no head found!", __FUNCTION__);
         doc.Clear();
         return -1;
     }
     tinyxml2::XMLElement *headLayout = head->FirstChildElement("layout");
     if (headLayout == nullptr) headLayout = head->FirstChildElement("tt:layout");
     if (headLayout == nullptr) {
-        ALOGD("%s Error. no head layout found!", __FUNCTION__);
+        SUBTITLE_LOGI("%s Error. no head layout found!", __FUNCTION__);
         doc.Clear();
         return -1;
     }
@@ -265,7 +265,7 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
     tinyxml2::XMLElement *headLayoutRegion = headLayout->FirstChildElement("region");
     if (headLayoutRegion == nullptr) headLayoutRegion = headLayout->FirstChildElement("tt:region");
     if (headLayoutRegion == nullptr) {
-        ALOGD("%s Error. no head layout region found!", __FUNCTION__);
+        SUBTITLE_LOGI("%s Error. no head layout region found!", __FUNCTION__);
         doc.Clear();
         return -1;
     }
@@ -275,7 +275,7 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
     tinyxml2::XMLElement *body = root->FirstChildElement("body");
     if (body == nullptr) body = root->FirstChildElement("tt:body");
     if (body == nullptr) {
-        ALOGD("%s Error. no body found!", __FUNCTION__);
+        SUBTITLE_LOGI("%s Error. no body found!", __FUNCTION__);
         doc.Clear();
         return -1;
     }
@@ -283,7 +283,7 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
     tinyxml2::XMLElement *bodyDiv = body->FirstChildElement("div");
     if (bodyDiv == nullptr) bodyDiv = body->FirstChildElement("tt:div");
     if (bodyDiv == nullptr) {
-        ALOGD("%s Error. no body div found!", __FUNCTION__);
+        SUBTITLE_LOGI("%s Error. no body div found!", __FUNCTION__);
         doc.Clear();
         return -1;
     }
@@ -291,7 +291,7 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
     tinyxml2::XMLElement *bodyDivP = bodyDiv->FirstChildElement("p");
     if (bodyDivP == nullptr) bodyDivP = bodyDiv->FirstChildElement("tt:p");
     if (bodyDivP == nullptr) {
-        ALOGD("%s Error. no body div p found!", __FUNCTION__);
+        SUBTITLE_LOGI("%s Error. no body div p found!", __FUNCTION__);
         doc.Clear();
         return -1;
     }
@@ -319,7 +319,7 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
         tinyxml2::XMLElement *divPSpan = bodyDivP->FirstChildElement("span");
         if (divPSpan == nullptr) divPSpan = bodyDivP->FirstChildElement("tt:span");
         if (divPSpan == nullptr) {
-            ALOGD("%s Error. no divPSpan found!", __FUNCTION__);
+            SUBTITLE_LOGI("%s Error. no divPSpan found!", __FUNCTION__);
             doc.Clear();
             return -1;
         }
@@ -327,18 +327,18 @@ int TtmlParser::TtmlDecodeFrame(std::shared_ptr<AML_SPUVAR> spu, char *srcData, 
         tinyxml2::XMLNode *childNodeBodyDivP = bodyDivP->FirstChild();
         while (divPSpan != nullptr) {
             const tinyxml2::XMLAttribute *divPSpanStyleAttribute = divPSpan->FindAttribute("style");
-            ALOGD("%s style=%s text:%s", __FUNCTION__, divPSpanStyleAttribute->Value(), divPSpan->GetText());
+            SUBTITLE_LOGI("%s style=%s text:%s", __FUNCTION__, divPSpanStyleAttribute->Value(), divPSpan->GetText());
             if (childNodeBodyDivP && (strcmp((childNodeBodyDivP->ToElement())->Value(), "tt:br") == 0)) {
                 tempString = tempString + "\n" + std::string(divPSpan->GetText());
             } else {
                 tempString = tempString + std::string(divPSpan->GetText());
             }
-            ALOGD("%s tempString:%s", __FUNCTION__, tempString.c_str());
+            SUBTITLE_LOGI("%s tempString:%s", __FUNCTION__, tempString.c_str());
             divPSpan = divPSpan->NextSiblingElement("tt:span");
             childNodeBodyDivP = childNodeBodyDivP->NextSibling();
         }
 
-        ALOGD("%s Region: xml:id=%s tts:extent=%s tts:origin=%s tts:padding=%s tts:displayAlign=%s tts:writingMode=%s Div: xml:id=%s style=%s  ttp: begin=%s end=%s style=%s region=%s xml:id=%s  text=%s", __FUNCTION__,
+        SUBTITLE_LOGI("%s Region: xml:id=%s tts:extent=%s tts:origin=%s tts:padding=%s tts:displayAlign=%s tts:writingMode=%s Div: xml:id=%s style=%s  ttp: begin=%s end=%s style=%s region=%s xml:id=%s  text=%s", __FUNCTION__,
                 regionXmlIdAttribute->Value(),
                 regionTtsExtentAttribute->Value(),
                 regionTtsOriginAttribute->Value(),
@@ -372,7 +372,7 @@ int TtmlParser::getTTMLSpu() {
     char tmpbuf[8] = {0};
     int64_t packetHeader = 0;
 
-    if (mDumpSub) ALOGI("enter get_dvb_ttml_spu\n");
+    if (mDumpSub) SUBTITLE_LOGI("enter get_dvb_ttml_spu\n");
     int ret = -1;
 
     while (mDataSource->read(tmpbuf, 1) == 1) {
@@ -384,7 +384,7 @@ int TtmlParser::getTTMLSpu() {
         spu->sync_bytes = AML_PARSER_SYNC_WORD;
 
         packetHeader = ((packetHeader<<8) & 0x000000ffffffffff) | tmpbuf[0];
-        if (mDumpSub) ALOGI("## get_dvb_spu %x, %llx,-------------\n",tmpbuf[0], packetHeader);
+        if (mDumpSub) SUBTITLE_LOGI("## get_dvb_spu %x, %llx,-------------\n",tmpbuf[0], packetHeader);
 
         if ((packetHeader & 0xffffffff) == 0x000001bd) {
             ret = hwDemuxParse(spu);
@@ -414,7 +414,7 @@ int TtmlParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             if (mDataSource->read(tmpbuf, 3) == 3) {
                 packetLen -= 3;
                 pesHeaderLen = tmpbuf[2];
-                ALOGI("get_dvb_ttml spu-packetLen:%d, pesHeaderLen:%d\n", packetLen,pesHeaderLen);
+                SUBTITLE_LOGI("get_dvb_ttml spu-packetLen:%d, pesHeaderLen:%d\n", packetLen,pesHeaderLen);
 
                 if (packetLen >= pesHeaderLen) {
                     if ((tmpbuf[1] & 0xc0) == 0x80) {
@@ -459,7 +459,7 @@ int TtmlParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
         if (needSkipData) {
             if (packetLen < 0 || packetLen > INT_MAX) {
-                ALOGE("illegal packetLen!!!\n");
+                SUBTITLE_LOGE("illegal packetLen!!!\n");
                 return false;
             }
             for (int iii = 0; iii < packetLen; iii++) {
@@ -471,46 +471,46 @@ int TtmlParser::hwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
         } else if (packetLen > 0) {
             char *buf = NULL;
             if ((packetLen) > (OSD_HALF_SIZE * 4)) {
-                ALOGE("dvb packet is too big\n\n");
+                SUBTITLE_LOGE("dvb packet is too big\n\n");
                 return -1;
             }
             spu->subtitle_type = TYPE_SUBTITLE_TTML;
             spu->pts = dvbPts;
             if (isMore32Bit(spu->pts) && !isMore32Bit(mDataSource->getSyncTime())) {
-                ALOGD("SUB PTS is greater than 32 bits, before subpts: %lld, vpts:%lld", spu->pts, mDataSource->getSyncTime());
+                SUBTITLE_LOGI("SUB PTS is greater than 32 bits, before subpts: %lld, vpts:%lld", spu->pts, mDataSource->getSyncTime());
                 spu->pts &= TSYNC_32_BIT_PTS;
             }
             //If gap time is large than 9 secs, think pts skip,notify info
             if (abs(mDataSource->getSyncTime() - spu->pts) > 9*90000) {
-                ALOGE("[%s::%d]pts skip,vpts:%lld, spu->pts:%lld notify time error!\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime(), spu->pts);
+                SUBTITLE_LOGE("[%s::%d]pts skip,vpts:%lld, spu->pts:%lld notify time error!\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime(), spu->pts);
             }
 
-            ALOGI("[%s::%d]pts ---------------,vpts:%lld, spu->pts:%lld\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime(), spu->pts);
+            SUBTITLE_LOGI("[%s::%d]pts ---------------,vpts:%lld, spu->pts:%lld\n", __FUNCTION__, __LINE__, mDataSource->getSyncTime(), spu->pts);
 
             buf = (char *)malloc(packetLen);
             if (buf) {
-                ALOGI("packetLen is %d, pts is %llx, delay is %llx\n", packetLen, spu->pts, tempPts);
+                SUBTITLE_LOGI("packetLen is %d, pts is %llx, delay is %llx\n", packetLen, spu->pts, tempPts);
             } else {
-                ALOGI("packetLen buf malloc fail!!!\n");
+                SUBTITLE_LOGI("packetLen buf malloc fail!!!\n");
             }
 
             if (buf) {
                 memset(buf, 0x0, packetLen);
                 if (mDataSource->read(buf, packetLen) == packetLen) {
                     ret = TtmlDecodeFrame(spu, buf, packetLen);
-                    ALOGI(" @@@@@@@hwDemuxParse parse ret:%d", ret);
+                    SUBTITLE_LOGI(" @@@@@@@hwDemuxParse parse ret:%d", ret);
                     if (ret != -1) {
-                        ALOGI("dump-pts-hwdmx!success.\n");
+                        SUBTITLE_LOGI("dump-pts-hwdmx!success.\n");
                         if (buf) free(buf);
                         return 0;
                     } else {
-                        ALOGI("dump-pts-hwdmx!error.\n");
+                        SUBTITLE_LOGI("dump-pts-hwdmx!error.\n");
                         if (buf) free(buf);
                         return -1;
                     }
                 }
-                ALOGI("packetLen buf free=%p\n", buf);
-                ALOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, buf);
+                SUBTITLE_LOGI("packetLen buf free=%p\n", buf);
+                SUBTITLE_LOGI("@@[%s::%d]free ptr=%p\n", __FUNCTION__, __LINE__, buf);
                 free(buf);
             }
         }
@@ -528,7 +528,7 @@ int TtmlParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
     // read package header info
     if (mDataSource->read(tmpbuf, 19) == 19) {
-        if (mDumpSub) ALOGI("## %s get_dvb_spu %x,%x,%x,  %x,%x,%x,  %x,%x,-------------\n",
+        if (mDumpSub) SUBTITLE_LOGI("## %s get_dvb_spu %x,%x,%x,  %x,%x,%x,  %x,%x,-------------\n",
                 __FUNCTION__,
                 tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3],
                 tmpbuf[4], tmpbuf[5], tmpbuf[6], tmpbuf[7]);
@@ -539,8 +539,8 @@ int TtmlParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
         spu->subtitle_type = TYPE_SUBTITLE_TTML;
         spu->pts = dvbPts;
-        if (mDumpSub) ALOGI("## %s spu-> pts:%lld,dvPts:%lld\n", __FUNCTION__, spu->pts, dvbPts);
-        if (mDumpSub) ALOGI("## %s datalen=%d,pts=%llx,delay=%llx,diff=%llx, data: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
+        if (mDumpSub) SUBTITLE_LOGI("## %s spu-> pts:%lld,dvPts:%lld\n", __FUNCTION__, spu->pts, dvbPts);
+        if (mDumpSub) SUBTITLE_LOGI("## %s datalen=%d,pts=%llx,delay=%llx,diff=%llx, data: %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
                 __FUNCTION__, dataLen, dvbPts, spu->m_delay, ptsDiff,
                 tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4],
                 tmpbuf[5], tmpbuf[6], tmpbuf[7], tmpbuf[8], tmpbuf[9],
@@ -548,26 +548,26 @@ int TtmlParser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
 
         data = (char *)malloc(dataLen);
         if (!data) {
-            ALOGE("[%s::%d]malloc error! \n", __FUNCTION__,__LINE__);
+            SUBTITLE_LOGE("[%s::%d]malloc error! \n", __FUNCTION__,__LINE__);
             return -1;
         }
-        if (mDumpSub) ALOGI("@@[%s::%d]malloc ptr=%p, size = %d\n",__FUNCTION__, __LINE__, data, dataLen);
+        if (mDumpSub) SUBTITLE_LOGI("@@[%s::%d]malloc ptr=%p, size = %d\n",__FUNCTION__, __LINE__, data, dataLen);
         memset(data, 0x0, dataLen);
         ret = mDataSource->read(data, dataLen);
-        if (mDumpSub) ALOGI("## ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
+        if (mDumpSub) SUBTITLE_LOGI("## ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
                 ret, dataLen, data[0], data[1], data[2], data[3],
                 data[4], data[5], data[6], data[7]);
 
         ret = TtmlDecodeFrame(spu, data, dataLen);
         if (ret != -1) {
-            if (mDumpSub) ALOGI("dump-pts-swdmx!success pts(%lld) mIndex:%d frame was add\n", spu->pts, mIndex);
+            if (mDumpSub) SUBTITLE_LOGI("dump-pts-swdmx!success pts(%lld) mIndex:%d frame was add\n", spu->pts, mIndex);
             {
                 std::unique_lock<std::mutex> autolock(mMutex);
                 mPendingAction = 1;
                 mCv.notify_all();
             }
         } else {
-            if (mDumpSub) ALOGI("dump-pts-swdmx!error this pts(%lld) frame was abandon\n", spu->pts);
+            if (mDumpSub) SUBTITLE_LOGI("dump-pts-swdmx!error this pts(%lld) frame was abandon\n", spu->pts);
         }
 
         if (data) {
@@ -590,21 +590,21 @@ int TtmlParser::atvHwDemuxParse(std::shared_ptr<AML_SPUVAR> spu) {
             spu->subtitle_type = TYPE_SUBTITLE_TTML;
             data = (char *)malloc(ATV_TTML_DATA_LEN);
             if (!data) {
-                ALOGE("[%s::%d]malloc error! \n", __FUNCTION__,__LINE__);
+                SUBTITLE_LOGE("[%s::%d]malloc error! \n", __FUNCTION__,__LINE__);
                 return -1;
             }
             memset(data, 0x0, ATV_TTML_DATA_LEN);
             ret = mDataSource->read(data, ATV_TTML_DATA_LEN);
-            if (mDumpSub) ALOGI("[%s::%d] ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
+            if (mDumpSub) SUBTITLE_LOGI("[%s::%d] ret=%d,dataLen=%d, %x,%x,%x,%x,%x,%x,%x,%x,---------\n",
                     __FUNCTION__, __LINE__, ret, ATV_TTML_DATA_LEN, data[0], data[1], data[2], data[3],
                     data[4], data[5], data[6], data[7]);
 
             ret = TtmlDecodeFrame(spu, data, ATV_TTML_DATA_LEN);
 
             if (ret != -1 && spu->buffer_size > 0) {
-                if (mDumpSub) ALOGI("[%s::%d]dump-pts-atvHwDmx!success pts(%lld) mIndex:%d frame was add\n", __FUNCTION__,__LINE__, spu->pts, ++mIndex);
+                if (mDumpSub) SUBTITLE_LOGI("[%s::%d]dump-pts-atvHwDmx!success pts(%lld) mIndex:%d frame was add\n", __FUNCTION__,__LINE__, spu->pts, ++mIndex);
             } else {
-                if (mDumpSub) ALOGI("[%s::%d]dump-pts-atvHwDmx!error this pts(%lld) frame was abandon\n", __FUNCTION__,__LINE__, spu->pts);
+                if (mDumpSub) SUBTITLE_LOGI("[%s::%d]dump-pts-atvHwDmx!error this pts(%lld) frame was abandon\n", __FUNCTION__,__LINE__, spu->pts);
             }
 
             if (data) {
@@ -650,7 +650,7 @@ int TtmlParser::getSpu() {
     if (mState == SUB_INIT) {
         mState = SUB_PLAYING;
     } else if (mState == SUB_STOP) {
-        ALOGD(" mState == SUB_STOP \n\n");
+        SUBTITLE_LOGI(" mState == SUB_STOP \n\n");
         return 0;
     }
 

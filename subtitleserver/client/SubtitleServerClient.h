@@ -6,7 +6,7 @@
 #include <utils/Atomic.h>
 #include <utils/String8.h>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include <hidlmemory/mapping.h>
 #include <android/hidl/memory/1.0/IMemory.h>

@@ -28,7 +28,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include <UserDataAfd.h>
 #include "VideoInfo.h"
@@ -37,17 +37,17 @@
 UserDataAfd *UserDataAfd::sInstance = nullptr;
 int UserDataAfd::sNewAfdValue = -1;
 void UserDataAfd::notifyCallerAfdChange(int afd) {
-    //ALOGI("afd_evt_callback, afdValue:%x", afd);
+    //SUBTITLE_LOGI("afd_evt_callback, afdValue:%x", afd);
     if (mNotifier != nullptr) {
         mNotifier->onVideoAfdChange((afd&0x7), mPlayerId);
     }
 }
 
 void UserDataAfd:: setPipId(int mode, int id) {
-    ALOGI("setPipId mode = %d, id = %d\n", mode, id);
+    SUBTITLE_LOGI("setPipId mode = %d, id = %d\n", mode, id);
 
     if (sInstance == nullptr) {
-       ALOGI("Error: setPlayerId sInstance is null");
+       SUBTITLE_LOGI("Error: setPlayerId sInstance is null");
        return;
     }
 
@@ -87,7 +87,7 @@ void afd_evt_callback(long devno, int eventType, void *param, void *userdata) {
     if (instance != nullptr && afdValue != UserDataAfd::sNewAfdValue) {
         instance->notifyCallerAfdChange(afdValue);
         UserDataAfd::sNewAfdValue = afdValue;
-        ALOGI("AFD callback, value:0x%x", UserDataAfd::sNewAfdValue);
+        SUBTITLE_LOGI("AFD callback, value:0x%x", UserDataAfd::sNewAfdValue);
     }
 }
 
@@ -96,14 +96,14 @@ UserDataAfd::UserDataAfd() {
     mPlayerId = -1;
     mMediasyncId = -1;
     mMode = -1;
-    ALOGI("creat UserDataAfd");
+    SUBTITLE_LOGI("creat UserDataAfd");
     sInstance = this;
     mThread = nullptr;
 
 }
 
 UserDataAfd::~UserDataAfd() {
-    ALOGI("~UserDataAfd");
+    SUBTITLE_LOGI("~UserDataAfd");
     sInstance = nullptr;
     mPlayerId = -1;
     stop();
@@ -111,7 +111,7 @@ UserDataAfd::~UserDataAfd() {
 }
 int UserDataAfd::start(ParserEventNotifier *notify)
 {
-    ALOGI("startUserData mPlayerId = %d", mPlayerId);
+    SUBTITLE_LOGI("startUserData mPlayerId = %d", mPlayerId);
 
     // TODO: should impl a real status/notify manner
     std::unique_lock<std::mutex> autolock(mMutex);
@@ -136,12 +136,12 @@ void UserDataAfd::run() {
     para.mediasyncid = mMediasyncId;
     UserDataAfd::sNewAfdValue = -1;
     if (AM_USERDATA_Open(USERDATA_DEVICE_NUM, &para) != AM_SUCCESS) {
-         ALOGI("Cannot open userdata device %d", USERDATA_DEVICE_NUM);
+         SUBTITLE_LOGI("Cannot open userdata device %d", USERDATA_DEVICE_NUM);
          return;
     }
 
     //add notify afd change
-    ALOGI("start afd running mPlayerId = %d",mPlayerId);
+    SUBTITLE_LOGI("start afd running mPlayerId = %d",mPlayerId);
     AM_USERDATA_GetMode(USERDATA_DEVICE_NUM, &mMode);
     AM_USERDATA_SetMode(USERDATA_DEVICE_NUM, mMode | AM_USERDATA_MODE_AFD);
     AM_EVT_Subscribe(USERDATA_DEVICE_NUM, AM_USERDATA_EVT_AFD, afd_evt_callback, NULL);
@@ -149,7 +149,7 @@ void UserDataAfd::run() {
 
 
 int UserDataAfd::stop() {
-    ALOGI("stopUserData");
+    SUBTITLE_LOGI("stopUserData");
     // TODO: should impl a real status/notify manner
     // this is too simple...
     std::unique_lock<std::mutex> autolock(mMutex);

@@ -30,6 +30,7 @@
 
 #include "SubtitleServer.h"
 #include "MemoryLeakTrackUtil.h"
+#include "SubtitleLog.h"
 #include <utils/CallStack.h>
 
 using android::CallStack;
@@ -44,10 +45,10 @@ namespace implementation {
 class FmqReaderImpl : public FmqReader {
 public:
     FmqReaderImpl(DataMQ* dataMQ) : mDataMQ(dataMQ) {
-        ALOGD("%s", __func__);
+        SUBTITLE_LOGI("%s", __func__);
     }
     virtual ~FmqReaderImpl() {
-        ALOGD("%s", __func__);
+        SUBTITLE_LOGI("%s", __func__);
     }
 
     virtual bool pollEvent() {return true;}
@@ -66,7 +67,7 @@ public:
                 if (mDataMQ->readBlocking(buffer, availToRead, 50*1000*1000LL)) {
                     return availToRead;
                 } else {
-                    ALOGE("Error! cannot read data! require:%d avail:%d", size, availToRead);
+                    SUBTITLE_LOGE("Error! cannot read data! require:%d avail:%d", size, availToRead);
                     return -1;
                 }
             }
@@ -113,7 +114,7 @@ std::shared_ptr<SubtitleService> SubtitleServer::getSubtitleServiceLocked(int sI
     if (search != mServiceClients.end()) {
         return search->second;
     } else {
-        ALOGE("Error! cannot found service by id:%x", sId);
+        SUBTITLE_LOGE("Error! cannot found service by id:%x", sId);
     }
 #else
     (void) sId;
@@ -131,7 +132,7 @@ std::shared_ptr<SubtitleService> SubtitleServer::getSubtitleService(int sId) {
 
 // Methods from ISubtitleServer follow.
 Return<void> SubtitleServer::openConnection(openConnection_cb _hidl_cb) {
-    ALOGV("%s ", __func__);
+    SUBTITLE_LOGI("%s ", __func__);
     int sessionId = -1;
     {
         android::AutoMutex _l(mLock);
@@ -143,9 +144,9 @@ Return<void> SubtitleServer::openConnection(openConnection_cb _hidl_cb) {
         //auto p = std::make_pair(sessionId, ss);
         //mClients.insert(p);
         mServiceClients[0] = ss;
-        ALOGD("openConnection: size:%d", mServiceClients.size());
+        SUBTITLE_LOGI("openConnection: size:%d", mServiceClients.size());
         for (int i=0; i<mServiceClients.size(); i++) {
-            ALOGD("client %d-%d: %p", i, mServiceClients.size(), mServiceClients[i].get());
+            SUBTITLE_LOGI("client %d-%d: %p", i, mServiceClients.size(), mServiceClients[i].get());
         }
 
     }
@@ -155,11 +156,11 @@ Return<void> SubtitleServer::openConnection(openConnection_cb _hidl_cb) {
 
 Return<Result> SubtitleServer::closeConnection(int32_t sId) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s sId=%d", __func__, sId);
+    SUBTITLE_LOGI("%s sId=%d", __func__, sId);
 
     //TODO: too simple here! need more condition.
     hide(sId); // for standalone play, need hide!
-    ALOGD("need hide here");
+    SUBTITLE_LOGI("need hide here");
 
 
     android::AutoMutex _l(mLock);
@@ -173,7 +174,7 @@ Return<Result> SubtitleServer::closeConnection(int32_t sId) {
     }
 
     int clientSize = mServiceClients.size();
-    ALOGD("clientSize=%d", clientSize);
+    SUBTITLE_LOGI("clientSize=%d", clientSize);
 #if SUPPORT_MULTI
     for (auto it = mServiceClients.begin(); it != mServiceClients.end();) {
         if (it->first == sId) {
@@ -191,7 +192,7 @@ Return<Result> SubtitleServer::closeConnection(int32_t sId) {
 Return<Result> SubtitleServer:: open(int32_t sId, const hidl_handle& handle, int32_t ioType, OpenType openType) {
     android::AutoMutex _l(mLock);
     std::shared_ptr<SubtitleService>  ss = getSubtitleServiceLocked(sId);
-    ALOGV("%s ss=%p ioType=%d openType:%d", __func__, ss.get(), ioType, openType);
+    SUBTITLE_LOGI("%s ss=%p ioType=%d openType:%d", __func__, ss.get(), ioType, openType);
 
     std::vector<int> fds;
     int idxSubId = -1;
@@ -210,7 +211,7 @@ Return<Result> SubtitleServer:: open(int32_t sId, const hidl_handle& handle, int
 
     auto now = systemTime(SYSTEM_TIME_MONOTONIC);
     const int64_t diff200ms = 200000000LL;
-    ALOGD("mOpenCalled: %d mLastOpenTime=%lld, now=%lld",
+    SUBTITLE_LOGI("mOpenCalled: %d mLastOpenTime=%lld, now=%lld",
             mOpenCalled,  mLastOpenTime, now);
 
     if (ss != nullptr) {
@@ -230,7 +231,7 @@ Return<Result> SubtitleServer:: open(int32_t sId, const hidl_handle& handle, int
         if ((ioType&0xff) == E_SUBTITLE_DEMUX) {
             demuxId = ioType>>16;
             ioType = ioType&0xff;
-            ALOGD("mOpenCalled : demux id= %d, ioType =%d\n", demuxId, ioType);
+            SUBTITLE_LOGI("mOpenCalled : demux id= %d, ioType =%d\n", demuxId, ioType);
             ss->setDemuxId(demuxId);
         }
         bool r = ss->startSubtitle(fds, idxSubId, (SubtitleIOType)ioType, mMessageQueue.get());
@@ -243,13 +244,13 @@ Return<Result> SubtitleServer:: open(int32_t sId, const hidl_handle& handle, int
     }
 
     //if (dupFd != -1) close(dupFd);
-    ALOGD("no valid ss, Should not enter here!");
+    SUBTITLE_LOGI("no valid ss, Should not enter here!");
     return Result::FAIL;
 }
 
 Return<Result> SubtitleServer::close(int32_t sId) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s ss=%p", __func__, ss.get());
+    SUBTITLE_LOGI("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
         bool r = ss->stopSubtitle();
         mOpenCalled = false;
@@ -279,9 +280,9 @@ Return<Result> SubtitleServer::updateVideoPos(int32_t sId, int32_t pos) {
 
 Return<void> SubtitleServer::getTotalTracks(int32_t sId, getTotalTracks_cb _hidl_cb) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s ss=%p", __func__, ss.get());
+    SUBTITLE_LOGI("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
-        ALOGV("%s total=%d", __func__, ss->totalSubtitles());
+        SUBTITLE_LOGI("%s total=%d", __func__, ss->totalSubtitles());
         _hidl_cb(Result::OK, ss->totalSubtitles());
     } else {
         _hidl_cb(Result::FAIL, 1);//-1);
@@ -292,9 +293,9 @@ Return<void> SubtitleServer::getTotalTracks(int32_t sId, getTotalTracks_cb _hidl
 
 Return<void> SubtitleServer::getType(int32_t sId, getType_cb _hidl_cb) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s ss=%p", __func__, ss.get());
+    SUBTITLE_LOGI("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
-        ALOGV("%s subType=%d", __func__, ss->subtitleType());
+        SUBTITLE_LOGI("%s subType=%d", __func__, ss->subtitleType());
         _hidl_cb(Result::OK, ss->subtitleType());
     } else {
         _hidl_cb(Result::FAIL, 1);
@@ -304,7 +305,7 @@ Return<void> SubtitleServer::getType(int32_t sId, getType_cb _hidl_cb) {
 
 Return<void> SubtitleServer::getLanguage(int32_t sId, getLanguage_cb _hidl_cb) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s ss=%p", __func__, ss.get());
+    SUBTITLE_LOGI("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
         _hidl_cb(Result::OK, ss->currentLanguage());
     }
@@ -314,7 +315,7 @@ Return<void> SubtitleServer::getLanguage(int32_t sId, getLanguage_cb _hidl_cb) {
 
 Return<Result> SubtitleServer::setLanguage(int32_t sId, const hidl_string& lang) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s ss=%p setLanguage=%s", __func__, ss.get(), lang.c_str());
+    SUBTITLE_LOGI("%s ss=%p setLanguage=%s", __func__, ss.get(), lang.c_str());
 
     if (ss != nullptr) {
         ss->setLanguage(lang);
@@ -324,7 +325,7 @@ Return<Result> SubtitleServer::setLanguage(int32_t sId, const hidl_string& lang)
 
 Return<Result> SubtitleServer::setSubType(int32_t sId, int32_t type) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s ss=%p subType=%d", __func__, ss.get(), type);
+    SUBTITLE_LOGI("%s ss=%p subType=%d", __func__, ss.get(), type);
 
     if (ss != nullptr) {
         ss->setSubType(type);
@@ -334,7 +335,7 @@ Return<Result> SubtitleServer::setSubType(int32_t sId, int32_t type) {
 
 Return<Result> SubtitleServer::setSubPid(int32_t sId, int32_t pid, int onid, int tsid) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s ss=%p pid=%d", __func__, ss.get(), pid);
+    SUBTITLE_LOGI("%s ss=%p pid=%d", __func__, ss.get(), pid);
     if (ss != nullptr) {
         ss->setSubPid(pid, onid, tsid);
     }
@@ -343,7 +344,7 @@ Return<Result> SubtitleServer::setSubPid(int32_t sId, int32_t pid, int onid, int
 
 Return<Result> SubtitleServer::setPageId(int32_t sId, int32_t pageId) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s ss=%p", __func__, ss.get());
+    SUBTITLE_LOGI("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
         ss->setSubPageId(pageId);
     }
@@ -352,7 +353,7 @@ Return<Result> SubtitleServer::setPageId(int32_t sId, int32_t pageId) {
 
 Return<Result> SubtitleServer::setAncPageId(int32_t sId, int32_t ancPageId) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s ss=%p setAncPageId=%d", __func__, ss.get(), ancPageId);
+    SUBTITLE_LOGI("%s ss=%p setAncPageId=%d", __func__, ss.get(), ancPageId);
     if (ss != nullptr) {
         ss->setSubAncPageId(ancPageId);
     }
@@ -361,7 +362,7 @@ Return<Result> SubtitleServer::setAncPageId(int32_t sId, int32_t ancPageId) {
 
 Return<Result> SubtitleServer::setSecureLevel(int32_t sId, int32_t flag) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(flag);
-    ALOGV("%s ss=%p", __func__, ss.get());
+    SUBTITLE_LOGI("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
         ss->setSecureLevel(flag);
     }
@@ -370,7 +371,7 @@ Return<Result> SubtitleServer::setSecureLevel(int32_t sId, int32_t flag) {
 
 Return<Result> SubtitleServer::setChannelId(int32_t sId, int32_t channelId) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s ss=%p", __func__, ss.get());
+    SUBTITLE_LOGI("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
         ss->setChannelId(channelId);
     }
@@ -379,7 +380,7 @@ Return<Result> SubtitleServer::setChannelId(int32_t sId, int32_t channelId) {
 
 Return<Result> SubtitleServer::setClosedCaptionVfmt(int32_t sId, int32_t vfmt) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGV("%s ss=%p", __func__, ss.get());
+    SUBTITLE_LOGI("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
         ss->setClosedCaptionVfmt(vfmt);
     }
@@ -388,7 +389,7 @@ Return<Result> SubtitleServer::setClosedCaptionVfmt(int32_t sId, int32_t vfmt) {
 
 Return<Result> SubtitleServer::setClosedCaptionLang(int32_t sId, const hidl_string& lang) {
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
-    ALOGD("%s ss=%p", __func__, ss.get());
+    SUBTITLE_LOGI("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
         ss->setClosedCaptionLang(lang.c_str());
     }
@@ -400,7 +401,7 @@ Return<Result> SubtitleServer::ttControl(int32_t sId, int cmd, int magazine, int
     if (ss == nullptr) {
         return Result::FAIL;
     }
-    ALOGV("%s ss=%p cmd=%d", __func__, ss.get(), cmd);
+    SUBTITLE_LOGI("%s ss=%p cmd=%d", __func__, ss.get(), cmd);
 
     bool r = ss->ttControl(cmd, magazine, page, regionId, param);
     return r ? Result::OK : Result::FAIL;
@@ -438,7 +439,7 @@ Return<Result> SubtitleServer::ttGotoPage(int32_t sId, int32_t pageNo, int32_t s
     if (ss == nullptr) {
         return Result::FAIL;
     }
-    ALOGE(" ttGotoPage pageNo=%d, subPageNo=%d",pageNo, subPageNo);
+    SUBTITLE_LOGE(" ttGotoPage pageNo=%d, subPageNo=%d",pageNo, subPageNo);
     ss->ttGotoPage(pageNo, subPageNo);
     return Result::OK;
 }
@@ -451,13 +452,13 @@ Return<Result> SubtitleServer::setPipId(int32_t sId, int32_t mode, int32_t id) {
     if ((1 != mode) && (2 != mode)) {
         return Result::FAIL;
     }
-    ALOGE(" setPipId mode=%d, id=%d",mode, id);
+    SUBTITLE_LOGE(" setPipId mode=%d, id=%d",mode, id);
     ss->setPipId(mode, id);
     return Result::OK;
 }
 
 Return<Result> SubtitleServer::userDataOpen(int32_t sId) {
-    ALOGV("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
     if (ss == nullptr) {
         return Result::FAIL;
@@ -467,7 +468,7 @@ Return<Result> SubtitleServer::userDataOpen(int32_t sId) {
 }
 
 Return<Result> SubtitleServer::userDataClose(int32_t sId) {
-    ALOGV("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     std::shared_ptr<SubtitleService>  ss = getSubtitleService(sId);
     if (ss == nullptr) {
         return Result::FAIL;
@@ -483,16 +484,18 @@ Return<void> SubtitleServer::prepareWritingQueue(int32_t sId, int32_t size, prep
         _hidl_cb(result, DataMQ::Descriptor());
     };
 
-    ALOGV("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     android::AutoMutex _l(mLock);
 
     // Create message queues.
     if (mDataMQ) {
-        ALOGW("the client attempts to call prepareForWriting twice");
+        SUBTITLE_LOGI("the client attempts to call prepareForWriting twice");
     } else {
         std::unique_ptr<DataMQ> tempDataMQ(new DataMQ(size, true /* EventFlag */));
         if (!tempDataMQ->isValid()) {
-            ALOGE_IF(!tempDataMQ->isValid(), "data MQ is invalid");
+            if (!tempDataMQ->isValid()) {
+                SUBTITLE_LOGE("data MQ is invalid");
+            }
             sendError(Result::FAIL);
             return Void();
         }
@@ -504,11 +507,11 @@ Return<void> SubtitleServer::prepareWritingQueue(int32_t sId, int32_t size, prep
     std::unique_ptr<FmqReader> tempReader(new FmqReaderImpl(mDataMQ.get()));
 
     std::shared_ptr<SubtitleService>  ss = getSubtitleServiceLocked(sId);
-    ALOGV("%s ss=%p", __func__, ss.get());
+    SUBTITLE_LOGI("%s ss=%p", __func__, ss.get());
     if (ss != nullptr) {
         ss->startFmqReceiver(std::move(tempReader));
     } else {
-        ALOGE("Error! cannot get subtitle service through ID:%d(%x)", sId, sId);
+        SUBTITLE_LOGE("Error! cannot get subtitle service through ID:%d(%x)", sId, sId);
     }
 
     _hidl_cb(Result::OK, *mDataMQ->getDesc());
@@ -525,7 +528,7 @@ Return<void> SubtitleServer::setCallback(const sp<ISubtitleCallback>& callback, 
         int clientSize = mCallbackClients.size();
         for (int i = 0; i < clientSize; i++) {
             if (mCallbackClients[i] == nullptr) {
-                ALOGI("%s, client index:%d had died, this id give the new client", __FUNCTION__, i);
+                SUBTITLE_LOGI("%s, client index:%d had died, this id give the new client", __FUNCTION__, i);
                 cookie = i;
                 mCallbackClients[i] = callback;
                 break;
@@ -540,10 +543,10 @@ Return<void> SubtitleServer::setCallback(const sp<ISubtitleCallback>& callback, 
         Return<bool> linkResult = callback->linkToDeath(mDeathRecipient, cookie);
         bool linkSuccess = linkResult.isOk() ? static_cast<bool>(linkResult) : false;
         if (!linkSuccess) {
-            ALOGW("Couldn't link death recipient for cookie: %d", cookie);
+            SUBTITLE_LOGI("Couldn't link death recipient for cookie: %d", cookie);
         }
 
-        ALOGI("%s cookie:%d, client size:%d", __FUNCTION__, cookie, (int)mCallbackClients.size());
+        SUBTITLE_LOGI("%s cookie:%d, client size:%d", __FUNCTION__, cookie, (int)mCallbackClients.size());
     }
 
     return Void();
@@ -565,10 +568,10 @@ Return<void> SubtitleServer::removeCallback(const sp<ISubtitleCallback>& callbac
         }
 
         int clientSize = mCallbackClients.size();
-        ALOGI("[removeCallback] remove:%p clientSize=%d", callback.get(), clientSize);
+        SUBTITLE_LOGI("[removeCallback] remove:%p clientSize=%d", callback.get(), clientSize);
         for (auto it = mCallbackClients.begin(); it != mCallbackClients.end(); it++) {
             if ((it->second != nullptr) && interfacesEqual(it->second, callback)) {
-                ALOGI("[removeCallback] remove %p  req:%p", (it->second).get(), callback.get());
+                SUBTITLE_LOGI("[removeCallback] remove %p  req:%p", (it->second).get(), callback.get());
                 it->second->unlinkToDeath(mDeathRecipient);
                 it = mCallbackClients.erase(it);
                 break;
@@ -695,20 +698,24 @@ Return<Result> SubtitleServer::setSurfaceViewRect(int32_t sId, int32_t x, int32_
 void SubtitleServer::sendSubtitleDisplayNotify(SubtitleHidlParcel &event) {
     android::AutoMutex _l(mLock);
 
-    ALOGI("onEvent event:%d, client size:%d", event.msgType, mCallbackClients.size());
+    SUBTITLE_LOGI("onEvent event:%d, client size:%d", event.msgType, mCallbackClients.size());
 
     if (mFallbackPlayStarted && mFallbackCallback != nullptr) {
         // enabled fallback display and fallback displayer started, then
         auto r = mFallbackCallback->notifyDataCallback(event);
-        ALOGE_IF(!r.isOk(), "Error, call notifyDataCallback failed! client died?");
+        if (!r.isOk()) {
+            SUBTITLE_LOGE("Error, call notifyDataCallback failed! client died?");
+        }
         return;
     }
 
     for (int i = 0; i<mCallbackClients.size(); i++) {
         if (mCallbackClients[i] != nullptr) {
-            ALOGI("%s, client cookie:%d notifyCallback", __FUNCTION__, i);
+            SUBTITLE_LOGI("%s, client cookie:%d notifyCallback", __FUNCTION__, i);
             auto r = mCallbackClients[i]->notifyDataCallback(event);
-            ALOGE_IF(!r.isOk(), "Error, call notifyDataCallback failed! client died?");
+            if (!r.isOk()) {
+                SUBTITLE_LOGE("Error, call notifyDataCallback failed! client died?");
+            }
         }
     }
 }
@@ -717,12 +724,14 @@ void SubtitleServer::sendSubtitleEventNotify(SubtitleHidlParcel &event) {
     android::AutoMutex _l(mLock);
     if (mFallbackPlayStarted && mFallbackCallback != nullptr) {
         auto r = mFallbackCallback->eventNotify(event);
-        ALOGE_IF(!r.isOk(), "Error, call eventNotify failed! client died?");
+        if (!r.isOk()) {
+            SUBTITLE_LOGE("Error, call eventNotify failed! client died?");
+        }
     }
 
     int clientSize = mCallbackClients.size();
 
-    ALOGI("onEvent event:%d, client size:%d", event.msgType, clientSize);
+    SUBTITLE_LOGI("onEvent event:%d, client size:%d", event.msgType, clientSize);
 
     // check has valid client or not.
     bool hasEventClient = false;
@@ -739,15 +748,17 @@ void SubtitleServer::sendSubtitleEventNotify(SubtitleHidlParcel &event) {
     if (hasEventClient > 0) {
         for (int i = 0; i < clientSize; i++) {
             if (mCallbackClients[i] != nullptr) {
-                ALOGI("%s, client cookie:%d notifyCallback", __FUNCTION__, i);
+                SUBTITLE_LOGI("%s, client cookie:%d notifyCallback", __FUNCTION__, i);
                 auto r = mCallbackClients[i]->eventNotify(event);
-                ALOGE_IF(!r.isOk(), "Error, call notifyDataCallback failed! client died?");
+                if (!r.isOk()) {
+                    SUBTITLE_LOGE("Error, call notifyDataCallback failed! client died?");
+                }
             }
         }
     } else {
         // No client connected, try fallback display.
         //if (mFallbackDisplayClient != nullptr) {
-        //    if (ENABLE_LOG_PRINT) ALOGI("fallback display event:%d, client size:%d", parcel.msgType, clientSize);
+        //    if (ENABLE_LOG_PRINT) SUBTITLE_LOGI("fallback display event:%d, client size:%d", parcel.msgType, clientSize);
         //    mFallbackDisplayClient->notifyDisplayCallback(parcel);
         //}
     }
@@ -756,12 +767,12 @@ void SubtitleServer::sendSubtitleEventNotify(SubtitleHidlParcel &event) {
 
 void SubtitleServer::sendUiEvent(SubtitleHidlParcel &event) {
     //if (!mFallbackPlayStarted) {
-    //    ALOGE("UI event request not proceed, do you called uiShow()?");
+    //    SUBTITLE_LOGE("UI event request not proceed, do you called uiShow()?");
     //    return;
     //}
 
     if (mFallbackCallback == nullptr) {
-        ALOGE("Error, no default fallback display registered!");
+        SUBTITLE_LOGE("Error, no default fallback display registered!");
         return;
     }
 
@@ -772,7 +783,7 @@ void SubtitleServer::sendUiEvent(SubtitleHidlParcel &event) {
 
 
 Return<void> SubtitleServer::debug(const hidl_handle& handle, const hidl_vec<hidl_string>& options) {
-    ALOGV("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     if (handle != nullptr && handle->numFds >= 1) {
         int fd = handle->data[0];
 
@@ -788,7 +799,7 @@ Return<void> SubtitleServer::debug(const hidl_handle& handle, const hidl_vec<hid
 
 void SubtitleServer::dump(int fd, const std::vector<std::string>& args) {
     android::Mutex::Autolock lock(mLock);
-    ALOGV("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
 
     int len = args.size();
     for (int i = 0; i < len; i ++) {
@@ -860,18 +871,18 @@ void SubtitleServer::dump(int fd, const std::vector<std::string>& args) {
 }
 
 bool SubtitleServer::ClientMessageHandlerImpl::onSubtitleDisplayNotify(SubtitleHidlParcel &event) {
-    ALOGE("CallbackHandlerImpl onSubtitleDataEvent");
+    SUBTITLE_LOGE("CallbackHandlerImpl onSubtitleDataEvent");
     mSubtitleServer->sendSubtitleDisplayNotify(event);
     return false;
 }
 bool SubtitleServer::ClientMessageHandlerImpl::onSubtitleEventNotify(SubtitleHidlParcel &event) {
-        ALOGE("CallbackHandlerImpl onSubtitleDataEvent");
+        SUBTITLE_LOGE("CallbackHandlerImpl onSubtitleDataEvent");
         mSubtitleServer->sendSubtitleEventNotify(event);
         return false;
     }
 
 void SubtitleServer::handleServiceDeath(uint32_t cookie) {
-    ALOGV("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     {
         android::AutoMutex _l(mLock);
         /*if (cookie == FALLBACK_DISPLAY_COOKIE) {
@@ -891,17 +902,17 @@ void SubtitleServer::handleServiceDeath(uint32_t cookie) {
 void SubtitleServer::DeathRecipient::serviceDied(
         uint64_t cookie,
         const ::android::wp<::android::hidl::base::V1_0::IBase>& who) {
-    ALOGE("subtitleserver daemon client died cookie:%d", (int)cookie);
+    SUBTITLE_LOGE("subtitleserver daemon client died cookie:%d", (int)cookie);
 
     ::android::sp<::android::hidl::base::V1_0::IBase> s = who.promote();
-    ALOGE("subtitleserver daemon client died who:%p", s.get());
+    SUBTITLE_LOGE("subtitleserver daemon client died who:%p", s.get());
 
     if (s != nullptr) {
         auto r = s->interfaceDescriptor([&](const hidl_string &types) {
-                ALOGE("subtitleserver daemon client, who=%s", types.c_str());
+                SUBTITLE_LOGE("subtitleserver daemon client, who=%s", types.c_str());
             });
         if (!r.isOk()) {
-            ALOGE("why?");
+            SUBTITLE_LOGE("why?");
         }
     }
     uint32_t type = static_cast<uint32_t>(cookie);

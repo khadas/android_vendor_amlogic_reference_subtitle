@@ -29,7 +29,7 @@
 #include "Subrip.h"
 
 Subrip::Subrip(std::shared_ptr<DataSource> source): TextSubtitle(source) {
-    ALOGD("Subrip subtitle!");
+    SUBTITLE_LOGI("Subrip subtitle!");
     mSubData.format = "Sub Rip";
 }
 

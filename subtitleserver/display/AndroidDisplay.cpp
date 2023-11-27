@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <chrono>
 
 #include "AndroidDisplay.h"
@@ -16,9 +16,9 @@ AndroidDisplay::AndroidDisplay() {
     android::sp<android::IBinder> binder = sm->getService(android::String16("SurfaceFlinger"));
     //android::sp<android::IBinder> binder = sm->getService(android::String16("android.ui.ISurfaceComposer"));
 
-    ALOGD("Created ISurfaceComposer: %p", binder.get());
+    SUBTITLE_LOGI("Created ISurfaceComposer: %p", binder.get());
     if (binder == nullptr) {
-        ALOGD("Error! cannot connect ISurfaceComposer!");
+        SUBTITLE_LOGI("Error! cannot connect ISurfaceComposer!");
       return;
     }
 
@@ -29,7 +29,7 @@ AndroidDisplay::AndroidDisplay() {
 void AndroidDisplay::binderDied(const android::wp<android::IBinder>&)
 {
     // wow, surfaceflinger died!
-    ALOGD("SurfaceFlinger died, we also dying...");
+    SUBTITLE_LOGI("SurfaceFlinger died, we also dying...");
     // calling requestExit() is not enough here because the Surface code
     // might be blocked on a condition variable that will never be updated.
     kill( getpid(), SIGKILL );

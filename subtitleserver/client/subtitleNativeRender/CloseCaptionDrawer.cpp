@@ -1,7 +1,7 @@
 
 #include "CloseCaptionDrawer.h"
 #include "CloseCaption.h"
-#include "MyLog.h"
+#include "SubtitleLog.h"
 
 using Amlogic::NativeRender::CloseCaption::Configure;
 
@@ -20,7 +20,7 @@ CloseCaptionDrawer::~CloseCaptionDrawer() {
 
 
 void CloseCaptionDrawer::draw(SkCanvas &canvas, const char *str) {
-    ALOGD("draw %s", str);
+    SUBTITLE_LOGI("draw %s", str);
     Amlogic::NativeRender::CloseCaption::CloseCaption cc(mConfig);
     cc.parserJson(str);
     cc.draw(canvas);

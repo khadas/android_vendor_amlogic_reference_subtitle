@@ -16,7 +16,7 @@
 #include <SkPaint.h>
 #include <SkPath.h>
 
-#include "MyLog.h"
+#include "SubtitleLog.h"
 #include "ZipFileRO.h"
 
 namespace Amlogic {
@@ -55,7 +55,7 @@ FontManager::FontManager() {
     if (mMonoSerifTf == nullptr) {
         mMonoSerifTf = getFallbackFonts("mono_sans", false);
     }
-    ALOGD("FontManager mMonoSerifTf:%p %d", mMonoSerifTf.get(), errno);
+    SUBTITLE_LOGI("FontManager mMonoSerifTf:%p %d", mMonoSerifTf.get(), errno);
 
     mMonoSerifItTf  = SkTypeface::MakeFromFile((fontPath+"cinecavD_mono_it.ttf").c_str());
     if (mMonoSerifItTf == nullptr) {
@@ -83,24 +83,24 @@ FontManager::FontManager() {
     errno = 0;
     mFallbackCJK = SkTypeface::MakeFromFile("/system/fonts/NotoSansCJK-Regular.ttc");
 
-    ALOGD("mFallbackCJK%s =%p %d", "/system/fonts/NotoSansCJK-Regular.ttc", mFallbackCJK.get(), errno);
+    SUBTITLE_LOGI("mFallbackCJK%s =%p %d", "/system/fonts/NotoSansCJK-Regular.ttc", mFallbackCJK.get(), errno);
 
-    ALOGD("FontManager %d", access((fontPath+"cinecavD_mono.ttf").c_str(), R_OK));
+    SUBTITLE_LOGI("FontManager %d", access((fontPath+"cinecavD_mono.ttf").c_str(), R_OK));
 
     FILE *fp = fopen((fontPath+"cinecavD_mono.ttf").c_str(), "r");
-    ALOGD("open File: %s fp=%p",(fontPath+"cinecavD_mono.ttf").c_str(), fp);
+    SUBTITLE_LOGI("open File: %s fp=%p",(fontPath+"cinecavD_mono.ttf").c_str(), fp);
 }
 
 
 bool FontManager::initFontResource() {
     errno = 0;
     std::string workpath = getApplicationPath();
-    ALOGD("workpath:%s", workpath.c_str());
+    SUBTITLE_LOGI("workpath:%s", workpath.c_str());
     std::string fPath = getApplicationPath() +"/font/";
 
     if (::access(fPath.c_str(), R_OK) != 0) {
         if (::mkdir(fPath.c_str(), 0775) != 0) {
-            ALOGE("Error, cannot create path!:%s %d", fPath.c_str(), errno);
+            SUBTITLE_LOGE("Error, cannot create path!:%s %d", fPath.c_str(), errno);
             return false;
         }
     } else {
@@ -117,10 +117,10 @@ bool FontManager::uncryptFontTo(const char*srcPath, const char*destPath) {
     bool result = false;
     android::ZipFileRO *zip = android::ZipFileRO::open(srcPath);
     if (zip == nullptr) {
-      ALOGE("Failed to open file \"%s\": %s", srcPath, strerror(errno));
+      SUBTITLE_LOGE("Failed to open file \"%s\": %s", srcPath, strerror(errno));
       return false;
     } else {
-        ALOGD("open Zip file:%p", zip);
+        SUBTITLE_LOGI("open Zip file:%p", zip);
     }
 
     void *cookie = nullptr;
@@ -134,31 +134,31 @@ bool FontManager::uncryptFontTo(const char*srcPath, const char*destPath) {
     while ((entry = zip->nextEntry(cookie)) != nullptr) {
         const int foundEntryName = zip->getEntryFileName(entry, name, ENTRY_NAME_MAX);
         if (foundEntryName > ENTRY_NAME_MAX || foundEntryName == -1) {
-            ALOGE("Error fetching entry file name");
+            SUBTITLE_LOGE("Error fetching entry file name");
             continue;
         }
 
         if (strlen(name) > 0) {
-            ALOGD("Got Item :%s", name);
+            SUBTITLE_LOGI("Got Item :%s", name);
         }
 
         uint16_t method;
         uint32_t uncompressedLen;
         if (!zip->getEntryInfo(entry, &method, &uncompressedLen, NULL, NULL, NULL, NULL)) {
-            ALOGE("Error getEntryInfo failed for %s", name);
+            SUBTITLE_LOGE("Error getEntryInfo failed for %s", name);
             continue;
         }
 
         android::FileMap* dataMap = zip->createEntryFileMap(entry);
         if (dataMap == NULL) {
-            ALOGE("create map from entry failed\n");
+            SUBTITLE_LOGE("create map from entry failed\n");
             continue;
         }
 
         if (method == android::ZipFileRO::kCompressDeflated) {
-            ALOGD("ZipCompressed!");
+            SUBTITLE_LOGI("ZipCompressed!");
         } else if (method == android::ZipFileRO::kCompressStored) {
-            ALOGD("store!");
+            SUBTITLE_LOGI("store!");
             std::string destFile(destPath);
             destFile +="/";
             destFile += name;
@@ -175,12 +175,12 @@ bool FontManager::uncryptFontTo(const char*srcPath, const char*destPath) {
 }
 
 sk_sp<SkTypeface> FontManager::getFallbackFonts(std::string typeName, bool isItalic) {
-    ALOGE("getFallback font:%s", typeName.c_str());
+    SUBTITLE_LOGE("getFallback font:%s", typeName.c_str());
     return nullptr;
 }
 
 sk_sp<SkTypeface> FontManager::typeFaceFromName(std::string typeName, bool isItalic, bool isMultiByte) {
-    ALOGE("typeFaceFromName font:%s isMultiByte=%d", typeName.c_str(), isMultiByte);
+    SUBTITLE_LOGE("typeFaceFromName font:%s isMultiByte=%d", typeName.c_str(), isMultiByte);
 
     if (isMultiByte) {
         return mFallbackCJK;
@@ -223,7 +223,7 @@ sk_sp<SkTypeface> FontManager::typeFaceFromName(std::string typeName, bool isIta
     //} else if (ignoreCaseCompare(typeName, "fallback")) {
     }
 
-    ALOGE("font match exception, no match font for %s! ", typeName.c_str());
+    SUBTITLE_LOGE("font match exception, no match font for %s! ", typeName.c_str());
     return isItalic ? mMonoSerifItTf : mMonoSerifTf;
 }
 

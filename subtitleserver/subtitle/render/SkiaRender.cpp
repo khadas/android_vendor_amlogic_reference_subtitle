@@ -29,7 +29,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "SkiaRender.h"
 
@@ -94,7 +94,7 @@ bool SkiaRender::drawAndPost() {
 // TODO: the subtitle may has some params, config how to render
 //       Need impl later.
 bool SkiaRender::showSubtitleItem(std::shared_ptr<AML_SPUVAR> spu,int type) {
-    ALOGD("showSubtitleItem");
+    SUBTITLE_LOGI("showSubtitleItem");
     mShowingSubs.push_back(spu);
     return drawAndPost();
 }
@@ -104,7 +104,7 @@ void AndroidHidlRemoteRender::resetSubtitleItem() {
 }
 
 bool SkiaRender::hideSubtitleItem(std::shared_ptr<AML_SPUVAR> spu) {
-    ALOGD("hideSubtitleItem");
+    SUBTITLE_LOGI("hideSubtitleItem");
     mShowingSubs.remove(spu);
     return drawAndPost();
 }

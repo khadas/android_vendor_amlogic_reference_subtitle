@@ -40,7 +40,7 @@ std::shared_ptr<ExtSubItem> Mpsub::decodedItem() {
     float a, b;
 
     while (mReader->getLine(line)) {
-        ALOGD(" read: %s", line);
+        SUBTITLE_LOGI(" read: %s", line);
         if (sscanf(line, "%f %f", &a, &b) != 2) {
                 continue;
         }

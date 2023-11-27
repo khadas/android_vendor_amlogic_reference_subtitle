@@ -35,7 +35,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "VideoInfo.h"
 #include "ParserFactory.h"
@@ -96,28 +96,28 @@ public:
                 memset(ubuf8, 0, 1025);
                 bytes = read(fd, ubuf8, 1024);
                 ubuf8[1024] = 0;
-                ALOGI("getVideoFormat ubuf8:%s", ubuf8);
+                SUBTITLE_LOGI("getVideoFormat ubuf8:%s", ubuf8);
                 if (strstr((const char*)ubuf8, "amvdec_h264"/*"vdec.h264.00"*/)) {
-                    ALOGI("H264_CC_TYPE");
+                    SUBTITLE_LOGI("H264_CC_TYPE");
                     close(fd);
                     return H264_CC_TYPE;
                 } else if (strstr((const char*)ubuf8, "amvdec_h265"/*"vdec.h265.00"*/)) {
-                    ALOGI("H265_CC_TYPE");
+                    SUBTITLE_LOGI("H265_CC_TYPE");
                     close(fd);
                     return H265_CC_TYPE;
                 } else if (strstr((const char*)ubuf8, "amvdec_mpeg12"/*"vdec.mpeg12.00"*/)) {
-                    ALOGI("MPEG_CC_TYPE");
+                    SUBTITLE_LOGI("MPEG_CC_TYPE");
                     close(fd);
                     return MPEG_CC_TYPE;
                 } else if (strstr((const char*)ubuf8, "VDEC_STATUS_CONNECTED")) {
-                    ALOGI("vdec has connect, no mpeg or h264 type, return!");
+                    SUBTITLE_LOGI("vdec has connect, no mpeg or h264 type, return!");
                     close(fd);
                     return INVALID_CC_TYPE;
                 }
 
                 close(fd);
             } else {
-                ALOGE("open error:%d,%s!!", errno,strerror(errno));
+                SUBTITLE_LOGE("open error:%d,%s!!", errno,strerror(errno));
             }
             usleep(20*1000);
         }

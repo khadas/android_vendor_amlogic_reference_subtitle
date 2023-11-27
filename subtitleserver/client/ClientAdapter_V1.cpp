@@ -11,7 +11,7 @@
 #include <binder/Binder.h>
 
 #include <utils/Atomic.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/RefBase.h>
 #include <utils/String8.h>
 #include <utils/String16.h>
@@ -29,7 +29,7 @@ class DeathNotifier: public IBinder::DeathRecipient
         }
 
         void binderDied(const wp<IBinder>& who) {
-            ALOGW("subtitleservice died!");
+            SUBTITLE_LOGI("subtitleservice died!");
         }
 };
 
@@ -48,7 +48,7 @@ int mpos = 0;
 void *thrSubtitleShow(void *pthis)
 {
     int pos = 0;
-    //ALOGE("thrSubtitleShow pos:%d\n",pos);
+    //SUBTITLE_LOGE("thrSubtitleShow pos:%d\n",pos);
     unsigned long firstvpts = 0;
 
     do {
@@ -73,7 +73,7 @@ void *thrSubtitleShow(void *pthis)
                  pos = ((ctc_mp->GetCurrentPlayTime() - firstvpts)/90);
              }
         }
-        //ALOGE("1thrSubtitleShow pos:%d, sleep:%d\n", pos, (300 - (pos % 300)
+        //SUBTITLE_LOGE("1thrSubtitleShow pos:%d, sleep:%d\n", pos, (300 - (pos % 300)
 ));
         subtitleShowSub(pos);
         usleep((300 - (pos % 300)) * 1000);
@@ -85,10 +85,10 @@ void *thrSubtitleShow(void *pthis)
 void subtitleShow()
 {
     int err;
-    //ALOGE("subtitleShow 0 mTotal:%d, mRetry:%d\n", mTotal, mRetry);
+    //SUBTITLE_LOGE("subtitleShow 0 mTotal:%d, mRetry:%d\n", mTotal, mRetry);
     /*do {
         mTotal = subtitleGetTotal();
-        //ALOGE("subtitleShow 1 mTotal:%d, mRetry:%d\n", mTotal, mRetry);
+        //SUBTITLE_LOGE("subtitleShow 1 mTotal:%d, mRetry:%d\n", mTotal, mRetry);
         mRetry--;
         usleep(500000); // 0.5 s
     }while(mTotal == -1 && mRetry > 0);*/
@@ -108,7 +108,7 @@ const sp<ISubTitleService>& getSubtitleService()
             binder = sm->getService(String16("subtitle_service"));
             if (binder != 0)
                 break;
-            ALOGW("subtitle_service not published, waiting...");
+            SUBTITLE_LOGI("subtitle_service not published, waiting...");
             usleep(500000); // 0.5 s
         } while(true);
         if (amDeathNotifier == NULL) {
@@ -117,7 +117,9 @@ const sp<ISubTitleService>& getSubtitleService()
         binder->linkToDeath(amDeathNotifier);
         subtitleservice = interface_cast<ISubTitleService>(binder);
     }
-    ALOGE_IF(subtitleservice == 0, "no subtitle_service!!");
+    if (subtitleservice == 0) {
+        SUBTITLE_LOGE("no subtitle_service!!")
+    }
     return subtitleservice;
 }
 
@@ -195,7 +197,7 @@ void subtitleShowSub(int pos)
 {
     const sp<ISubTitleService>& subser = getSubtitleService();
     if (subser != 0) {
-        //ALOGE("subtitleShowSub pos:%d\n", pos);
+        //SUBTITLE_LOGE("subtitleShowSub pos:%d\n", pos);
         subser->showSub(pos);
     }
     return;
@@ -297,9 +299,9 @@ void subtitleSetImgRatio(float ratioW, float ratioH, int maxW, int maxH)
 void subtitleSetSurfaceViewParam(int x, int y, int w, int h)
 {
     const sp<ISubTitleService>& subser = getSubtitleService();
-    ALOGE("subtitleSetSurfaceViewParam 00\n");
+    SUBTITLE_LOGE("subtitleSetSurfaceViewParam 00\n");
     if (subser != 0) {
-        ALOGE("subtitleSetSurfaceViewParam 01\n");
+        SUBTITLE_LOGE("subtitleSetSurfaceViewParam 01\n");
         subser->setSurfaceViewParam(x, y, w, h);
     }
     return;

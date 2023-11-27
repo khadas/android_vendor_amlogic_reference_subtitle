@@ -49,7 +49,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <stdio.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 /*add for config define for linux dvb *.h*/
 #include <am_config.h>
 #include <am_misc.h>
@@ -129,7 +129,7 @@ static AM_ErrorCode_t dvb_open(AM_DMX_Device_t *dev, const AM_DMX_OpenPara_t *pa
     dmx = (DVBDmx_t*)malloc(sizeof(DVBDmx_t));
     if (!dmx)
     {
-        ALOGE("not enough memory");
+        SUBTITLE_LOGE("not enough memory");
         return AM_DMX_ERR_NO_MEM;
     }
 
@@ -164,7 +164,7 @@ static AM_ErrorCode_t dvb_alloc_filter(AM_DMX_Device_t *dev, AM_DMX_Filter_t *fi
     fd = open(dmx->dev_name, O_RDWR);
     if (fd == -1)
     {
-        ALOGE("cannot open \"%s\" (%s)", dmx->dev_name, strerror(errno));
+        SUBTITLE_LOGE("cannot open \"%s\" (%s)", dmx->dev_name, strerror(errno));
         return AM_DMX_ERR_CANNOT_OPEN_DEV;
     }
 
@@ -212,7 +212,7 @@ static AM_ErrorCode_t dvb_set_sec_filter(AM_DMX_Device_t *dev, AM_DMX_Filter_t *
     ret = ioctl(fd, DMX_SET_FILTER, &p);
     if (ret == -1)
     {
-        ALOGE("set section filter failed (%s)", strerror(errno));
+        SUBTITLE_LOGE("set section filter failed (%s)", strerror(errno));
         return AM_DMX_ERR_SYS;
     }
 
@@ -230,14 +230,14 @@ static AM_ErrorCode_t dvb_set_pes_filter(AM_DMX_Device_t *dev, AM_DMX_Filter_t *
     ret = fcntl(fd,F_SETFL,O_NONBLOCK);
     if (ret == -1)
     {
-        ALOGE("fcntl failed (%s)", strerror(errno));
+        SUBTITLE_LOGE("fcntl failed (%s)", strerror(errno));
         return AM_DMX_ERR_SYS;
     }
 
     ret = ioctl(fd, DMX_SET_PES_FILTER, params);
     if (ret == -1)
     {
-        ALOGE("set section filter failed (%s)", strerror(errno));
+        SUBTITLE_LOGE("set section filter failed (%s)", strerror(errno));
         return AM_DMX_ERR_SYS;
     }
 
@@ -258,7 +258,7 @@ static AM_ErrorCode_t dvb_enable_filter(AM_DMX_Device_t *dev, AM_DMX_Filter_t *f
 
     if (ret == -1)
     {
-        ALOGE("start filter failed (%s)", strerror(errno));
+        SUBTITLE_LOGE("start filter failed (%s)", strerror(errno));
         return AM_DMX_ERR_SYS;
     }
 
@@ -275,7 +275,7 @@ static AM_ErrorCode_t dvb_set_buf_size(AM_DMX_Device_t *dev, AM_DMX_Filter_t *fi
     ret = ioctl(fd, DMX_SET_BUFFER_SIZE, size);
     if (ret == -1)
     {
-        ALOGE("set buffer size failed (%s)", strerror(errno));
+        SUBTITLE_LOGE("set buffer size failed (%s)", strerror(errno));
         return AM_DMX_ERR_SYS;
     }
 
@@ -339,7 +339,7 @@ static AM_ErrorCode_t dvb_wake(AM_DMX_Device_t *dev)
     int ret = write(event_fd, &wdata, 8);
     if (ret != 8)
     {
-        ALOGE("dvb_wake write %d bytes instead of 8!", ret);
+        SUBTITLE_LOGE("dvb_wake write %d bytes instead of 8!", ret);
     }
 
     return AM_SUCCESS;
@@ -370,7 +370,7 @@ static AM_ErrorCode_t dvb_read(AM_DMX_Device_t *dev, AM_DMX_Filter_t *filter, ui
     {
         if (errno == ETIMEDOUT)
             return AM_DMX_ERR_TIMEOUT;
-        ALOGE("read demux failed (%s) %d", strerror(errno), errno);
+        SUBTITLE_LOGE("read demux failed (%s) %d", strerror(errno), errno);
         return AM_DMX_ERR_SYS;
     }
 
@@ -408,7 +408,7 @@ static AM_ErrorCode_t dvb_set_source(AM_DMX_Device_t *dev, AM_DMX_Source_t src)
             cmd = "hiu1";
         break;
         default:
-            ALOGE("do not support demux source %d", src);
+            SUBTITLE_LOGE("do not support demux source %d", src);
         return AM_DMX_ERR_NOT_SUPPORTED;
     }
 

@@ -42,24 +42,24 @@ static inline void dumpBuffer(const char *buf, int size) {
         sprintf(chars, "%02x ", buf[i]);
         strcat(str, chars);
         if (i%8 == 7) {
-            ALOGD("%s", str);
+            SUBTITLE_LOGI("%s", str);
             str[0] = str[1] = 0;
         }
     }
-    ALOGD("%s", str);
+    SUBTITLE_LOGI("%s", str);
 }
 
 
 FmqReceiver::FmqReceiver(std::unique_ptr<FmqReader> reader) {
     mStop = false;
     mReader = std::move(reader);
-    ALOGD("%s mReader=%p", __func__, mReader.get());
+    SUBTITLE_LOGI("%s mReader=%p", __func__, mReader.get());
     mReaderThread = std::thread(&FmqReceiver::readLoop, this);
 
 }
 
 FmqReceiver::~FmqReceiver() {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     mStop = true;
     mReaderThread.join();
 }
@@ -69,11 +69,11 @@ bool FmqReceiver::readLoop() {
     IpcPackageHeader curHeader;
     rbuf_handle_t bufferHandle = ringbuffer_create(1024*1024, "fmqbuffer");
     if (bufferHandle == nullptr) {
-        ALOGE("%s ring buffer create error! \n", __func__);
+        SUBTITLE_LOGE("%s ring buffer create error! \n", __func__);
         return false;
     }
 
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     while (!mStop) {
 
         if (mClients.size() <= 0) {
@@ -87,7 +87,7 @@ bool FmqReceiver::readLoop() {
             if (available > 0) {
                 char *recvBuf = (char *)malloc(available);
                 if (!recvBuf) {
-                    ALOGE("%s recvBuf malloc error! \n", __func__);
+                    SUBTITLE_LOGE("%s recvBuf malloc error! \n", __func__);
                     continue;
                 }
                 size_t read = mReader->read((uint8_t*)recvBuf, available);
@@ -97,7 +97,7 @@ bool FmqReceiver::readLoop() {
                     continue;
                 }
 
-                //ALOGD("read: available %d size: %d", available, read);
+                //SUBTITLE_LOGI("read: available %d size: %d", available, read);
 
                 ringbuffer_write(bufferHandle, recvBuf, read, RBUF_MODE_BLOCK);
                 free(recvBuf);
@@ -110,10 +110,10 @@ bool FmqReceiver::readLoop() {
                 char buffer[sizeof(IpcPackageHeader)];
                 uint32_t size = ringbuffer_peek(bufferHandle, buffer, sizeof(IpcPackageHeader), RBUF_MODE_BLOCK);
                 if (size < sizeof(IpcPackageHeader)) {
-                    ALOGE("Error! read size: %d request %d", size, sizeof(IpcPackageHeader));
+                    SUBTITLE_LOGE("Error! read size: %d request %d", size, sizeof(IpcPackageHeader));
                 }
                 if ((peekAsSocketWord(buffer) != START_FLAG) && (peekAsSocketWord(buffer+8) != MAGIC_FLAG)) {
-                    ALOGD("!!!Wrong Sync header found! %x %x", peekAsSocketWord(buffer), peekAsSocketWord(buffer+8));
+                    SUBTITLE_LOGI("!!!Wrong Sync header found! %x %x", peekAsSocketWord(buffer), peekAsSocketWord(buffer+8));
                     ringbuffer_read(bufferHandle, buffer, 4, RBUF_MODE_BLOCK);
                     continue; // ignore and try next.
                 }
@@ -122,11 +122,11 @@ bool FmqReceiver::readLoop() {
                 curHeader.magicWord = peekAsSocketWord(buffer+8); // need check magic or not??
                 curHeader.dataSize  = peekAsSocketWord(buffer+12);
                 curHeader.pkgType   = peekAsSocketWord(buffer+16);
-                //ALOGD("data: syncWord:%x session:%x magic:%x subType:%x size:%x",
+                //SUBTITLE_LOGI("data: syncWord:%x session:%x magic:%x subType:%x size:%x",
                 //    curHeader.syncWord, curHeader.sessionId, curHeader.magicWord,
                 //    curHeader.pkgType, curHeader.dataSize);
                 if (ringbuffer_read_avail(bufferHandle) < (sizeof(IpcPackageHeader)+curHeader.dataSize)) {
-                    ALOGW("not enough data, try next...");
+                    SUBTITLE_LOGI("not enough data, try next...");
                     break; // not enough data. try next
                 }
 
@@ -135,7 +135,7 @@ bool FmqReceiver::readLoop() {
 
                 char *payloads = (char *) malloc(curHeader.dataSize +4);
                 if (!payloads) {
-                    ALOGE("%s payload malloc error! \n", __func__, __LINE__);
+                    SUBTITLE_LOGE("%s payload malloc error! \n", __func__, __LINE__);
                     continue;
                 }
                 memcpy(payloads, &curHeader.pkgType, 4); // fill package type
@@ -143,12 +143,12 @@ bool FmqReceiver::readLoop() {
                 {  // notify listener
                     std::lock_guard<std::mutex> guard(mLock);
                     std::shared_ptr<DataListener> listener = mClients.front();
-                    //ALOGD("payload listener=%p type=%x, %d", listener.get(), peekAsSocketWord(payloads), curHeader.dataSize);
+                    //SUBTITLE_LOGI("payload listener=%p type=%x, %d", listener.get(), peekAsSocketWord(payloads), curHeader.dataSize);
                     if (listener != nullptr) {
                         if (listener->onData(payloads, curHeader.dataSize+4) < 0) {
                             //for some ext and internel sub switch, if here return, then ext sub(now this no data) switch
                             //to internel will no sub. so not return.
-                            ALOGE("%s no need free buffer handle, need wait stop now! \n", __func__);
+                            SUBTITLE_LOGE("%s no need free buffer handle, need wait stop now! \n", __func__);
                         }
                     }
                 }
@@ -156,7 +156,7 @@ bool FmqReceiver::readLoop() {
             }
         }
     }
-    ALOGD("exit %s", __func__);
+    SUBTITLE_LOGI("exit %s", __func__);
 
     ringbuffer_free(bufferHandle);
     return true;

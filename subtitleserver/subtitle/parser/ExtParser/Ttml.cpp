@@ -31,7 +31,7 @@
 
 TTML::TTML(std::shared_ptr<DataSource> source): TextSubtitle(source) {
     mDataSource = source;
-    ALOGD("TTML");
+    SUBTITLE_LOGI("TTML");
     parseXml();
 }
 
@@ -50,7 +50,7 @@ void TTML::parseXml() {
 
     tinyxml2::XMLElement* root = doc.RootElement();
     if (root == NULL) {
-        ALOGD("Failed to load file: No root element.");
+        SUBTITLE_LOGI("Failed to load file: No root element.");
         doc.Clear();
         delete[] rdBuffer;
         return;
@@ -62,7 +62,7 @@ void TTML::parseXml() {
     tinyxml2::XMLElement *body = root->FirstChildElement("body");
     if (body == nullptr) body = root->FirstChildElement("tt:body");
     if (body == nullptr) {
-        ALOGD("Error. no body found!");
+        SUBTITLE_LOGI("Error. no body found!");
         doc.Clear();
         delete[] rdBuffer;
         return;
@@ -73,36 +73,36 @@ void TTML::parseXml() {
     tinyxml2::XMLElement *parag;
     tinyxml2::XMLElement *spanarag;
     if (div == nullptr) {
-        ALOGD("%d", __LINE__);
+        SUBTITLE_LOGI("%d", __LINE__);
         parag = root->FirstChildElement("p");
         if (parag == nullptr) parag = root->FirstChildElement("tt:p");
     } else {
-        ALOGD("%d", __LINE__);
+        SUBTITLE_LOGI("%d", __LINE__);
         parag = div->FirstChildElement("p");
         if (parag == nullptr) parag = div->FirstChildElement("tt:p");
     }
 
     while (parag != nullptr) {
         const tinyxml2::XMLAttribute *attr = parag->FindAttribute("xml:id");
-        if (attr != nullptr) ALOGD("parseXml xml:id=%s\n", attr->Value());
+        if (attr != nullptr) SUBTITLE_LOGI("parseXml xml:id=%s\n", attr->Value());
 
         std::shared_ptr<ExtSubItem> item = std::shared_ptr<ExtSubItem>(new ExtSubItem());
         attr = parag->FindAttribute("begin");
         if (attr != nullptr) {
             item->start = attr->FloatValue() *100; // subtitle pts multiply
-            ALOGD("parseXml begin:%s\n", attr->Value());
+            SUBTITLE_LOGI("parseXml begin:%s\n", attr->Value());
         }
 
         attr = parag->FindAttribute("end");
         if (attr != nullptr) {
             item->end = attr->FloatValue() *100; // subtitle pts multiply
-            ALOGD("parseXml end:%s\n", attr->Value());
+            SUBTITLE_LOGI("parseXml end:%s\n", attr->Value());
         }
 
-        ALOGD("parseXml parag Text:%s\n", parag->GetText());
+        SUBTITLE_LOGI("parseXml parag Text:%s\n", parag->GetText());
         if (parag->GetText() == nullptr) {
             spanarag = parag->FirstChildElement("tt:span");
-            ALOGD("parseXml spanarag Text:%s\n", spanarag->GetText());
+            SUBTITLE_LOGI("parseXml spanarag Text:%s\n", spanarag->GetText());
             item->lines.push_back(std::string(spanarag->GetText()));
         } else {
             item->lines.push_back(std::string(parag->GetText()));

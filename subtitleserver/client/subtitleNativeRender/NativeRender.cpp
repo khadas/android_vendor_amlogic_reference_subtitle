@@ -9,7 +9,7 @@
 #include <SkPaint.h>
 #include <SkTypeface.h>
 
-#include "MyLog.h"
+#include "SubtitleLog.h"
 #include "TextDrawer.h"
 #include "BitmapDrawer.h"
 #include "CloseCaptionDrawer.h"

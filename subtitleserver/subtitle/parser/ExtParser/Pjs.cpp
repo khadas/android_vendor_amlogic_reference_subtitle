@@ -27,7 +27,7 @@
 #define LOG_TAG "Pjs"
 
 #include "Pjs.h"
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 
 Pjs::Pjs(std::shared_ptr<DataSource> source): TextSubtitle(source) {
@@ -47,19 +47,19 @@ Pjs::~Pjs() {
 std::shared_ptr<ExtSubItem> Pjs::decodedItem() {
     char *line = (char *)MALLOC(LINE_LEN+1);
     if (!line) {
-        ALOGE("[%s::%d] line malloc error!\n", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGE("[%s::%d] line malloc error!\n", __FUNCTION__, __LINE__);
         return nullptr;
     }
     char *text = (char *)MALLOC(LINE_LEN+1);
     if (!text) {
-        ALOGE("[%s::%d] text malloc error!\n", __FUNCTION__, __LINE__);
+        SUBTITLE_LOGE("[%s::%d] text malloc error!\n", __FUNCTION__, __LINE__);
         free(line);
         return nullptr;
     }
     memset(line, 0, LINE_LEN+1);
     memset(text, 0, LINE_LEN+1);
     while (mReader->getLine(line)) {
-        ALOGD(" read: %s", line);
+        SUBTITLE_LOGI(" read: %s", line);
         int start, end;
         if (sscanf(line, "%d,%d,%[^\n\r]", &start, &end, text) != 3) {
             continue;

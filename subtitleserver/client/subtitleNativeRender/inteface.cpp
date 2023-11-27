@@ -8,7 +8,7 @@
 
 #include "AmlNativeSubRender.h"
 
-#include "MyLog.h"
+#include "SubtitleLog.h"
 #include "SubtitleContext.h"
 
 static SubNativeRenderCallback gRenderCallback;
@@ -18,7 +18,7 @@ static SubNativeRenderCallback gRenderCallback;
 // the API wrappers are const globally, so can directly use global variable.
 int32_t NativeWindowLock(SubNativeRenderHnd hnd, SubNativeRenderBuffer *buf) {
     if (gRenderCallback.lock == nullptr) {
-        ALOGE("Error! NativeWindow callback function not initialize properly!");
+        SUBTITLE_LOGE("Error! NativeWindow callback function not initialize properly!");
         return -1;
     }
 
@@ -27,7 +27,7 @@ int32_t NativeWindowLock(SubNativeRenderHnd hnd, SubNativeRenderBuffer *buf) {
 
 int32_t NativeWindowUnlockAndPost(SubNativeRenderHnd hnd) {
     if (gRenderCallback.unlockAndPost == nullptr) {
-        ALOGE("Error! NativeWindow callback function not initialize properly!");
+        SUBTITLE_LOGE("Error! NativeWindow callback function not initialize properly!");
         return -1;
     }
 
@@ -35,7 +35,7 @@ int32_t NativeWindowUnlockAndPost(SubNativeRenderHnd hnd) {
 }
 int32_t NativeWindowSetBuffersGeometry(SubNativeRenderHnd hnd, int w, int h, int format) {
     if (gRenderCallback.setBuffersGeometry == nullptr) {
-        ALOGE("Error! NativeWindow callback function not initialize properly!");
+        SUBTITLE_LOGE("Error! NativeWindow callback function not initialize properly!");
         return -1;
     }
 
@@ -45,7 +45,7 @@ int32_t NativeWindowSetBuffersGeometry(SubNativeRenderHnd hnd, int w, int h, int
 
 int64_t NativeWindowGetPts(int sessionId) {
     if (gRenderCallback.getPts == nullptr) {
-        ALOGE("Error! NativeWindow callback function not initialize properly!");
+        SUBTITLE_LOGE("Error! NativeWindow callback function not initialize properly!");
         return -1;
     }
 

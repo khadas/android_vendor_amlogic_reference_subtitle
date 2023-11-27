@@ -28,7 +28,7 @@
 #include <utils/Vector.h>
 #include <utils/String8.h>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "MemoryLeakTrackUtil.h"
 
@@ -99,7 +99,7 @@ public:
                 if (sscanf(line, "%lx-%lx %4c %llx %hhx:%hhx %lu %n",
                          &startAddrValue, &endAddrValue, permissions, &offset,
                          &devMajor, &devMinor, &inode, &pathIndex) == 7) {
-                    //ALOGD("parsed maps:%lx-%lx %s %llx %hhx:%hhx %lu [%s]",
+                    //SUBTITLE_LOGI("parsed maps:%lx-%lx %s %llx %hhx:%hhx %lu [%s]",
                     //     startAddrValue, endAddrValue, permissions, offset,
                     //     devMajor, devMinor, inode, line+pathIndex);
                     if (strlen(line+pathIndex) < 3) {

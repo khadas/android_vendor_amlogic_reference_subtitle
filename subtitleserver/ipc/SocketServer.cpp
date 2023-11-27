@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <sys/poll.h>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "DataSource.h"
 #include "Segment.h"
@@ -77,21 +77,21 @@ static inline void dump(const char *buf, int size) {
         sprintf(chars, "%02x ", buf[i]);
         strcat(str, chars);
         if (i%8 == 7) {
-            ALOGD("%s", str);
+            SUBTITLE_LOGI("%s", str);
             str[0] = str[1] = 0;
         }
     }
-    ALOGD("%s", str);
+    SUBTITLE_LOGI("%s", str);
 }
 
 
 static std::mutex _g_inst_mutex;
 SubSocketServer::SubSocketServer() : mExitRequested(false) {
-    ALOGD("%s ?", __func__);
+    SUBTITLE_LOGI("%s ?", __func__);
 }
 
 SubSocketServer::~SubSocketServer() {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     mExitRequested = true;
     mThread.join();
     mDispatchThread.join();
@@ -100,7 +100,7 @@ SubSocketServer::~SubSocketServer() {
 SubSocketServer* SubSocketServer::mInstance = nullptr;
 
 SubSocketServer* SubSocketServer::GetInstance() {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
 
     std::unique_lock<std::mutex> autolock(_g_inst_mutex);
     if (mInstance == nullptr) {
@@ -111,7 +111,7 @@ SubSocketServer* SubSocketServer::GetInstance() {
 }
 
 int SubSocketServer::serve() {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
 
     mThread = std::thread(&SubSocketServer::__threadLoop, this);
     return 0;
@@ -133,36 +133,36 @@ bool SubSocketServer::threadLoop() {
     if (sockFd < 0) return true;
 
     if ((setsockopt(sockFd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag))) < 0) {
-        ALOGE("setsockopt failed.\n");
+        SUBTITLE_LOGE("setsockopt failed.\n");
         close(sockFd);
         return true;
     }
 
     if (bind(sockFd, (struct sockaddr *)&addr,sizeof(addr)) == -1) {
-        ALOGE("bind fail. error=%d, err:%s\n", errno, strerror(errno));
+        SUBTITLE_LOGE("bind fail. error=%d, err:%s\n", errno, strerror(errno));
         close(sockFd);
         return true;
     }
 
     if (listen(sockFd, QUEUE_SIZE) == -1) {
-        ALOGE("listen fail.error=%d, err:%s\n", errno, strerror(errno));
+        SUBTITLE_LOGE("listen fail.error=%d, err:%s\n", errno, strerror(errno));
         close(sockFd);
         return true;
     }
 
-    ALOGV("[startServerThread] listen success.\n");
+    SUBTITLE_LOGI("[startServerThread] listen success.\n");
     while (!mExitRequested) {
         struct sockaddr_in client_addr;
         socklen_t length = sizeof(client_addr);
         int connFd = accept(sockFd, (struct sockaddr*)&client_addr, &length);
 
         if (connFd < 0) {
-            ALOGE("client connect fail.error=%d, err:%s\n", errno, strerror(errno));
+            SUBTITLE_LOGE("client connect fail.error=%d, err:%s\n", errno, strerror(errno));
             close(sockFd);
             return true;
         }
 
-        ALOGV("new client accepted connFd=%d.\n", connFd);
+        SUBTITLE_LOGI("new client accepted connFd=%d.\n", connFd);
 
         // TODO: in a new thread?
         if (mClientThreads.size() >= QUEUE_SIZE) {
@@ -174,7 +174,7 @@ bool SubSocketServer::threadLoop() {
         mClientThreads.push_back(pthread);
     }
 
-    ALOGV("closed.\n");
+    SUBTITLE_LOGI("closed.\n");
     close(sockFd);
     return true;
 }
@@ -189,7 +189,7 @@ int SubSocketServer::clientConnected(int sockfd) {
 
     rbuf_handle_t bufferHandle = ringbuffer_create(512*1024, "socket_buffer");
 
-    ALOGV("start process client message connFd=%d.\n", sockfd);
+    SUBTITLE_LOGI("start process client message connFd=%d.\n", sockfd);
     while (!mExitRequested) {
 
         if (mClients.size() <= 0) {
@@ -208,13 +208,13 @@ int SubSocketServer::clientConnected(int sockfd) {
         int retLen = recv(sockfd, recvBuf, sizeof(recvBuf), 0);
 
         if (errno != 0 && errno != EACCES) {
-            //ALOGD("error no:%d %s", errno, strerror(errno));
+            //SUBTITLE_LOGI("error no:%d %s", errno, strerror(errno));
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-        //ALOGV("[child_connect]recv begin... ret=%d\n", retLen);
+        //SUBTITLE_LOGI("[child_connect]recv begin... ret=%d\n", retLen);
         if (retLen == 0) continue; // TODO: check why
         if (retLen < 0) {
-            ALOGE("child recv fail, retLen: %d\n", retLen);
+            SUBTITLE_LOGE("child recv fail, retLen: %d\n", retLen);
             ringbuffer_free(bufferHandle);
             close(sockfd);
             return 0;
@@ -225,7 +225,7 @@ int SubSocketServer::clientConnected(int sockfd) {
         // check packages, we handle here, for better package handle
         // TODO: wrap in a function:
         // check header
-        //ALOGD("current %d: session:%x magic:%x subType:%x size:%x", pendingByData,
+        //SUBTITLE_LOGI("current %d: session:%x magic:%x subType:%x size:%x", pendingByData,
         //    curHeader.sessionId, curHeader.magicWord, curHeader.pkgType, curHeader.dataSize);
 
         if (!pendingByData) {
@@ -233,12 +233,12 @@ int SubSocketServer::clientConnected(int sockfd) {
             if (ringbuffer_read_avail(bufferHandle) < sizeof(IpcPackageHeader)) {
                 continue;
             }
-            //ALOGD("Got enough header bytes!");
+            //SUBTITLE_LOGI("Got enough header bytes!");
             char buffer[sizeof(IpcPackageHeader)];
             // Check sync word.
             ringbuffer_read(bufferHandle, buffer, 4, RBUF_MODE_BLOCK);
             if (peekAsSocketWord(buffer) != START_FLAG) {
-                ALOGD("Wrong Sync header found! %x", peekAsSocketWord(buffer));
+                SUBTITLE_LOGI("Wrong Sync header found! %x", peekAsSocketWord(buffer));
                 continue;
             }
 
@@ -247,11 +247,11 @@ int SubSocketServer::clientConnected(int sockfd) {
             curHeader.magicWord    = peekAsSocketWord(buffer+4); // need check magic or not??
             curHeader.dataSize = peekAsSocketWord(buffer+8);
             curHeader.pkgType  = peekAsSocketWord(buffer+12);
-           // ALOGD("data: session:%x magic:%x subType:%x size:%x",
+           // SUBTITLE_LOGI("data: session:%x magic:%x subType:%x size:%x",
            //     curHeader.sessionId, curHeader.magicWord, curHeader.pkgType, curHeader.dataSize);
 
             if (eTypeSubtitleExitServ == curHeader.pkgType || 'XEDC' == curHeader.pkgType) {
-                ALOGD("exit requested!");
+                SUBTITLE_LOGI("exit requested!");
                 ringbuffer_free(bufferHandle);
                 close(sockfd);
                 return -1;
@@ -264,7 +264,7 @@ int SubSocketServer::clientConnected(int sockfd) {
             if (ringbuffer_read_avail(bufferHandle) >= curHeader.dataSize) {
                 char *payloads = (char *) malloc(curHeader.dataSize +4);
                 if (!payloads) {
-                    ALOGE("%s payloads malloc error! \n", __func__);
+                    SUBTITLE_LOGE("%s payloads malloc error! \n", __func__);
                     continue;
                 }
                 memcpy(payloads, &curHeader.pkgType, 4); // fill package type

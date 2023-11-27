@@ -2,18 +2,18 @@
 #include <sys/prctl.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <android/log.h>
+#include "SubtitleLog.h"
 
 #include "AmlNativeSubRender.h"
 
-#include "MyLog.h"
+#include "SubtitleLog.h"
 #include "SubtitleContext.h"
 
 char *gMemory;
 
 static int32_t lock(SubNativeRenderHnd hnd, SubNativeRenderBuffer *buf) {
     if (buf == nullptr) {
-        ALOGE("Error! no buffer!");
+        SUBTITLE_LOGE("Error! no buffer!");
         return -1;
     }
     buf->format = 1;

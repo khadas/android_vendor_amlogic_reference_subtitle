@@ -57,7 +57,7 @@ int ExtParserEbuttd::parseEbuttd(char *buffer) {
     doc.Parse(buffer);
     TiXmlElement* tt = doc.RootElement();
     if (tt == NULL) {
-        ALOGD("Failed to load file: No tt element.\n");
+        SUBTITLE_LOGI("Failed to load file: No tt element.\n");
         doc.Clear();
         return -1;
     }
@@ -66,7 +66,7 @@ int ExtParserEbuttd::parseEbuttd(char *buffer) {
     if (body == NULL) {
         body = tt->FirstChildElement("tt:body");
         if (body == NULL) {
-            ALOGD("Failed to load file: No body element.\n");
+            SUBTITLE_LOGI("Failed to load file: No body element.\n");
             doc.Clear();
             return -1;
         }
@@ -76,7 +76,7 @@ int ExtParserEbuttd::parseEbuttd(char *buffer) {
     if (div == NULL) {
         div = body->FirstChildElement("tt:div");
         if (div == NULL) {
-            ALOGD("Failed to load file: No div element.\n");
+            SUBTITLE_LOGI("Failed to load file: No div element.\n");
             doc.Clear();
             return -1;
         }
@@ -90,14 +90,14 @@ int ExtParserEbuttd::parseEbuttd(char *buffer) {
 
     for (TiXmlElement* elem = div->FirstChildElement(); elem != NULL; elem = elem->NextSiblingElement()) {
         const char* begin= elem->Attribute("begin");
-        ALOGD("%s begin:%s\n", __FUNCTION__, begin);
+        SUBTITLE_LOGI("%s begin:%s\n", __FUNCTION__, begin);
         count = sscanf(begin, "%d:%d:%d.%d", &hour, &min, &sec, &ms);
         if (count == 4) {
             timeStart = ((hour*60*60 + min*60 + sec)*1000 + ms)*90;
         }
 
         const char* end = elem->Attribute("end");
-        ALOGD("%s end:%s\n", __FUNCTION__, end);
+        SUBTITLE_LOGI("%s end:%s\n", __FUNCTION__, end);
         count = sscanf(end, "%d:%d:%d.%d", &hour, &min, &sec, &ms);
         if (count == 4) {
             timeEnd = ((hour*60*60 + min*60 + sec)*1000 + ms)*90;
@@ -121,7 +121,7 @@ int ExtParserEbuttd::parseEbuttd(char *buffer) {
         sub->end = timeEnd;
 
 
-        ALOGD("[%s](%d,%d)%s", __FUNCTION__, sub->start, sub->end, textBuff);
+        SUBTITLE_LOGI("[%s](%d,%d)%s", __FUNCTION__, sub->start, sub->end, textBuff);
         std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
         spu->pts = sub->start;
         spu->m_delay = sub->end;

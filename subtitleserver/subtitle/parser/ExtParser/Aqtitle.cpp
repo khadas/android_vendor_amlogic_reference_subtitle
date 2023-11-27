@@ -29,7 +29,7 @@
 #include "Aqtitle.h"
 
 Aqtitle::Aqtitle(std::shared_ptr<DataSource> source) : TextSubtitle(source) {
-    ALOGE("Aqtitle Subtitle");
+    SUBTITLE_LOGE("Aqtitle Subtitle");
 }
 
 
@@ -68,8 +68,8 @@ std::shared_ptr<ExtSubItem> Aqtitle::decodedItem() {
 
     while (mReader->getLine(line)) {
 
-        //ALOGD("%d %d %d", __LINE__, strlen(line), line[strlen(line)-1]);
-        //ALOGD("%d %s is EmptyLine?%d", __LINE__, line, isEmptyLine(line));
+        //SUBTITLE_LOGI("%d %d %d", __LINE__, strlen(line), line[strlen(line)-1]);
+        //SUBTITLE_LOGI("%d %s is EmptyLine?%d", __LINE__, line, isEmptyLine(line));
         if (sscanf(line, "-->> %d", &startPts) < 1) {
             continue;
         }
@@ -81,7 +81,7 @@ std::shared_ptr<ExtSubItem> Aqtitle::decodedItem() {
         } while (strlen(line) == 0);
 
         if (isEmptyLine(line)) {
-            ALOGD("?%d %d %d %d [%d]? why new line??", __LINE__, line[0], line[1], line[2], strlen(line));
+            SUBTITLE_LOGI("?%d %d %d %d [%d]? why new line??", __LINE__, line[0], line[1], line[2], strlen(line));
             continue;
         }
         // Got Start Pts, Got Subtitle String...
@@ -109,7 +109,7 @@ std::shared_ptr<ExtSubItem> Aqtitle::decodedItem() {
         item ->start = startPts;
         item ->end = endPts;
         item->lines.push_back(sub);
-        ALOGD("Add Item: %d:%d %s", startPts, endPts, sub.c_str());
+        SUBTITLE_LOGI("Add Item: %d:%d %s", startPts, endPts, sub.c_str());
         return item;
     }
 

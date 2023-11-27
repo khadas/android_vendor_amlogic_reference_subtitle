@@ -5,7 +5,7 @@
 #include <fmq/EventFlag.h>
 #include <fmq/MessageQueue.h>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/CallStack.h>
 
 #include <vendor/amlogic/hardware/subtitleserver/1.0/ISubtitleServer.h>
@@ -41,7 +41,7 @@ static AmlSubDataType __mapServerType2ApiType(int type) {
 }
 
 static int __mapApiType2SubtitleType(int type) {
-    ALOGD("call>> %s [stype:%d]", __func__, type);
+    SUBTITLE_LOGI("call>> %s [stype:%d]", __func__, type);
     switch (type) {
     case TYPE_SUBTITLE_DVB:
         return DTV_SUB_DTVKIT_DVB;
@@ -148,12 +148,12 @@ private:
 class SubtitleContext : public android::RefBase {
 public:
     SubtitleContext() {
-        ALOGD("call>> %s [%p]", __func__, this);
+        SUBTITLE_LOGI("call>> %s [%p]", __func__, this);
         mClient = nullptr;
     }
 
     ~SubtitleContext() {
-        ALOGD("call>> %s [%p]", __func__, this);
+        SUBTITLE_LOGI("call>> %s [%p]", __func__, this);
     }
 
     amlogic::SubtitleServerClient *mClient;
@@ -169,7 +169,7 @@ static bool __pushContext(sp<SubtitleContext> ctx) {
     auto it = gAvailContextMap.begin();
     it = gAvailContextMap.insert (it , ctx);
 
-    ALOGD("%s>> ctx:%p MapSize=%d", __func__, ctx.get(), gAvailContextMap.size());
+    SUBTITLE_LOGI("%s>> ctx:%p MapSize=%d", __func__, ctx.get(), gAvailContextMap.size());
 
     return *it != nullptr;
 }
@@ -177,14 +177,14 @@ static bool __pushContext(sp<SubtitleContext> ctx) {
 static bool __checkInContextMap(SubtitleContext *ctx) {
     android::Mutex::Autolock autoLock(gContextMapLock);
     for (auto it=gAvailContextMap.begin(); it<gAvailContextMap.end(); it++) {
-        ALOGD("%s>> search ctx:%p current:%p MapSize=%d",
+        SUBTITLE_LOGI("%s>> search ctx:%p current:%p MapSize=%d",
                 __func__, ctx, (*it).get(), gAvailContextMap.size());
 
         if (ctx == (*it).get()) {
             return true;
         }
     }
-    ALOGE("Error Invalid context handle!");
+    SUBTITLE_LOGE("Error Invalid context handle!");
     return false;
 }
 
@@ -192,7 +192,7 @@ static bool __eraseFromContext(SubtitleContext *ctx) {
     android::Mutex::Autolock autoLock(gContextMapLock);
     for (auto it=gAvailContextMap.begin(); it<gAvailContextMap.end(); it++) {
 
-        ALOGD("%s>> search ctx:%p current:%p MapSize=%d",
+        SUBTITLE_LOGI("%s>> search ctx:%p current:%p MapSize=%d",
                 __func__, ctx, (*it).get(), gAvailContextMap.size());
 
         if (ctx == (*it).get()) {
@@ -200,7 +200,7 @@ static bool __eraseFromContext(SubtitleContext *ctx) {
             return true;
         }
     }
-    ALOGE("Error Invalid context handle!");
+    SUBTITLE_LOGE("Error Invalid context handle!");
     return false;
 }
 
@@ -208,7 +208,7 @@ static bool __eraseFromContext(SubtitleContext *ctx) {
 
 
 AmlSubtitleHnd amlsub_Create() {
-    ALOGD("call>> %s", __func__);
+    SUBTITLE_LOGI("call>> %s", __func__);
     sp<SubtitleContext> ctx = new SubtitleContext();
     sp<MyAdaptorListener> listener = new MyAdaptorListener();
 
@@ -223,14 +223,14 @@ AmlSubtitleHnd amlsub_Create() {
 AmlSubtitleStatus amlsub_Destroy(AmlSubtitleHnd handle) {
     SubtitleContext *ctx = (SubtitleContext *)handle;
 
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
 
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
 
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -254,20 +254,20 @@ AmlSubtitleStatus amlsub_Destroy(AmlSubtitleHnd handle) {
  *   path: the subtitle external file path.
  */
 AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
-        ALOGE("Error! invalid handle, uninitialized?");
+        SUBTITLE_LOGE("Error! invalid handle, uninitialized?");
         return SUB_STAT_INV;
     }
 
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
     if (param == nullptr) {
-        ALOGE("Error! invalid input param, param=%p", param);
+        SUBTITLE_LOGE("Error! invalid input param, param=%p", param);
         return SUB_STAT_INV;
     }
     ctx->mClient->userDataOpen();
@@ -284,7 +284,7 @@ AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
 
     // TODO: CTC always use amstream. later we may all change to hwdemux
     // From middleware, the extSubPath should always null.
-    ALOGD("call>> %s demuxId[%d] ioSource[%d]", __func__, param->dmxId, param->ioSource);
+    SUBTITLE_LOGI("call>> %s demuxId[%d] ioSource[%d]", __func__, param->dmxId, param->ioSource);
     int ioType = -1;
     if (param->dmxId >= 0) {
         ioType = (param->dmxId << 16 | param->ioSource);
@@ -302,13 +302,13 @@ AmlSubtitleStatus amlsub_Open(AmlSubtitleHnd handle, AmlSubtitleParam *param) {
 }
 
 AmlSubtitleStatus amlsub_Close(AmlSubtitleHnd handle) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
     ctx->mClient->userDataClose();
@@ -319,13 +319,13 @@ AmlSubtitleStatus amlsub_Close(AmlSubtitleHnd handle) {
  * reset current play, most used for seek.
  */
 AmlSubtitleStatus amlsub_Reset(AmlSubtitleHnd handle) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
     return ctx->mClient->resetForSeek() ? SUB_STAT_OK : SUB_STAT_FAIL;
@@ -336,32 +336,32 @@ AmlSubtitleStatus amlsub_Reset(AmlSubtitleHnd handle) {
 ////////////////////////////////////////////////////////////
 
 AmlSubtitleStatus amlsub_SetParameter(AmlSubtitleHnd handle, AmlSubtitleParamCmd cmd, void *value, int paramSize) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
     return SUB_STAT_OK;
 }
 
 int amlsub_GetParameter(AmlSubtitleHnd handle, AmlSubtitleParamCmd cmd, void *value) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     return 0;
 }
 
 AmlSubtitleStatus amlsub_SetPip(AmlSubtitleHnd handle, AmlSubtitlePipMode mode, int value) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     if (value == INVALID_PIP_ID) return SUB_STAT_INV;
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -370,13 +370,13 @@ AmlSubtitleStatus amlsub_SetPip(AmlSubtitleHnd handle, AmlSubtitlePipMode mode, 
 }
 
 AmlSubtitleStatus amlsub_TeletextControl(AmlSubtitleHnd handle, AmlTeletextCtrlParam *param) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr || param == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -385,13 +385,13 @@ AmlSubtitleStatus amlsub_TeletextControl(AmlSubtitleHnd handle, AmlTeletextCtrlP
 }
 
 AmlSubtitleStatus amlsub_SelectCcChannel(AmlSubtitleHnd handle, int ch) {
-    ALOGD("call>> %s handle[%p] ch:%d", __func__, handle, ch);
+    SUBTITLE_LOGI("call>> %s handle[%p] ch:%d", __func__, handle, ch);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr || ch < 0) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -405,13 +405,13 @@ AmlSubtitleStatus amlsub_SelectCcChannel(AmlSubtitleHnd handle, int ch) {
 ////// Regist callbacks for subtitle Event and data ////////
 ////////////////////////////////////////////////////////////
 AmlSubtitleStatus amlsub_RegistOnDataCB(AmlSubtitleHnd handle, AmlSubtitleDataCb listener) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -421,13 +421,13 @@ AmlSubtitleStatus amlsub_RegistOnDataCB(AmlSubtitleHnd handle, AmlSubtitleDataCb
 }
 
 AmlSubtitleStatus amlsub_RegistOnChannelUpdateCb(AmlSubtitleHnd handle, AmlChannelUpdateCb listener) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
     ctx->mAdaptorListener->setupChannelUpdateCb(listener);
@@ -435,13 +435,13 @@ AmlSubtitleStatus amlsub_RegistOnChannelUpdateCb(AmlSubtitleHnd handle, AmlChann
 }
 
 AmlSubtitleStatus amlsub_RegistOnSubtitleAvailCb(AmlSubtitleHnd handle, AmlSubtitleAvailCb listener) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
     ctx->mAdaptorListener->setupSubtitleAvailCb(listener);
@@ -449,13 +449,13 @@ AmlSubtitleStatus amlsub_RegistOnSubtitleAvailCb(AmlSubtitleHnd handle, AmlSubti
 }
 
 AmlSubtitleStatus amlsub_RegistAfdEventCB(AmlSubtitleHnd handle, AmlAfdEventCb listener) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
     ctx->mAdaptorListener->setupAfdEventCb(listener);
@@ -463,13 +463,13 @@ AmlSubtitleStatus amlsub_RegistAfdEventCB(AmlSubtitleHnd handle, AmlAfdEventCb l
 }
 
 AmlSubtitleStatus amlsub_RegistGetDimensionCb(AmlSubtitleHnd handle, AmlSubtitleDimensionCb listener) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
     ctx->mAdaptorListener->setupDimensionCb(listener);
@@ -477,13 +477,13 @@ AmlSubtitleStatus amlsub_RegistGetDimensionCb(AmlSubtitleHnd handle, AmlSubtitle
 }
 
 AmlSubtitleStatus amlsub_RegistOnSubtitleLanguageCb(AmlSubtitleHnd handle, AmlSubtitleLanguageCb listener) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
     ctx->mAdaptorListener->setupLanguageCb(listener);
@@ -491,13 +491,13 @@ AmlSubtitleStatus amlsub_RegistOnSubtitleLanguageCb(AmlSubtitleHnd handle, AmlSu
 }
 
 AmlSubtitleStatus amlsub_RegistOnSubtitleInfoCB(AmlSubtitleHnd handle, AmlSubtitleInfoCb listener) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -508,13 +508,13 @@ AmlSubtitleStatus amlsub_RegistOnSubtitleInfoCB(AmlSubtitleHnd handle, AmlSubtit
 
 
 AmlSubtitleStatus amlsub_UiShow(AmlSubtitleHnd handle) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -523,13 +523,13 @@ AmlSubtitleStatus amlsub_UiShow(AmlSubtitleHnd handle) {
 }
 
 AmlSubtitleStatus amlsub_UiHide(AmlSubtitleHnd handle) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -539,13 +539,13 @@ AmlSubtitleStatus amlsub_UiHide(AmlSubtitleHnd handle) {
 
 /* Only available for text subtitle */
 AmlSubtitleStatus amlsub_UiSetTextColor(AmlSubtitleHnd handle, int color) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -553,13 +553,13 @@ AmlSubtitleStatus amlsub_UiSetTextColor(AmlSubtitleHnd handle, int color) {
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 AmlSubtitleStatus amlsub_UiSetTextSize(AmlSubtitleHnd handle, int sp) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -567,13 +567,13 @@ AmlSubtitleStatus amlsub_UiSetTextSize(AmlSubtitleHnd handle, int sp) {
     return r ? SUB_STAT_OK : SUB_STAT_FAIL;
 }
 AmlSubtitleStatus amlsub_UiSetGravity(AmlSubtitleHnd handle, int gravity) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
     bool r  = ctx->mClient->uiSetGravity(gravity);
@@ -581,13 +581,13 @@ AmlSubtitleStatus amlsub_UiSetGravity(AmlSubtitleHnd handle, int gravity) {
 }
 
 AmlSubtitleStatus amlsub_UiSetPosHeight(AmlSubtitleHnd handle, int yOffset) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -596,13 +596,13 @@ AmlSubtitleStatus amlsub_UiSetPosHeight(AmlSubtitleHnd handle, int yOffset) {
 }
 
 AmlSubtitleStatus amlsub_UiSetImgRatio(AmlSubtitleHnd handle, float ratioW, float ratioH, int maxW, int maxH) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -611,13 +611,13 @@ AmlSubtitleStatus amlsub_UiSetImgRatio(AmlSubtitleHnd handle, float ratioW, floa
 }
 
 AmlSubtitleStatus amlsub_UiSetSurfaceViewRect(AmlSubtitleHnd handle, int x, int y, int width, int height) {
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 
@@ -627,13 +627,13 @@ AmlSubtitleStatus amlsub_UiSetSurfaceViewRect(AmlSubtitleHnd handle, int x, int 
 
 AmlSubtitleStatus amlsub_UpdateVideoPos(AmlSubtitleHnd handle, int64_t pos) {
 
-    ALOGD("call>> %s handle[%p]", __func__, handle);
+    SUBTITLE_LOGI("call>> %s handle[%p]", __func__, handle);
     SubtitleContext *ctx = (SubtitleContext *)handle;
     if (ctx == nullptr || ctx->mClient == nullptr) {
         return SUB_STAT_INV;
     }
     if (!__checkInContextMap(ctx)) {
-        ALOGE("Error! Bad handle! mis-using API?");
+        SUBTITLE_LOGE("Error! Bad handle! mis-using API?");
         return SUB_STAT_INV;
     }
 

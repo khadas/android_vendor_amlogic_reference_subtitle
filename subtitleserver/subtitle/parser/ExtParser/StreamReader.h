@@ -95,7 +95,7 @@ static inline void removeHtmlToken(std::string &s) {
         std::sregex_iterator end;
         if (next != end) {
             std::smatch match = *next;
-            //ALOGD("%s html", match.str().c_str());
+            //SUBTITLE_LOGI("%s html", match.str().c_str());
             s.erase(s.find(match.str()), match.str().length());
             replaced = true;
         }

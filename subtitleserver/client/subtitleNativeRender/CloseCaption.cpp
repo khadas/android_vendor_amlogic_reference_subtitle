@@ -10,7 +10,7 @@
 #include "SkTextBox.h"
 
 #include <utils/CallStack.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <cutils/properties.h>
 
 //#define CC_LEFT_ALIGNED
@@ -90,7 +90,7 @@ void CaptionScreen::updateScreen(int w, int h) {
 //    }
     mMaxFontSize = mMaxFontHeight;
 
-    ALOGD("=============updateScreen: mMaxFontSize:%f mMaxFontHeight:%f, mSafeTitleHeight:%f, mCcRowCount:%d",
+    SUBTITLE_LOGI("=============updateScreen: mMaxFontSize:%f mMaxFontHeight:%f, mSafeTitleHeight:%f, mCcRowCount:%d",
         mMaxFontSize, mMaxFontHeight, mSafeTitleHeight, mCcRowCount);
 
     //This is used for positioning character in 608 mode.
@@ -221,10 +221,10 @@ RowString::RowString(CaptionVersion ver, std::shared_ptr<Configure> config, Json
     } else if (ignoreCaseCompare(mPenSize, "standard")) {
         mFontScale = 0.65;
     } else {
-        ALOGE("Font scale not supported: %s",  mPenSize.c_str());
+        SUBTITLE_LOGE("Font scale not supported: %s",  mPenSize.c_str());
         mFontScale = 0.8;
     }
-    ALOGE("mPenSize: %s mFontScale:%f",  mPenSize.c_str(), mFontScale);
+    SUBTITLE_LOGE("mPenSize: %s mFontScale:%f",  mPenSize.c_str(), mFontScale);
 
     if ((root["font_style"].asString()).compare("default") != 0) {
         mFontStyle = root["font_style"].asString();
@@ -270,7 +270,7 @@ RowString::RowString(CaptionVersion ver, std::shared_ptr<Configure> config, Json
     } else if (ignoreCaseCompare(mFgOpacity, "translucent")) {
         mFgOpacityInt = 0x80;
     } else {
-        ALOGE("Fg opacity Not supported yet %s", mFgOpacity.c_str());
+        SUBTITLE_LOGE("Fg opacity Not supported yet %s", mFgOpacity.c_str());
     }
 
     /* --------------------Background----------------- */
@@ -345,17 +345,17 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
     mStrBottom = win.mWindowStartY + (row.mRowNumberInWindow + 1) * mConfig->getScreen()->mMaxFontHeight + rowSpace;
 
     /* Handle mJustify here */
-    ALOGD("%s[r:%d] mJustify=%s [T:%f B:%f] mMaxFontHeight:%f", __func__,
+    SUBTITLE_LOGI("%s[r:%d] mJustify=%s [T:%f B:%f] mMaxFontHeight:%f", __func__,
     row.mRowNumberInWindow, win.mJustify.c_str(), mStrTop, mStrBottom, mConfig->getScreen()->mMaxFontHeight);
 
 
-    ALOGD("win.mWindowRight:%f, mStringLengthOnPaint:%f", win.mWindowRight, mStringLengthOnPaint);
+    SUBTITLE_LOGI("win.mWindowRight:%f, mStringLengthOnPaint:%f", win.mWindowRight, mStringLengthOnPaint);
     #ifndef CC_LEFT_ALIGNED
     if (ignoreCaseCompare(win.mJustify, "left")) {
         if (row.mPriorStrPositionForDraw == -1) {
             row.mPriorStrPositionForDraw = (win.mWindowRight - mStringLengthOnPaint)/2;
         }
-        ALOGD("%s mPriorStrPositionForDraw=%f winStartX:%f, strStartX:%f", __func__, row.mPriorStrPositionForDraw, win.mWindowStartX, mStrStartX);
+        SUBTITLE_LOGI("%s mPriorStrPositionForDraw=%f winStartX:%f, strStartX:%f", __func__, row.mPriorStrPositionForDraw, win.mWindowStartX, mStrStartX);
         mStrLeft = row.mPriorStrPositionForDraw;
         mStrRight = mStrLeft + mStringLengthOnPaint;
         row.mPriorStrPositionForDraw = mStrRight;
@@ -399,7 +399,7 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
         if (row.mPriorStrPositionForDraw == -1) {
             row.mPriorStrPositionForDraw = win.mWindowStartX + mStrStartX;
         }
-        ALOGD("%s mPriorStrPositionForDraw=%f winStartX:%f, strStartX:%f", __func__, row.mPriorStrPositionForDraw, win.mWindowStartX, mStrStartX);
+        SUBTITLE_LOGI("%s mPriorStrPositionForDraw=%f winStartX:%f, strStartX:%f", __func__, row.mPriorStrPositionForDraw, win.mWindowStartX, mStrStartX);
         mStrLeft = row.mPriorStrPositionForDraw;
         mStrRight = mStrLeft + mStringLengthOnPaint;
         row.mPriorStrPositionForDraw = mStrRight;
@@ -408,7 +408,7 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
             if (row.mPriorStrPositionForDraw == -1) {
                 row.mPriorStrPositionForDraw = (win.mWindowRight - mStringLengthOnPaint)/2;
             }
-            ALOGD("%s mPriorStrPositionForDraw=%f winStartX:%f, strStartX:%f", __func__, row.mPriorStrPositionForDraw, win.mWindowStartX, mStrStartX);
+            SUBTITLE_LOGI("%s mPriorStrPositionForDraw=%f winStartX:%f, strStartX:%f", __func__, row.mPriorStrPositionForDraw, win.mWindowStartX, mStrStartX);
             mStrLeft = row.mPriorStrPositionForDraw;
             mStrRight = mStrLeft + mStringLengthOnPaint;
             row.mPriorStrPositionForDraw = mStrRight;
@@ -448,7 +448,7 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
 
     /* Draw background, a rect, if opacity == 0, skip it */
     if (mStrBottom < mConfig->getScreen()->mSafeTitleTop + mConfig->getScreen()->mMaxFontHeight) {
-        ALOGD("FAILED: %f < %f (safe top:%f) strtop:%f", mStrBottom,
+        SUBTITLE_LOGI("FAILED: %f < %f (safe top:%f) strtop:%f", mStrBottom,
             mConfig->getScreen()->mSafeTitleTop + mConfig->getScreen()->mMaxFontHeight,
             mConfig->getScreen()->mSafeTitleTop, mStrTop);
         mStrBottom = mConfig->getScreen()->mSafeTitleTop + mConfig->getScreen()->mMaxFontHeight;
@@ -463,7 +463,7 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
         paint.setColor(mBgColor);
         paint.setAlpha(mBgOpacityInt);
         canvas.drawRect(SkRect::MakeLTRB(mStrLeft, mStrTop, mStrRight, mStrBottom), paint);
-        ALOGD("Row String draw rect [%f %f %f %f] mFillColor:%x, mFileOpcityInt:%x",
+        SUBTITLE_LOGI("Row String draw rect [%f %f %f %f] mFillColor:%x, mFileOpcityInt:%x",
             mStrLeft, mStrTop, mStrRight, mStrBottom, mBgColor, mBgOpacityInt);
     }
 
@@ -486,7 +486,7 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
         }
     }
 
-    ALOGD("   StrStartX:%f Rect[%f %f %f %f]",
+    SUBTITLE_LOGI("   StrStartX:%f Rect[%f %f %f %f]",
          mStrStartX, mStrLeft, mStrTop, mStrRight, mStrBottom);
 
     return true;
@@ -497,7 +497,7 @@ void RowString::drawString(SkCanvas &canvas, std::string str, SkScalar left, SkS
     //paint.setBlendMode(SkBlendMode::kPlus);
     canvas.drawText(str.c_str(), str.length(), left, bottom, paint);
 
-    ALOGD("RowString::drawString  %s at[%f %f] color[%08X] alpha:%08x",
+    SUBTITLE_LOGI("RowString::drawString  %s at[%f %f] color[%08X] alpha:%08x",
         str.c_str(), left, bottom, paint.getColor(), paint.getAlpha());
 
 }
@@ -579,16 +579,16 @@ void RowString::drawText(SkCanvas &canvas,  std::string str,
 
 void RowString::dump(std :: string prefix) {
     if (mData.length() <= 0) return;
-    ALOGD("%s ==> Subtitle: %s", prefix.c_str(), mData.c_str());
-    ALOGD("%s   Italics:%d Underline:%d Color[Edge:%08x Fg:%08x, Bg:%08x]",
+    SUBTITLE_LOGI("%s ==> Subtitle: %s", prefix.c_str(), mData.c_str());
+    SUBTITLE_LOGI("%s   Italics:%d Underline:%d Color[Edge:%08x Fg:%08x, Bg:%08x]",
         prefix.c_str(), mItalics, mUnderline, mEdgeColor, mFgColor, mBgColor);
-    ALOGD("%s   FontStyle:%s PenSize:%s offset:%s, edgeType:%s Opacity[fg:%s bg:%s]",
+    SUBTITLE_LOGI("%s   FontStyle:%s PenSize:%s offset:%s, edgeType:%s Opacity[fg:%s bg:%s]",
         prefix.c_str(), mFontStyle.c_str(), mPenSize.c_str(), mOffset.c_str(),
         mEdgeType.c_str(), mFgOpacity.c_str(), mBgOpacity.c_str());
 
-    ALOGD("%s   face:%p FontSize:%f StrCharactersCount:%d StringLenOnPaint:%f MaxSingleFontWidth:%f",
+    SUBTITLE_LOGI("%s   face:%p FontSize:%f StrCharactersCount:%d StringLenOnPaint:%f MaxSingleFontWidth:%f",
         prefix.c_str(), mFontFace.get(), mFontSize, mStrCharactersCount, mStringLengthOnPaint, mMaxSingleFontWidth);
-    ALOGD("%s   StrStartX:%f Rect[%f %f %f %f]",
+    SUBTITLE_LOGI("%s   StrStartX:%f Rect[%f %f %f %f]",
         prefix.c_str(), mStrStartX, mStrLeft, mStrTop, mStrRight, mStrBottom);
 }
 
@@ -602,7 +602,7 @@ Rows::Rows(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Value &r
     mRowArray = root["content"];
     mRowStartX = root["row_start"].asInt();
     mStrCount = mRowArray.size();
-    ALOGD("Row: Row==> mRowStartX:%f,%s mStrCount:%d", mRowStartX, root["row_start"].asString().c_str(), mStrCount);
+    SUBTITLE_LOGI("Row: Row==> mRowStartX:%f,%s mStrCount:%d", mRowStartX, root["row_start"].asString().c_str(), mStrCount);
 
     double singleCharWidth = (mVersion==CC_VER_CEA708) ?
             mConfig->mWindowMaxFontSize : mConfig->getScreen()->mFixedCharWidth;
@@ -633,12 +633,12 @@ Rows::Rows(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Value &r
 bool Rows::draw(SkCanvas &canvas, Window &win) {
     // nothing need to draw in this row ...
 
-    ALOGD("mRowLengthOnPaint=%f mStrCount:%d", mRowLengthOnPaint, mStrCount);
+    SUBTITLE_LOGI("mRowLengthOnPaint=%f mStrCount:%d", mRowLengthOnPaint, mStrCount);
     if (/*mRowLengthOnPaint == 0 || */mStrCount == 0) {
         return false;
     }
 
-    ALOGD("Rows::draw mRowStartX:%f", mRowStartX);
+    SUBTITLE_LOGI("Rows::draw mRowStartX:%f", mRowStartX);
 
     Rows &r = *this;
     std::for_each(mRowStrs.begin(), mRowStrs.end(), [&](RowString &rs) {
@@ -652,9 +652,9 @@ void Rows::dump(std::string prefix) {
         return;
     }
 
-    ALOGD("%s RowNum:%d StringCount:%d mRowStartX:%f mRowStartY:%f",
+    SUBTITLE_LOGI("%s RowNum:%d StringCount:%d mRowStartX:%f mRowStartY:%f",
         prefix.c_str(), mRowNumberInWindow, mStrCount, mRowStartX, mRowStartY);
-    ALOGD("%s RowLengthOnPaint:%f RowCharactersCount:%d PriorStrPositionForDra:%f CharacterGap:%f mRowMaxFontSize:%f",
+    SUBTITLE_LOGI("%s RowLengthOnPaint:%f RowCharactersCount:%d PriorStrPositionForDra:%f CharacterGap:%f mRowMaxFontSize:%f",
         prefix.c_str(), mRowLengthOnPaint, mRowCharactersCount, mPriorStrPositionForDraw, mCharacterGap, mRowMaxFontSize);
 
     std::for_each(mRowStrs.begin(), mRowStrs.end(), [&](RowString &rs) {
@@ -670,14 +670,14 @@ Window::Window(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Valu
     mAnchorV = root["anchor_vertical"].asInt();
     mAnchorH = root["anchor_horizontal"].asInt();
     mAnchorRelative = root["anchor_relative"].asBool();
-    ALOGD("Window: anchor_point=%d  mAnchor[%d %d] anchor_relative:%d",
+    SUBTITLE_LOGI("Window: anchor_point=%d  mAnchor[%d %d] anchor_relative:%d",
         mAnchorPointer, mAnchorV, mAnchorH, mAnchorRelative);
 
     mRowCount = root["row_count"].asInt();
     mColCount = root["column_count"].asInt();
     mRowLock = root["row_lock"].asBool();
     mColumnLock = root["column_lock"].asBool();
-    ALOGD("Window: Row==> row:%d (lock?%d)  column:%d (lock?%d)",
+    SUBTITLE_LOGI("Window: Row==> row:%d (lock?%d)  column:%d (lock?%d)",
         mRowCount, mRowLock, mColCount, mColumnLock);
 
 
@@ -685,7 +685,7 @@ Window::Window(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Valu
     mPrintDirection = root["print_direction"].asString();
     mScrollDirection = root["scroll_direction"].asString();
     mWordwrap = root["wordwrap"].asBool();
-    ALOGD("Window: justify==> %s print_dir:%s scroll_dir:%s wordwrap?%d",
+    SUBTITLE_LOGI("Window: justify==> %s print_dir:%s scroll_dir:%s wordwrap?%d",
         mJustify.c_str(), mPrintDirection.c_str(), mScrollDirection.c_str(), mWordwrap);
 
     mDisplayEffect = root["display_effect"].asString();
@@ -701,7 +701,7 @@ Window::Window(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Valu
         }
     }
 
-    ALOGD("Window: effect==> display:%s direction:%s speed:%d percent:%d status:%s",
+    SUBTITLE_LOGI("Window: effect==> display:%s direction:%s speed:%d percent:%d status:%s",
         mDisplayEffect.c_str(), mEffectDirection.c_str(), mEffectSpeed, mEffectPercent, mEffectStatus.c_str());
 
     mFillOpacity = root["fill_opacity"].asString();
@@ -730,7 +730,7 @@ Window::Window(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Valu
         mFillOpcityInt = mConfig->mDefaultFillOpacity;
     }
 
-    ALOGD("Window: fill==> mFillOpacity:%s mFillColor:%x mBorderType:%s mBorderColor:%x mFillOpcityInt:%x ",
+    SUBTITLE_LOGI("Window: fill==> mFillOpacity:%s mFillColor:%x mBorderType:%s mBorderColor:%x mFillOpcityInt:%x ",
         mFillOpacity.c_str(), mFillColor,  mBorderType.c_str(), mBorderColor, mFillOpcityInt);
 
     // initialize window
@@ -746,7 +746,7 @@ Window::Window(CaptionVersion ver, std::shared_ptr<Configure> config, Json::Valu
 
     mRowJson = root["rows"];
     if (mRowCount > mRowJson.size()) {
-        ALOGE("window loses %d rows!", (mRowCount - mRowJson.size()));
+        SUBTITLE_LOGE("window loses %d rows!", (mRowCount - mRowJson.size()));
     }
     for (int i=0; i<mRowJson.size(); i++) {
         Rows row(mVersion, mConfig, mRowJson[i]);
@@ -806,7 +806,7 @@ bool Window::draw(SkCanvas &canvas) {
     if (mFillOpcityInt != 0x0) {
         paint.setColor(mFillColor);
         paint.setAlpha(mFillOpcityInt);
-        ALOGD("Draw window rect [%f %f %f %f] mFillColor:%x, mFileOpcityInt:%x",
+        SUBTITLE_LOGI("Draw window rect [%f %f %f %f] mFillColor:%x, mFileOpcityInt:%x",
             mWindowLeft, mWindowRight, mWindowTop, mWindowBottom, mFillColor, mFillOpcityInt);
         canvas.drawRect(SkRect::MakeLTRB(mWindowLeft, mWindowTop, mWindowRight, mWindowBottom), paint);
     }
@@ -939,18 +939,18 @@ void Window::drawBorder(SkCanvas &canvas, SkPaint borderPaint, SkPaint shadowPai
 }
 
 void Window::dump(std :: string prefix) {
-    ALOGD("%s row:%d column:%d rowLock:%d colLock:%d", prefix.c_str(), mRowCount, mColCount, mRowLock, mColumnLock);
-    ALOGD("%s anchorPoint:%d AnchorVH[%d %d] AnchorRelative:%d",
+    SUBTITLE_LOGI("%s row:%d column:%d rowLock:%d colLock:%d", prefix.c_str(), mRowCount, mColCount, mRowLock, mColumnLock);
+    SUBTITLE_LOGI("%s anchorPoint:%d AnchorVH[%d %d] AnchorRelative:%d",
         prefix.c_str(), mAnchorPointer, mAnchorV, mAnchorH, mAnchorRelative);
-    ALOGD("%s Justify:%s direction:%s scroll_direction:%s mWordwrap:%d",
+    SUBTITLE_LOGI("%s Justify:%s direction:%s scroll_direction:%s mWordwrap:%d",
         prefix.c_str(), mJustify.c_str(), mPrintDirection.c_str(), mScrollDirection.c_str(), mWordwrap);
-    ALOGD("%s fill[%s %08X] border[%s %08X] penWindowDepend:%f",
+    SUBTITLE_LOGI("%s fill[%s %08X] border[%s %08X] penWindowDepend:%f",
         prefix.c_str(), mFillOpacity.c_str(), mFillColor, mBorderType.c_str(), mBorderColor, mPensizeWindowDepend);
-    ALOGD("%s Effect[%s Speed:%d direction:%s status:%s percent:%d]",
+    SUBTITLE_LOGI("%s Effect[%s Speed:%d direction:%s status:%s percent:%d]",
         prefix.c_str(), mDisplayEffect.c_str(), mEffectSpeed,mEffectDirection.c_str(), mEffectStatus.c_str(), mEffectPercent);
 
 
-    ALOGD("%s [==Only Dump Has Valid Content Row==]", prefix.c_str());
+    SUBTITLE_LOGI("%s [==Only Dump Has Valid Content Row==]", prefix.c_str());
     std::for_each(mRows.begin(), mRows.end(), [&](Rows &r) {
         r.dump(prefix+"    ");
     });
@@ -978,9 +978,9 @@ bool CloseCaption::parserJson(const char*str) {
         while (ds.length() >= 512) {
             std::string tmp = ds.substr(0, 512);
             ds = ds.substr(512);
-            ALOGD("%s", tmp.c_str());
+            SUBTITLE_LOGI("%s", tmp.c_str());
         }
-        ALOGD("%s", ds.c_str());
+        SUBTITLE_LOGI("%s", ds.c_str());
     }
 
     mVerString = root["type"].asString();
@@ -989,12 +989,12 @@ bool CloseCaption::parserJson(const char*str) {
     } else if (mVerString == "cea708") {
         mVersion = CC_VER_CEA708;
     } else {
-        ALOGE("Error! not supported CloseCaption Version:%s", mVerString.c_str());
+        SUBTITLE_LOGE("Error! not supported CloseCaption Version:%s", mVerString.c_str());
     }
 
     Json::Value windowRoots = root["windows"];
 
-    ALOGD("CloseCaption: type=%s windows[%d]", mVerString.c_str(), windowRoots.size());
+    SUBTITLE_LOGI("CloseCaption: type=%s windows[%d]", mVerString.c_str(), windowRoots.size());
 
     for (int i=0; i<windowRoots.size(); i++) {
         Window w(mVersion, mConfig, windowRoots[i]);
@@ -1033,16 +1033,16 @@ bool CloseCaption::draw(SkCanvas &canvas) {
     }
 
     if (mConfig == nullptr || mConfig->getScreen() == nullptr) {
-         ALOGE("Error! no configuration defined");
+         SUBTITLE_LOGE("Error! no configuration defined");
     } else {
         SkImageInfo info = canvas.imageInfo();
         mConfig->getScreen()->updateScreen(info.width(), info.height());
     }
-    ALOGD("|         ================ DRAW START ====================");
+    SUBTITLE_LOGI("|         ================ DRAW START ====================");
     std::for_each(mWindows.begin(), mWindows.end(), [&](Window &w) {
         w.draw(canvas);
     });
-    ALOGD("|         ================  DRAW END  ====================");
+    SUBTITLE_LOGI("|         ================  DRAW END  ====================");
     if (gDump) dump();
     return true;
 }
@@ -1050,7 +1050,7 @@ bool CloseCaption::draw(SkCanvas &canvas) {
 void CloseCaption::dump() {
     std::string prefix("    ");
 
-    ALOGD("CloseCation Item: version:%s", mVerString.c_str());
+    SUBTITLE_LOGI("CloseCation Item: version:%s", mVerString.c_str());
 
     std::for_each(mWindows.begin(), mWindows.end(), [&](Window &w) {
         w.dump(prefix);

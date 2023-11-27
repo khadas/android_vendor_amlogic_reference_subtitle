@@ -30,7 +30,7 @@
 #include <fcntl.h>
 #include <string>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/CallStack.h>
 
 #include "FileSource.h"
@@ -38,7 +38,7 @@
 
 
 FileSource::FileSource(int fd, int extFd) {
-    ALOGD("%s fd:%d", __func__, fd);
+    SUBTITLE_LOGI("%s fd:%d", __func__, fd);
     mFd = fd;
     if (mFd > 0) {
         ::lseek(mFd, 0, SEEK_SET);
@@ -50,7 +50,7 @@ FileSource::FileSource(int fd, int extFd) {
 }
 
 FileSource::~FileSource() {
-    ALOGD("%s mFd:%d", __func__, mFd);
+    SUBTITLE_LOGI("%s mFd:%d", __func__, mFd);
     if (mFd > 0) {
         ::close(mFd);
         mFd = -1;
@@ -66,12 +66,12 @@ int FileSource::onData(const char *buffer, int len) {
 }
 
 bool FileSource::start() {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     return true;
 }
 
 bool FileSource::stop() {
-    ALOGD("%s mFd:%d", __func__, mFd);
+    SUBTITLE_LOGI("%s mFd:%d", __func__, mFd);
     return true;
 }
 
@@ -79,12 +79,12 @@ SubtitleIOType FileSource::type() {
     return E_SUBTITLE_FILE;
 }
 bool FileSource::isFileAvailable() {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     return (mDumpFd > 0);
 }
 
 size_t FileSource::lseek(int offSet, int whence) {
-    ALOGD("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     if (mFd > 0) {
         return ::lseek(mFd, offSet, whence);
     } else {
@@ -110,7 +110,7 @@ size_t FileSource::read(void *buffer, size_t size) {
         errno = 0;
         r = ::read(mFd, buf + read_done, data_size);
     } while (r <= 0 && (errno == EINTR || errno == EAGAIN));
-    ALOGD("have read r=%d, mRdFd:%d, size:%d errno:%d(%s)", r, mFd, size, errno, strerror(errno));
+    SUBTITLE_LOGI("have read r=%d, mRdFd:%d, size:%d errno:%d(%s)", r, mFd, size, errno, strerror(errno));
     return r;
 }
 

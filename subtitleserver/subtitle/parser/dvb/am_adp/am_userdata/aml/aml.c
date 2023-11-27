@@ -42,7 +42,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <fcntl.h>
 #include <errno.h>
 #include <poll.h>
@@ -264,7 +264,7 @@ static void dump_cc_data(char *who, int poc, uint8_t *buff, int size)
         sprintf(buf+i*3, "%02x ", buff[i]);
     }
 
-    ALOGD("CC DUMP:who:%s poc: %d :%s", who, poc, buf);
+    SUBTITLE_LOGI("CC DUMP:who:%s poc: %d :%s", who, poc, buf);
 }
 
 static void aml_free_cc_data (AM_CCData *cc)
@@ -332,12 +332,12 @@ static userdata_type aml_check_userdata_format (uint8_t *buf, int vfmt, int len)
     {
         if (IS_H264(buf) || IS_H265(buf))
         {
-            ALOGI("CC format is h264_or_h265_cc_type");
+            SUBTITLE_LOGI("CC format is h264_or_h265_cc_type");
             return H264_CC_TYPE;
         }
         else if (IS_DIRECTV(buf))
         {
-            ALOGI("CC format is directv_cc_type");
+            SUBTITLE_LOGI("CC format is directv_cc_type");
             return DIRECTV_CC_TYPE;
         }
         else if (IS_H264_AFD(buf))
@@ -348,7 +348,7 @@ static userdata_type aml_check_userdata_format (uint8_t *buf, int vfmt, int len)
     else if (vfmt == 7)
     {
         if (IS_AVS(buf)) {
-            ALOGI("CC format is avs_cc_type");
+            SUBTITLE_LOGI("CC format is avs_cc_type");
             return AVS_CC_TYPE;
         }
     }
@@ -360,12 +360,12 @@ static userdata_type aml_check_userdata_format (uint8_t *buf, int vfmt, int len)
 
             if (IS_ATSC(hdr->atsc_flag))
             {
-                ALOGI("CC format is mpeg_cc_type");
+                SUBTITLE_LOGI("CC format is mpeg_cc_type");
                 return MPEG_CC_TYPE;
             }
             else if (IS_SCTE(hdr->atsc_flag))
             {
-                ALOGD("CC format is scte_cc_type");
+                SUBTITLE_LOGI("CC format is scte_cc_type");
                 return SCTE_CC_TYPE;
             }
             else if (IS_AFD(hdr->atsc_flag))
@@ -375,7 +375,7 @@ static userdata_type aml_check_userdata_format (uint8_t *buf, int vfmt, int len)
         }
     }
     else
-        ALOGD("vfmt not handled");
+        SUBTITLE_LOGI("vfmt not handled");
 
     return INVALID_TYPE;
 }
@@ -419,7 +419,7 @@ static void aml_flush_cc_data(AM_USERDATA_Device_t *dev)
             }
         }
 
-        ALOGD("cc_write_package decode:%s", buf);
+        SUBTITLE_LOGI("cc_write_package decode:%s", buf);
 
         aml_write_userdata(dev, cc->buf, cc->size, cc->pts, cc->pts_valid, cc->duration);
 
@@ -467,7 +467,7 @@ static void aml_add_cc_data(AM_USERDATA_Device_t *dev, int poc, int type, uint8_
         }
     }*/
 
-    ALOGD("CC poc:%d ptype:%d data:%s", poc, type, buf);
+    SUBTITLE_LOGI("CC poc:%d ptype:%d data:%s", poc, type, buf);
 
     pcc = &ud->cc_list;
     if (*pcc && poc < ((*pcc)->poc - 30))
@@ -497,7 +497,7 @@ static void aml_add_cc_data(AM_USERDATA_Device_t *dev, int poc, int type, uint8_
     } else {
         cc = malloc(sizeof(AM_CCData));
         if (!cc) {
-            ALOGI("Error! cc data malloc failed!");
+            SUBTITLE_LOGI("Error! cc data malloc failed!");
             return;
         }
         cc->buf  = NULL;
@@ -509,7 +509,7 @@ static void aml_add_cc_data(AM_USERDATA_Device_t *dev, int poc, int type, uint8_
     if (cc->cap < len) {
         cc->buf = realloc(cc->buf, len);
         if (!cc->buf) {
-            ALOGI("Error! cc buf realloc failed!");
+            SUBTITLE_LOGI("Error! cc buf realloc failed!");
             return;
         }
         cc->cap = len;
@@ -537,7 +537,7 @@ len, int64_t pts, int pts_valid, int64_t duration)
     char display_buffer[10240];
     for (i=0;i<len; i++)
         sprintf(&display_buffer[i*3], " %02x", p[i]);
-    ALOGI("mpeg_process len:%d data:%s", len, display_buffer);
+    SUBTITLE_LOGI("mpeg_process len:%d data:%s", len, display_buffer);
 #endif
 
     if (len < 5)
@@ -616,7 +616,7 @@ static int aml_process_scte_userdata(AM_USERDATA_Device_t *dev, uint8_t *data, i
 #if 0
     for (i=0; i<len; i++)
         sprintf(display_buffer+3*i, " %02x", data[i]);
-    ALOGI("scte buffer type %d ref %d top_bit %d %s", ptype, ref, top_bit_value, display_buffer);
+    SUBTITLE_LOGI("scte buffer type %d ref %d top_bit %d %s", ptype, ref, top_bit_value, display_buffer);
 #endif
 
     if (ptype == I_TYPE)
@@ -673,7 +673,7 @@ static int aml_process_scte_userdata(AM_USERDATA_Device_t *dev, uint8_t *data, i
         GET(mark, 1);
         if (field == 3)
             field = 1;
-        ALOGD("loop %d field %d line %d cc1 %x cc2 %x",
+        SUBTITLE_LOGI("loop %d field %d line %d cc1 %x cc2 %x",
             i, field, line, cc1, cc2);
         if (field == 1)
             line = (top_bit_value)?line+10:line+273;
@@ -707,7 +707,7 @@ static int aml_process_scte_userdata(AM_USERDATA_Device_t *dev, uint8_t *data, i
 #if 0
     for (i=0; i<size; i++)
             sprintf(display_buffer+3*i, " %02x", cc_data[i]);
-        //ALOGI("scte_write_buffer len: %d data: %s", size, display_buffer);
+        //SUBTITLE_LOGI("scte_write_buffer len: %d data: %s", size, display_buffer);
 #endif
     if (cc_count > 0)
         aml_add_cc_data(dev, ref, ptype, cc_data, size, pts, meta_info->vpts_valid,
@@ -858,7 +858,7 @@ static int aml_process_h264_userdata(AM_USERDATA_Device_t *dev, uint8_t *data, i
                 break;
             }
 
-            //ALOGI("CC poc_number:%x hdr:%d pl:%d", poc, hdr, pl);
+            //SUBTITLE_LOGI("CC poc_number:%x hdr:%d pl:%d", poc, hdr, pl);
             if (poc == 0) {
                 aml_flush_cc_data(dev);
             }
@@ -901,7 +901,7 @@ static int get_kernel_version(void)
         return 0;
     if (sscanf(utsn.release, "%d.%d.%d", &version, &subversion, &patchlevel) != 3)
         return 0;
-    ALOGD("get_kernel_version version= %d,subversion=%d",version,subversion);
+    SUBTITLE_LOGI("get_kernel_version version= %d,subversion=%d",version,subversion);
     return (version << 16) + (subversion << 8) + patchlevel;
 }
 
@@ -939,7 +939,7 @@ static void* aml_userdata_thread (void *arg)
         //so we need to check cc type every time.
         left = 0;
         ret = poll(&pfd, 1, USERDATA_POLL_TIMEOUT);
-        ALOGD("userdata after poll ret %d", ret);
+        SUBTITLE_LOGI("userdata after poll ret %d", ret);
         if (!ud->running)
             break;
 
@@ -958,20 +958,20 @@ static void* aml_userdata_thread (void *arg)
         vdec_ids = 0;
 
         if (-1 == ioctl(fd, AMSTREAM_IOC_UD_AVAILABLE_VDEC, &vdec_ids)) {
-            ALOGD("get available vdec failed");
+            SUBTITLE_LOGI("get available vdec failed");
             continue;
         } else {
-            ALOGD("get available vdec OK: 0x%x\n", vdec_ids);
+            SUBTITLE_LOGI("get available vdec OK: 0x%x\n", vdec_ids);
         }
 
         if (kernel_version >= 5 || property_get_int32("ro.build.version.sdk", 28) >= 29) {
-        //ALOGI("kernel version:%d, android sdk:%d",kernel_version, property_get_int32("ro.build.version.sdk", 28));
+        //SUBTITLE_LOGI("kernel version:%d, android sdk:%d",kernel_version, property_get_int32("ro.build.version.sdk", 28));
             read_vdec_id = vdec_ids;
         } else {
             read_vdec_id = ffs(vdec_ids) - 1;
         }
         if (read_vdec_id != ud->playerId) {
-            ALOGI("the player is not consistent with the video read_vdec_id=%d,ud->playerId=%d",read_vdec_id,ud->playerId);
+            SUBTITLE_LOGI("the player is not consistent with the video read_vdec_id=%d,ud->playerId=%d",read_vdec_id,ud->playerId);
             continue;
         }
         if (flush) {
@@ -990,8 +990,8 @@ static void* aml_userdata_thread (void *arg)
             user_para_info.instance_id = read_vdec_id;
 
             if (-1 == ioctl(fd, AMSTREAM_IOC_UD_BUF_READ, &user_para_info))
-                ALOGI("call AMSTREAM_IOC_UD_BUF_READ failed\n");
-    //          ALOGI("vdec_id %d real_id %d ioctl left data: %d",
+                SUBTITLE_LOGI("call AMSTREAM_IOC_UD_BUF_READ failed\n");
+    //          SUBTITLE_LOGI("vdec_id %d real_id %d ioctl left data: %d",
     //          vdec_ids, read_vdec_id, user_para_info.meta_info.records_in_que);
 
             r = user_para_info.data_size;
@@ -1009,7 +1009,7 @@ static void* aml_userdata_thread (void *arg)
             static char display_buffer[10*1024];
             for (i=0; i<left; i++)
                 sprintf(&display_buffer[i*3], " %02x", data[i]);
-            ALOGI("fmt %d ud_aml_buffer: %s", ud->vfmt, display_buffer);
+            SUBTITLE_LOGI("fmt %d ud_aml_buffer: %s", ud->vfmt, display_buffer);
 #endif
             ud->format = INVALID_TYPE;
             while (ud->format == INVALID_TYPE ||
@@ -1051,7 +1051,7 @@ static void* aml_userdata_thread (void *arg)
         left -= r;
         }while(user_para_info.meta_info.records_in_que > 1 || (left >= 8));
     }
-    ALOGI("aml userdata thread exit");
+    SUBTITLE_LOGI("aml userdata thread exit");
     if (media_sync != NULL) {
         MediaSync_destroy(media_sync);
     }
@@ -1064,13 +1064,13 @@ static AM_ErrorCode_t aml_open(AM_USERDATA_Device_t *dev, const AM_USERDATA_Open
     int r;
 
     if (!ud) {
-        ALOGI("not enough memory");
+        SUBTITLE_LOGI("not enough memory");
         return AM_USERDATA_ERR_NO_MEM;
     }
 
     ud->fd = open("/dev/amstream_userdata", O_RDONLY);
     if (ud->fd == -1) {
-        ALOGI("cannot open userdata device");
+        SUBTITLE_LOGI("cannot open userdata device");
         free(ud);
         return AM_USERDATA_ERR_CANNOT_OPEN_DEV;
     }
@@ -1090,7 +1090,7 @@ static AM_ErrorCode_t aml_open(AM_USERDATA_Device_t *dev, const AM_USERDATA_Open
     dev->drv_data = ud;
     r = pthread_create(&ud->th, NULL, aml_userdata_thread, (void*)dev);
     if (r) {
-        ALOGI("create userdata thread failed");
+        SUBTITLE_LOGI("create userdata thread failed");
         close(ud->fd);
         free(ud);
         return AM_USERDATA_ERR_SYS;

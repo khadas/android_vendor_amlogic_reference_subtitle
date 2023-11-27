@@ -32,7 +32,7 @@
 
 
 SimpleWebVtt::SimpleWebVtt(std::shared_ptr<DataSource> source): TextSubtitle(source) {
-    ALOGE("SimpleWebVtt Subtitle");
+    SUBTITLE_LOGE("SimpleWebVtt Subtitle");
 }
 
 SimpleWebVtt::~SimpleWebVtt() {

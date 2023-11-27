@@ -53,7 +53,7 @@ std::shared_ptr<ExtSubItem> RealText::decodedItem() {
     char line[LINE_LEN + 1];
 
     while (mReader->getLine(line)) {
-        ALOGD(" read: %s", line);
+        SUBTITLE_LOGI(" read: %s", line);
         int plen = 0;
         int a1=0, a2=0, a3=0, a4=0, b1=0, b2=0, b3=0, b4=0;
 

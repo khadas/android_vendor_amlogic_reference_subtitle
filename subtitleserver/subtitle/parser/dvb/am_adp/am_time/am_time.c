@@ -44,7 +44,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include <am_time.h>
 

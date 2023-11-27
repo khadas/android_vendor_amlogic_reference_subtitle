@@ -38,7 +38,7 @@
 #include <sys/poll.h>
 #include <sys/ioctl.h>
 #include <string>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/CallStack.h>
 #include <pthread.h>
 
@@ -79,7 +79,7 @@ static inline unsigned long sysfsReadInt(const char *path, int base) {
         if (c > 0) val = strtoul(bcmd, NULL, base);
         ::close(fd);
     } else {
-        ALOGE("unable to open file %s,err: %s", path, strerror(errno));
+        SUBTITLE_LOGE("unable to open file %s,err: %s", path, strerror(errno));
     }
     return val;
 }
@@ -92,19 +92,19 @@ VbiSource::VbiSource() {
     mDumpFd = -1;
     mRdFd = ::open(VBI_DEV_FILE.c_str(), O_RDONLY);
     if (mRdFd == -1) {
-        ALOGD("cannot open %s", VBI_DEV_FILE.c_str());
+        SUBTITLE_LOGI("cannot open %s", VBI_DEV_FILE.c_str());
         return;
     }
     if (::ioctl(mRdFd, VBI_IOC_SET_TYPE, &type )== -1)
-        ALOGD("VBI_IOC_SET_TYPE error:%s", strerror(errno));
+        SUBTITLE_LOGI("VBI_IOC_SET_TYPE error:%s", strerror(errno));
 
     if (::ioctl(mRdFd, VBI_IOC_START) == -1)
-        ALOGD("VBI_IOC_START error:%s", strerror(errno));
-    ALOGD("VbiSource: %s=%d", VBI_DEV_FILE.c_str(), mRdFd);
+        SUBTITLE_LOGI("VBI_IOC_START error:%s", strerror(errno));
+    SUBTITLE_LOGI("VbiSource: %s=%d", VBI_DEV_FILE.c_str(), mRdFd);
 }
 
 VbiSource::~VbiSource() {
-    ALOGD("~VbiSource: %s=%d", VBI_DEV_FILE.c_str(), mRdFd);
+    SUBTITLE_LOGI("~VbiSource: %s=%d", VBI_DEV_FILE.c_str(), mRdFd);
 
     mExitRequested = true;
     if (mRenderTimeThread != nullptr) {
@@ -126,7 +126,7 @@ size_t VbiSource::totalSize() {
 }
 
 void VbiSource::updateParameter(int type, void *data) {
-   ALOGV(" in updateParameter type = %d ",type);
+   SUBTITLE_LOGI(" in updateParameter type = %d ",type);
    return;
 }
 
@@ -162,7 +162,7 @@ void VbiSource::loopRenderTime() {
             auto wk_listener = (*it);
 
             if (wk_listener.expired()) {
-                ALOGV("[threadLoop] lstn null.\n");
+                SUBTITLE_LOGI("[threadLoop] lstn null.\n");
                 continue;
             }
 
@@ -170,7 +170,7 @@ void VbiSource::loopRenderTime() {
 
             static int i = 0;
             if (i++%300 == 0) {
-                ALOGD("read pts: %ld %lu", value, value);
+                SUBTITLE_LOGI("read pts: %ld %lu", value, value);
             }
             if (!mExitRequested) {
                 if (auto lstn = wk_listener.lock()) {
@@ -195,7 +195,7 @@ void VbiSource::loopDriverData() {
             pd = &vbi;
 
             if (ret >= (int)sizeof(struct vbi_data_s)) {
-                //ALOGD("loopDriverData=line:%d data:%s", pd->line_num, pd->b);
+                //SUBTITLE_LOGI("loopDriverData=line:%d data:%s", pd->line_num, pd->b);
                 unsigned char sub_header[ATV_TELETEXT_SUB_HEADER_LEN] = {0x41, 0x4d, 0x4c, 0x55, 0x41, 0};
                 sub_header[5] = 0;//line_num 16 bit, for coverity
                 sub_header[6] = 0;//line_num 16 bit, for coverity
@@ -213,7 +213,7 @@ void VbiSource::loopDriverData() {
                 static char slice_buffer[10*1024];
                 for (int i=0; i < strlen((char*)pd->b); i++)
                     sprintf(&slice_buffer[i*3], " %02x", slice_buffer[i]);
-                ALOGD("line data: %s", slice_buffer);
+                SUBTITLE_LOGI("line data: %s", slice_buffer);
 #endif
             }
         }
@@ -222,7 +222,7 @@ void VbiSource::loopDriverData() {
 
 bool VbiSource::start() {
     if (E_SOURCE_STARTED == mState) {
-        ALOGE("already stated");
+        SUBTITLE_LOGE("already stated");
         return false;
     }
     mState = E_SOURCE_STARTED;
@@ -279,7 +279,7 @@ size_t VbiSource::readDriverData(void *buffer, size_t size) {
     if (mNeedDumpSource) {
         if (mDumpFd == -1) {
             mDumpFd = ::open("/data/local/traces/cur_sub.dump", O_RDWR | O_CREAT, 0666);
-            ALOGD("need dump Source: mDumpFd=%d %d", mDumpFd, errno);
+            SUBTITLE_LOGI("need dump Source: mDumpFd=%d %d", mDumpFd, errno);
         }
 
         if (mDumpFd > 0) {
@@ -305,10 +305,10 @@ size_t VbiSource::read(void *buffer, size_t size) {
     while (read != size && mState == E_SOURCE_STARTED) {
         if (mCurrentItem != nullptr && !mCurrentItem->isEmpty()) {
             read += mCurrentItem->read_l(((char *)buffer+read), size-read);
-            //ALOGD("read:%d,size:%d", read, size);
+            //SUBTITLE_LOGI("read:%d,size:%d", read, size);
             if (read == size) return read;
         } else {
-            //ALOGD("mCurrentItem null, pop next buffer item");
+            //SUBTITLE_LOGI("mCurrentItem null, pop next buffer item");
             mCurrentItem = mSegment->pop();
         }
     }

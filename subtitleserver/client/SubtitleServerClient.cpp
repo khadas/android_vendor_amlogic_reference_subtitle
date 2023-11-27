@@ -1,7 +1,7 @@
 #define LOG_TAG "SubtitleServerClientSDK"
 #include <fcntl.h>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <utils/CallStack.h>
 
 #include "SubtitleServerClient.h"
@@ -19,7 +19,7 @@ namespace amlogic {
 
 void SubtitleServerClient::SubtitleDeathRecipient::serviceDied(
     uint64_t, const android::wp<::android::hidl::base::V1_0::IBase>&) {
-    ALOGE("SubtitleServer died. Cleanup instance!");
+    SUBTITLE_LOGE("SubtitleServer died. Cleanup instance!");
     // delete Instance
 
     sp<SubtitleServerClient> owner = mOwner.promote();
@@ -45,9 +45,9 @@ Return<void> SubtitleServerClient::SubtitleCallback::notifyDataCallback(const Su
     int videoWidth = parcel.bodyInt[6];
     int videoHeight = parcel.bodyInt[7];
     int objectSegmentId = parcel.bodyInt[8];
-    ALOGD("processSubtitleData! %d %d", type, parcel.msgType);
+    SUBTITLE_LOGI("processSubtitleData! %d %d", type, parcel.msgType);
     if (memory ==  nullptr) {
-        ALOGD("Error! mapMemory cannot get memory!");
+        SUBTITLE_LOGI("Error! mapMemory cannot get memory!");
         return Void();
     }
     char* data = static_cast<char *>(static_cast<void*>(memory->getPointer()));
@@ -55,7 +55,7 @@ Return<void> SubtitleServerClient::SubtitleCallback::notifyDataCallback(const Su
     if (mListener != nullptr) {
         mListener->onSubtitleEvent(data, size, type, coordinateX, coordinateY, width, height, videoWidth, videoHeight, cmd, objectSegmentId);
     } else {
-        ALOGD("error, no handle for this event!");
+        SUBTITLE_LOGI("error, no handle for this event!");
     }
     return Void();
 }
@@ -65,23 +65,23 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
         case EVENT_ON_SUBTITLEDATA_CALLBACK: {
             int event = parcel.bodyInt[0];
             int id =  parcel.bodyInt[1];
-            ALOGI("onSubtitleDataEvent cc event:%d, channel id:%d", event, id);
+            SUBTITLE_LOGI("onSubtitleDataEvent cc event:%d, channel id:%d", event, id);
             if (mListener != nullptr) {
                 mListener->onSubtitleDataEvent(event, id);
             } else {
-                ALOGD("error, no handle for this event!");
+                SUBTITLE_LOGI("error, no handle for this event!");
             }
         }
         break;
 
         case EVENT_ON_SUBTITLEAVAILABLE_CALLBACK: {
             int avail = parcel.bodyInt[0];
-            ALOGI("onSubtitleAvail avail:%d", avail);
+            SUBTITLE_LOGI("onSubtitleAvail avail:%d", avail);
 
             if (mListener != nullptr) {
                 mListener->onSubtitleAvail(avail);
             } else {
-                ALOGD("error, no handle for this event!");
+                SUBTITLE_LOGI("error, no handle for this event!");
             }
         }
         break;
@@ -89,24 +89,24 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
         case EVENT_ON_VIDEOAFDCHANGE_CALLBACK: {
             int afdEvent = parcel.bodyInt[0];
             int playerid = parcel.bodyInt[1];
-            ALOGI("onSubtitleAfdEvent bbc event:%d, playerid:%d", afdEvent, playerid);
+            SUBTITLE_LOGI("onSubtitleAfdEvent bbc event:%d, playerid:%d", afdEvent, playerid);
 
             if (mListener != nullptr) {
                 mListener->onSubtitleAfdEvent(playerid, afdEvent);
             } else {
-                ALOGD("error, no handle for this event!");
+                SUBTITLE_LOGI("error, no handle for this event!");
             }
         }
         break;
 
         case EVENT_ON_MIXVIDEOEVENT_CALLBACK:{
             int val = parcel.bodyInt[0];
-            ALOGI("processSubtitle mix video event:%d", val);
+            SUBTITLE_LOGI("processSubtitle mix video event:%d", val);
 
             if (mListener != nullptr) {
                 mListener->onMixVideoEvent(val);
             } else {
-                ALOGD("error, no handle for this event!");
+                SUBTITLE_LOGI("error, no handle for this event!");
             }
         }
         break;
@@ -114,12 +114,12 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
         case EVENT_ON_SUBTITLE_DIMENSION_CALLBACK: {
             int width = parcel.bodyInt[0];
             int height = parcel.bodyInt[1];
-            ALOGI("onSubtitleDimension width:%d height:%d", width, height);
+            SUBTITLE_LOGI("onSubtitleDimension width:%d height:%d", width, height);
 
             if (mListener != nullptr) {
                 mListener->onSubtitleDimension(width, height);
             } else {
-                ALOGD("error, no handle for this event!");
+                SUBTITLE_LOGI("error, no handle for this event!");
             }
         }
         break;
@@ -127,10 +127,10 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
             std::string lang = parcel.bodyString[0];
 
             if (mListener != nullptr) {
-                ALOGI("onSubtitleLanguage lang:%s", lang.c_str());
+                SUBTITLE_LOGI("onSubtitleLanguage lang:%s", lang.c_str());
                 mListener->onSubtitleLanguage(lang);
             } else {
-                ALOGD("error, no handle for this event!");
+                SUBTITLE_LOGI("error, no handle for this event!");
             }
         }
 
@@ -138,11 +138,11 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
         case EVENT_ON_SUBTITLE_INFO_CALLBACK: {
             int what = parcel.bodyInt[0];
             int extra =  parcel.bodyInt[1];
-            ALOGI("onSubtitleInfoEvent what:%d, extra:%d", what, extra);
+            SUBTITLE_LOGI("onSubtitleInfoEvent what:%d, extra:%d", what, extra);
             if (mListener != nullptr) {
                 mListener->onSubtitleInfo(what, extra);
             } else {
-                ALOGD("error, no handle for this event!");
+                SUBTITLE_LOGI("error, no handle for this event!");
             }
         }
         break;
@@ -152,12 +152,12 @@ Return<void> SubtitleServerClient::SubtitleCallback::eventNotify(const SubtitleH
 }
 
 Return<void> SubtitleServerClient::SubtitleCallback::uiCommandCallback(const SubtitleHidlParcel &parcel) {
-    ALOGD("uiCommandCallback: cmd=%d", parcel.msgType);
+    SUBTITLE_LOGI("uiCommandCallback: cmd=%d", parcel.msgType);
 
     if (mListener != nullptr) {
         mListener->onSubtitleUIEvent(parcel.msgType, parcel.bodyInt);
     } else {
-        ALOGD("error, no handle for this event!");
+        SUBTITLE_LOGI("error, no handle for this event!");
     }
     return Void();
 }
@@ -165,7 +165,7 @@ Return<void> SubtitleServerClient::SubtitleCallback::uiCommandCallback(const Sub
 
 
 SubtitleServerClient::SubtitleServerClient(bool isFallback, sp<SubtitleListener> listener, OpenType openType) {
-    ALOGE("SubtitleServerHidlClient getSubtitleService ...");
+    SUBTITLE_LOGE("SubtitleServerHidlClient getSubtitleService ...");
     Mutex::Autolock _l(mLock);
     mIsFallback = isFallback;
     mListener = listener;
@@ -181,14 +181,14 @@ void SubtitleServerClient::initRemoteLocked() {
         usleep(200*1000);//sleep 200ms
         mLock.lock();
         mRemote = ISubtitleServer::tryGetService();
-        ALOGE("tryGet ISubtitleServer daemon Service ISubtitleServer::descriptor");
+        SUBTITLE_LOGE("tryGet ISubtitleServer daemon Service ISubtitleServer::descriptor");
     }
 
     mCallback = new SubtitleCallback(mListener);
 
     // fallback mode, only used for fallback display daemon
     if (mIsFallback) {
-        ALOGD("regist fallback subtitle");
+        SUBTITLE_LOGI("regist fallback subtitle");
         mRemote->setFallbackCallback(mCallback, static_cast<ConnectType>(1));
     } else {
         mRemote->setCallback(mCallback, static_cast<ConnectType>(1)/*ConnectType:TYPE_EXTEND*/);
@@ -198,11 +198,11 @@ void SubtitleServerClient::initRemoteLocked() {
 
     Return<bool> linked = mRemote->linkToDeath(mDeathRecipient, /*cookie*/ 0XABDADA);
     if (!linked.isOk()) {
-        ALOGE("Transaction error in linking to system service death");
+        SUBTITLE_LOGE("Transaction error in linking to system service death");
     } else if (!linked) {
-        ALOGE("Unable to link to death notifications");
+        SUBTITLE_LOGE("Unable to link to death notifications");
     } else {
-        ALOGE("Link to service death notification successful");
+        SUBTITLE_LOGE("Link to service death notification successful");
     }
 
     bool result;
@@ -216,24 +216,24 @@ void SubtitleServerClient::initRemoteLocked() {
         });
 
     if (!result) {
-        ALOGE("Cannot open connections!");
+        SUBTITLE_LOGE("Cannot open connections!");
         return;
     }
 
-    ALOGI("Created open session: 0x%x", mSessionId);
+    SUBTITLE_LOGI("Created open session: 0x%x", mSessionId);
 }
 
 template<typename T>
 void SubtitleServerClient::checkRemoteResultLocked(Return<T> &r) {
     if (!r.isOk()) {
         //mRemote = nullptr;
-        ALOGE("hidl communication failed! server died?? %s", r.description().c_str());
+        SUBTITLE_LOGE("hidl communication failed! server died?? %s", r.description().c_str());
     }
 }
 
 SubtitleServerClient::~SubtitleServerClient() {
     Mutex::Autolock _l(mLock);
-    ALOGI("~SubtitleServerClient 0x%x", mSessionId);
+    SUBTITLE_LOGI("~SubtitleServerClient 0x%x", mSessionId);
     if (mRemote != nullptr && mDeathRecipient != nullptr) {
         auto g = mRemote->removeCallback(mCallback);
         checkRemoteResultLocked(g);
@@ -256,7 +256,7 @@ bool SubtitleServerClient::open(int fd, int fdData, int trackId, int ioType) {
         return open(-1, ioType);
 
     Mutex::Autolock _l(mLock);
-    ALOGI("open session:0x%x  ioType=%d", mSessionId, ioType);
+    SUBTITLE_LOGI("open session:0x%x  ioType=%d", mSessionId, ioType);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
@@ -265,10 +265,10 @@ bool SubtitleServerClient::open(int fd, int fdData, int trackId, int ioType) {
 
     ::lseek(fd, 0, SEEK_SET);
     ::lseek(fd, 0, SEEK_SET);
-    ALOGI("open session:0x%x fd:%d fdData:%d", mSessionId, fd, fdData);
+    SUBTITLE_LOGI("open session:0x%x fd:%d fdData:%d", mSessionId, fd, fdData);
     nativeHandle = native_handle_create(2, 1);
     if (nativeHandle == nullptr) {
-        ALOGE("Creat native handle failed!");
+        SUBTITLE_LOGE("Creat native handle failed!");
         return false;
     }
     nativeHandle->data[0] = fd;
@@ -287,7 +287,7 @@ bool SubtitleServerClient::open(int fd, int fdData, int trackId, int ioType) {
 
 bool SubtitleServerClient::open(int fd, int ioType) {
     Mutex::Autolock _l(mLock);
-    ALOGI("open session:0x%x ioType:%d", mSessionId, ioType);
+    SUBTITLE_LOGI("open session:0x%x ioType:%d", mSessionId, ioType);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
@@ -296,7 +296,7 @@ bool SubtitleServerClient::open(int fd, int ioType) {
 
     if (fd > 0) {
         ::lseek(fd, 0, SEEK_SET);
-        ALOGI("open session:0x%x fd:%d", mSessionId, fd);
+        SUBTITLE_LOGI("open session:0x%x fd:%d", mSessionId, fd);
         nativeHandle = native_handle_create(1, 0);
         if (nativeHandle != nullptr) nativeHandle->data[0] = fd;
     } else {
@@ -330,9 +330,9 @@ bool SubtitleServerClient::open(const char *path, int ioType) {
 
 
 bool SubtitleServerClient::close() {
-    ALOGI("close session:0x%x", mSessionId);
+    SUBTITLE_LOGI("close session:0x%x", mSessionId);
     if (this == nullptr) {
-        ALOGE("maybe not exist!");
+        SUBTITLE_LOGE("maybe not exist!");
         return false;
     }
     Mutex::Autolock _l(mLock);
@@ -365,7 +365,7 @@ int SubtitleServerClient::totalTracks() {
     auto r = mRemote->getTotalTracks(mSessionId, [&] (const Result &ret, const int& v) {
             if (ret == Result::OK) {
                 track = v;
-                ALOGI("Get Total tracks:%d", track);
+                SUBTITLE_LOGI("Get Total tracks:%d", track);
             }
         });
     checkRemoteResultLocked(r);
@@ -381,7 +381,7 @@ std::string SubtitleServerClient::getSubLanguage(int idx) {
     auto r = mRemote->getLanguage(mSessionId, [&] (const Result &ret, const std::string& language) {
             if (ret == Result::OK) {
                 subLanguage = language;
-                ALOGI("Get subLanguage:%s", subLanguage.c_str());
+                SUBTITLE_LOGI("Get subLanguage:%s", subLanguage.c_str());
             }
         });
     checkRemoteResultLocked(r);
@@ -408,7 +408,7 @@ int SubtitleServerClient::getSubType() {
     auto r = mRemote->getType(mSessionId, [&] (const Result &ret, const int& v) {
             if (ret == Result::OK) {
                 subType = v;
-                ALOGI("Get subType:%d", subType);
+                SUBTITLE_LOGI("Get subType:%d", subType);
             }
         });
     checkRemoteResultLocked(r);
@@ -471,14 +471,14 @@ bool SubtitleServerClient::setSecureLevel(int flag) {
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
-    ALOGI("select session:0x%x flag:%d", mSessionId, flag);
+    SUBTITLE_LOGI("select session:0x%x flag:%d", mSessionId, flag);
     auto r = mRemote->setSecureLevel(mSessionId, flag);
     checkRemoteResultLocked(r);
     return r.isOk();
 }
 
 bool SubtitleServerClient::setClosedCaptionLang(const char *lang) {
-    ALOGI("select session:0x%x lang:%d", mSessionId, lang);
+    SUBTITLE_LOGI("select session:0x%x lang:%d", mSessionId, lang);
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr) {
         initRemoteLocked();
@@ -492,7 +492,7 @@ bool SubtitleServerClient::setClosedCaptionLang(const char *lang) {
 
 bool SubtitleServerClient::selectCcChannel(int ch, const char *lang) {
     Mutex::Autolock _l(mLock);
-    ALOGI("select session:0x%x  channel:%d lang:%d", mSessionId, ch, lang);
+    SUBTITLE_LOGI("select session:0x%x  channel:%d lang:%d", mSessionId, ch, lang);
     if (mRemote == nullptr) {
         initRemoteLocked();
     }
@@ -593,7 +593,7 @@ bool SubtitleServerClient::userDataOpen() {
 
 bool SubtitleServerClient::userDataClose() {
     if (this == nullptr) {
-        ALOGE("maybe not exist!");
+        SUBTITLE_LOGE("maybe not exist!");
         return false;
     }
     Mutex::Autolock _l(mLock);
@@ -701,7 +701,7 @@ bool SubtitleServerClient::uiGetSubDimension(int *pWidth, int *pHeight) {
             if (ret == Result::OK) {
                 *pWidth = width;
                 *pHeight = height;
-                ALOGI("Get getSubDimension width:%d height:%d", width, height);
+                SUBTITLE_LOGI("Get getSubDimension width:%d height:%d", width, height);
             }
         });
     checkRemoteResultLocked(r);

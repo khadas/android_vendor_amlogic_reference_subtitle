@@ -31,7 +31,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 #include <stdarg.h>
 #include "dtvcc.h"
 #include <am_iconv.h>
@@ -404,7 +404,7 @@ vbi_page_row_to_json (struct vbi_page *pg, Output *out, int row, vbi_char *st)
         vbi_char *pc = &pg->text[row * pg->columns + col];
         int uc = pc->unicode;
         int r;
-        //ALOGE("unicode %x op %d start %d", uc, pc->opacity,start);
+        //SUBTITLE_LOGE("unicode %x op %d start %d", uc, pc->opacity,start);
         if (vbi_style_cmp(st, pc)) {
             if (vbi_text_to_json(pg, buf, len, st, out) < 0)
                 return -1;
@@ -645,7 +645,7 @@ edge_to_str (enum edge e)
         break;
     default:
         str = "none";
-        // ALOGE("edge style error: %s", e);
+        // SUBTITLE_LOGE("edge style error: %s", e);
         break;
     }
 
@@ -750,7 +750,7 @@ text_to_json (uint8_t *buf, int len, struct dtvcc_pen_style *pt, Output *out)
     buf[len] = 0;
 #if 0
     iconv_t cd = iconv_open("utf-8", "euc-kr");
-    if (cd == -1) ALOGI("iconv open failed");
+    if (cd == -1) SUBTITLE_LOGI("iconv open failed");
     char tobuffer[1024] = {0};
     int outLen = 1024;
     char* tmpTobuffer = tobuffer;
@@ -779,8 +779,8 @@ test_korean_char()
         if (abc[i]) {
             iconv_t cd = iconv_open("utf-8", "euc-kr");
             if (cd == -1) {
-                ALOGI("iconv open failed errno=%d", errno);
-                ALOGI("cc_json convert json in kor lang: %s", getenv("ICU_DATA"));
+                SUBTITLE_LOGI("iconv open failed errno=%d", errno);
+                SUBTITLE_LOGI("cc_json convert json in kor lang: %s", getenv("ICU_DATA"));
                 break;
             }
             char tobuffer[16] = {0};
@@ -801,7 +801,7 @@ test_korean_char()
             }
             char* tmpTobuffer = tobuffer;
             int ret_len = iconv(cd, (const char**)&srcStart, (size_t *)&inLen, &tmpTobuffer, (size_t *)&outLen);
-            ALOGD("debug-cc-korea: %d in: %02x%02x inLen: %d outLen: %d out: %s outlen: %d %x",
+            SUBTITLE_LOGI("debug-cc-korea: %d in: %02x%02x inLen: %d outLen: %d out: %s outlen: %d %x",
                 ret_len, inbuffer[0], inbuffer[1], inLen, outLen, tobuffer, strlen(tobuffer), tobuffer[0]);
             iconv_close(cd);
             strcpy(pb, tobuffer);
@@ -858,12 +858,12 @@ row_to_json (struct tvcc_decoder *td, struct dtvcc_window *win, Output *out, int
         if (lang_korea && (lang_korea_unicode == 0))
         {
             errno = 0;
-            //ALOGI("cc_json convert json in kor lang: %s", getenv("ICU_DATA"));
+            //SUBTITLE_LOGI("cc_json convert json in kor lang: %s", getenv("ICU_DATA"));
             if (c) {
                 iconv_t cd = iconv_open("utf-8", "euc-kr");
                 if (cd == -1) {
-                    ALOGI("iconv open failed errno=%d", errno);
-                    ALOGI("cc_json convert json in kor lang: %s", getenv("ICU_DATA"));
+                    SUBTITLE_LOGI("iconv open failed errno=%d", errno);
+                    SUBTITLE_LOGI("cc_json convert json in kor lang: %s", getenv("ICU_DATA"));
                     break;
                 }
                 char tobuffer[16] = {0};
@@ -885,7 +885,7 @@ row_to_json (struct tvcc_decoder *td, struct dtvcc_window *win, Output *out, int
                 char* tmpTobuffer = tobuffer;
                 *pt = *cpt;
                 int ret_len = iconv(cd, (const char**)&srcStart, (size_t *)&inLen, &tmpTobuffer, (size_t *)&outLen);
-                ALOGD("debug-cc ret: %d in: %02x%02x inLen: %d outLen: %d out: %s outlen: %d %x",
+                SUBTITLE_LOGI("debug-cc ret: %d in: %02x%02x inLen: %d outLen: %d out: %s outlen: %d %x",
                     ret_len, inbuffer[0], inbuffer[1], inLen, outLen, tobuffer, strlen(tobuffer), tobuffer[0]);
                 iconv_close(cd);
                 strcpy(pb, tobuffer);
@@ -921,7 +921,7 @@ row_to_json (struct tvcc_decoder *td, struct dtvcc_window *win, Output *out, int
         }
     }
 
-    ALOGD("debug-cc row buffer=%s", buf);
+    SUBTITLE_LOGI("debug-cc row buffer=%s", buf);
 
     if (len) {
         if (text_to_json(buf, len, pt, out) < 0)

@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <functional>
 
-#include <utils/Log.h>
+#include "SubtitleLog.h"
 
 #include "streamUtils.h"
 #include "sub_types.h"
@@ -62,7 +62,7 @@ static inline int __isspace(int c) {
 }
 
 static void save2BitmapFile(const char *filename, uint32_t *bitmap, int w, int h) {
-    ALOGI("save2BitmapFile:%s\n",filename);
+    SUBTITLE_LOGI("save2BitmapFile:%s\n",filename);
     FILE *f;
     char fname[40];
 
@@ -151,7 +151,7 @@ static inline int getSpuCmd(std::shared_ptr<AML_SPUVAR> subFrame) {
     unsigned char dataByte0, dataByte1;
     unsigned char spuCmd;
     if (subFrame->cmd_offset >= subFrame->length) {
-        ALOGI("cmd_offset bigger than frame_size\n\n");
+        SUBTITLE_LOGI("cmd_offset bigger than frame_size\n\n");
         return -1;  //cmd offset > frame size
     }
     pCmdData = (unsigned char *)(subFrame->spu_data);
@@ -201,7 +201,7 @@ static inline int getSpuCmd(std::shared_ptr<AML_SPUVAR> subFrame) {
                 if (subFrame->spu_height > VOB_SUB_HEIGHT) {
                     subFrame->spu_height = VOB_SUB_HEIGHT;
                 }
-                ALOGI("subFrame->spu_width = %d, subFrame->spu_height = %d \n", subFrame->spu_width, subFrame->spu_height);
+                SUBTITLE_LOGI("subFrame->spu_width = %d, subFrame->spu_height = %d \n", subFrame->spu_width, subFrame->spu_height);
                 break;
             case SET_DSPXA:
                 temp = *pCmdData++;
@@ -232,13 +232,13 @@ static inline int getSpuCmd(std::shared_ptr<AML_SPUVAR> subFrame) {
                     if ((subFrame->m_delay = doDCSQC(pCmdData, pCmdEnd - 6)) > 0)
                         subFrame->m_delay = subFrame->m_delay*1024 + subFrame->pts;
                 }
-                ALOGI("getSpuCmd parser to the end\n\n");
+                SUBTITLE_LOGI("getSpuCmd parser to the end\n\n");
                 return 0;
             default:
                 return -1;
         }
     }
-    ALOGI("getSpuCmd can not parser complete\n\n");
+    SUBTITLE_LOGI("getSpuCmd can not parser complete\n\n");
     return -1;
 }
 
@@ -286,8 +286,8 @@ int getInterSpuSize(std::shared_ptr<AML_SPUVAR> spu) {
     }
 
     int bufferWidth = subtitleWidth;
-    ALOGI("buffer width is %d\n", bufferWidth);
-    ALOGI("buffer height is %d\n", subtitleHeight);
+    SUBTITLE_LOGI("buffer width is %d\n", bufferWidth);
+    SUBTITLE_LOGI("buffer height is %d\n", subtitleHeight);
     return bufferWidth * subtitleHeight;
 }
 
@@ -326,7 +326,7 @@ void DvdParser::checkDebug() {
 
 
 DvdParser::DvdParser(std::shared_ptr<DataSource> source) {
-    ALOGI("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     mDataSource = source;
     mParseType = TYPE_SUBTITLE_VOB;
     mDumpSub = false;
@@ -341,7 +341,7 @@ DvdParser::DvdParser(std::shared_ptr<DataSource> source) {
 }
 
 DvdParser::~DvdParser() {
-    ALOGI("%s", __func__);
+    SUBTITLE_LOGI("%s", __func__);
     stopParser();
 }
 
@@ -385,7 +385,7 @@ int DvdParser::parseExtradata(char *extradata, int extradataSize) {
 
 
 unsigned int *DvdParser::parseInterSpu(int *buffer, std::shared_ptr<AML_SPUVAR> spu) {
-    ALOGI("enter parser_inter_sup \n\n");
+    SUBTITLE_LOGI("enter parser_inter_sup \n\n");
     unsigned char *data = NULL;
     unsigned *resultBuf = (unsigned *)buffer;
     unsigned index = 0, index1 = 0;
@@ -399,11 +399,11 @@ unsigned int *DvdParser::parseInterSpu(int *buffer, std::shared_ptr<AML_SPUVAR> 
     int xStart = bufferWidth, xEnd = 0;
 
     unsigned dataByte = (((bufferWidth * 2) + 15) >> 4) << 1;
-    //ALOGI("dataByte is %d\n\n",dataByte);
+    //SUBTITLE_LOGI("dataByte is %d\n\n",dataByte);
     int bufferWidthSize = bufferWidth;
 
     unsigned short subtitleAlpha = spu->spu_alpha;
-    ALOGI("subtitleAlpha is %x\n\n", subtitleAlpha);
+    SUBTITLE_LOGI("subtitleAlpha is %x\n\n", subtitleAlpha);
     unsigned int RGBA_Pal[4];
     RGBA_Pal[0] = RGBA_Pal[1] = RGBA_Pal[2] = RGBA_Pal[3] = 0;
 
@@ -456,10 +456,10 @@ unsigned int *DvdParser::parseInterSpu(int *buffer, std::shared_ptr<AML_SPUVAR> 
     spu->resize_width = bufferWidth;
     spu->resize_height = endHeight - startHeight + 1;
     spu->resize_size = spu->resize_height * spu->resize_width;
-    ALOGI("resize startx is %d\n\n",spu->resize_xstart);
-    ALOGI("resize starty is %d\n\n",spu->resize_ystart);
-    ALOGI("resize height is %d\n\n",spu->resize_height);
-    ALOGI("resizeWidth is %d\n\n",spu->resize_width);
+    SUBTITLE_LOGI("resize startx is %d\n\n",spu->resize_xstart);
+    SUBTITLE_LOGI("resize starty is %d\n\n",spu->resize_ystart);
+    SUBTITLE_LOGI("resize height is %d\n\n",spu->resize_height);
+    SUBTITLE_LOGI("resizeWidth is %d\n\n",spu->resize_width);
 
     return (resultBuf + startHeight * bufferWidthSize);
 }
@@ -468,14 +468,14 @@ unsigned int *DvdParser::parseInterSpu(int *buffer, std::shared_ptr<AML_SPUVAR> 
 void DvdParser::fillResize(std::shared_ptr<AML_SPUVAR> spu) {
     int subSize = getInterSpuSize(spu);
     if (subSize <= 0) {
-        ALOGE("subSize invalid \n\n");
+        SUBTITLE_LOGE("subSize invalid \n\n");
         return;
     }
 
     int *internalSubData = NULL;
     internalSubData = (int *)malloc(subSize * 4);
     if (internalSubData == NULL) {
-        ALOGE("malloc subSize fail \n\n");
+        SUBTITLE_LOGE("malloc subSize fail \n\n");
         return;
     }
     memset(internalSubData, 0x0, subSize * 4);
@@ -528,7 +528,7 @@ unsigned char DvdParser::spuFillPixel(unsigned short *pixelIn, char *pixelOut,
 
     for (int j = 0; j < height/2; j++) {
         while (nDecodedPixNum < rownum) {
-            //ALOGD("%p %d j=%d  PXDBufferBitPos=%d", pixelIn, nDecodedPixNum, j, PXDBufferBitPos);
+            //SUBTITLE_LOGI("%p %d j=%d  PXDBufferBitPos=%d", pixelIn, nDecodedPixNum, j, PXDBufferBitPos);
             nRLData = GetWordFromPixBuffer(PXDBufferBitPos, pixelIn);
             nBits = DecodeRL(nRLData, &nPixelNum, &nPixelData);
             PXDBufferBitPos += nBits;
@@ -582,7 +582,7 @@ int DvdParser::getVobSpu(char *spuBuffer, int *bufsize, unsigned length, std::sh
     unsigned short *ptrPXDRead;
 
     if (spuBuffer[0] == 'E' && spuBuffer[1] == 'X' && spuBuffer[2] == 'T' && spuBuffer[3] == 'R' && spuBuffer[4] == 'A') {
-        ALOGI("## extradata %x,%x,%x,%x, %x,%x,%x,%x, %x,%x,%x,%x, %x,%x,%x,%x, ",
+        SUBTITLE_LOGI("## extradata %x,%x,%x,%x, %x,%x,%x,%x, %x,%x,%x,%x, %x,%x,%x,%x, ",
                 spuBuffer[0], spuBuffer[1], spuBuffer[2], spuBuffer[3],
                 spuBuffer[4], spuBuffer[5], spuBuffer[6], spuBuffer[7],
                 spuBuffer[8], spuBuffer[9], spuBuffer[10], spuBuffer[11],
@@ -603,14 +603,14 @@ int DvdParser::getVobSpu(char *spuBuffer, int *bufsize, unsigned length, std::sh
     wrOffset = 0;
     while (spu->length - wrOffset > 0) {
         if (!currentLen) {
-            ALOGI("currentLen is zero\n\n");
+            SUBTITLE_LOGI("currentLen is zero\n\n");
 
 
             int syncWord = subPeekAsInt32(spuBuffer + rdOffset);
             rdOffset += 4;
 
             if (AML_PARSER_SYNC_WORD != syncWord) {
-                ALOGE("Wrong sync header: %x! ignore....", syncWord);
+                SUBTITLE_LOGE("Wrong sync header: %x! ignore....", syncWord);
                 *bufsize -= rdOffset;
                 return rdOffset; // wrong head, ignore and retry
             }
@@ -644,31 +644,31 @@ int DvdParser::getVobSpu(char *spuBuffer, int *bufsize, unsigned length, std::sh
     *bufsize -= rdOffset;
 
     // if one frame data is ready, decode it.
-    ALOGI("spu->frame_rdy is %d, mRestLen=%d, rdOffset=%d", spu->frame_rdy, *bufsize, rdOffset);
+    SUBTITLE_LOGI("spu->frame_rdy is %d, mRestLen=%d, rdOffset=%d", spu->frame_rdy, *bufsize, rdOffset);
     if (spu->frame_rdy == 1) {
         pixDataOdd = (char *)malloc(VOB_SUB_SIZE / 2);
         if (!pixDataOdd) {
-            ALOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
+            SUBTITLE_LOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
             return 0;
         }
         ptrPXDRead = (unsigned short *)(spu->spu_data + spu->top_pxd_addr);
 
-        ALOGI("pixDataOdd is %p ptrPXDRead=%p top_pxd_addr=%d", pixDataOdd, ptrPXDRead, spu->top_pxd_addr);
+        SUBTITLE_LOGI("pixDataOdd is %p ptrPXDRead=%p top_pxd_addr=%d", pixDataOdd, ptrPXDRead, spu->top_pxd_addr);
         spuFillPixel(ptrPXDRead, pixDataOdd, spu, 1);
 
         pixDataEven = (char *)malloc(VOB_SUB_SIZE / 2);
         if (!pixDataEven) {
-            ALOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
+            SUBTITLE_LOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
             free(pixDataOdd);
             return 0;
         }
         ptrPXDRead = (unsigned short *)(spu->spu_data + spu->bottom_pxd_addr);
 
-        ALOGI("pixDataEven is %p ptrPXDRead=%p bottom_pxd_addr=%d", pixDataEven, ptrPXDRead, spu->bottom_pxd_addr);
+        SUBTITLE_LOGI("pixDataEven is %p ptrPXDRead=%p bottom_pxd_addr=%d", pixDataEven, ptrPXDRead, spu->bottom_pxd_addr);
         spuFillPixel(ptrPXDRead, pixDataEven, spu, 2);
 
         memset(spu->spu_data, 0, VOB_SUB_SIZE);
-        ALOGI("###copy spu_data###\n\n");
+        SUBTITLE_LOGI("###copy spu_data###\n\n");
 
         memcpy(spu->spu_data, pixDataOdd, VOB_SUB_SIZE / 2);
         memcpy(spu->spu_data + VOB_SUB_SIZE / 2, pixDataEven, VOB_SUB_SIZE / 2);
@@ -697,7 +697,7 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
     if (mState == SUB_INIT) {
         mState = SUB_PLAYING;
     } else if (mState == SUB_STOP) {
-        ALOGD(" subtitle_status == SUB_STOP \n\n");
+        SUBTITLE_LOGI(" subtitle_status == SUB_STOP \n\n");
         return 0;
     }
 
@@ -711,7 +711,7 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
         spuBuffer = (char *)malloc(size);
         //for coverity
         if (!spuBuffer) {
-            ALOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
+            SUBTITLE_LOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
             return -1;
         }
     }
@@ -720,14 +720,14 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
     char *tmpSpuBuf = spuBuffer;
 
     while (sizeflag > 30) {
-        ALOGI("sizeflag =%u  mRestLen=%d,", sizeflag,  mRestLen);
+        SUBTITLE_LOGI("sizeflag =%u  mRestLen=%d,", sizeflag,  mRestLen);
         char *spuBufPiece = tmpSpuBuf;
         if (mRestLen > 0) {
             memcpy(spuBufPiece, mRestbuf, mRestLen);
         }
 
         if ((currentType == 0x17000 || currentType == 0x1700a) && mRestLen > 0) {
-            ALOGI("decode rest data!\n");
+            SUBTITLE_LOGI("decode rest data!\n");
         } else {
             mDataSource->read(spuBufPiece + mRestLen, HEADER_SIZE);
             sizeflag -= HEADER_SIZE;
@@ -739,13 +739,13 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
         rdOffset += 4;
 
         if (AML_PARSER_SYNC_WORD != syncWord) {
-            ALOGI("\n wrong subtitle header : %x %x %x %x    %x %x %x %x    %x %x %x %x \n",
+            SUBTITLE_LOGI("\n wrong subtitle header : %x %x %x %x    %x %x %x %x    %x %x %x %x \n",
                     spuBufPiece[0], spuBufPiece[1], spuBufPiece[2], spuBufPiece[3],
                     spuBufPiece[4], spuBufPiece[5], spuBufPiece[6], spuBufPiece[7],
                     spuBufPiece[8], spuBufPiece[9], spuBufPiece[10], spuBufPiece[11]);
             mDataSource->read(spuBufPiece, sizeflag);
             sizeflag = 0;
-            ALOGI("\n\n ******* find wrong subtitle header!! ******\n\n");
+            SUBTITLE_LOGI("\n\n ******* find wrong subtitle header!! ******\n\n");
             free(spuBuffer);
             return -1;
         }
@@ -760,11 +760,11 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
         // update restLen
         if (mRestLen) mRestLen -= 4*4;
 
-        ALOGI("sizeflag=%u, currentType:%x, currentPts is %llx, currentLen is %d, \n",
+        SUBTITLE_LOGI("sizeflag=%u, currentType:%x, currentPts is %llx, currentLen is %d, \n",
                 sizeflag, currentType, currentPts, currentLen);
 
         if (currentLen > sizeflag) {
-            ALOGI("currentLen > size");
+            SUBTITLE_LOGI("currentLen > size");
             mDataSource->read(spuBufPiece, sizeflag);
             sizeflag = 0;
             free(spuBuffer);
@@ -777,7 +777,7 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
             mRestLen = sizeflag;
             sizeflag = 0;
             tmpSpuBuf += currentLen;
-            ALOGI("currentType=0x17000 or 0x1700a! mRestLen=%d, sizeflag=%d,\n", mRestLen, sizeflag);
+            SUBTITLE_LOGI("currentType=0x17000 or 0x1700a! mRestLen=%d, sizeflag=%d,\n", mRestLen, sizeflag);
         } else {
             mDataSource->read(spuBufPiece + HEADER_SIZE, currentLen + 4);
             sizeflag -= (currentLen + 4);
@@ -785,14 +785,14 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
             mRestLen = 0;
         }
 
-         ALOGD("currentType? %x", currentType);
+         SUBTITLE_LOGI("currentType? %x", currentType);
 
         switch (currentType) {
             case 0x1700a:   //mkv internel image
                 durationPts = subPeekAsInt32(spuBuffer + rdOffset);
                 rdOffset += 4;
                 mRestLen -= 4;
-                ALOGI("durationPts is %d\n", durationPts);
+                SUBTITLE_LOGI("durationPts is %d\n", durationPts);
                 [[fallthrough]];
             case 0x17000:   //vob internel image
                 //init
@@ -800,13 +800,13 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
                 spu->buffer_size = VOB_SUB_SIZE;
                 spu->spu_data = (unsigned char *)malloc(VOB_SUB_SIZE);
                 memset(spu->spu_data, 0, VOB_SUB_SIZE);
-                ALOGD("alloc spuData:%p size:%d", spu->spu_data, spu->buffer_size);
+                SUBTITLE_LOGI("alloc spuData:%p size:%d", spu->spu_data, spu->buffer_size);
                 spu->pts = currentPts;
                 ret = getVobSpu(spuBufPiece + rdOffset, &mRestLen, currentLen, spu);
-                ALOGI("## ret=%d, mRestLen=%d, sizeflag=%d, mRestbuf=%p, %x, ---\n",
+                SUBTITLE_LOGI("## ret=%d, mRestLen=%d, sizeflag=%d, mRestbuf=%p, %x, ---\n",
                         ret, mRestLen, sizeflag, mRestbuf, mRestbuf?mRestbuf[0]:0);
                 if (mRestLen < 0) {
-                    ALOGI("Warning mRestLen <0, set to 0\n");
+                    SUBTITLE_LOGI("Warning mRestLen <0, set to 0\n");
                     mRestLen = 0;
                 }
                 if (mRestLen) {
@@ -817,18 +817,18 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
 
                     mRestbuf = (char *)malloc(mRestLen);
                     if (!mRestbuf) {
-                        ALOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
+                        SUBTITLE_LOGE("[%s::%d] malloc error!\n", __FUNCTION__, __LINE__);
                         break;
                     }
-                    ALOGD("spuBufPiece: %p, rdoff:%d ret:%d, mRestLen=%d", spuBufPiece, rdOffset, ret, mRestLen);
+                    SUBTITLE_LOGI("spuBufPiece: %p, rdoff:%d ret:%d, mRestLen=%d", spuBufPiece, rdOffset, ret, mRestLen);
                     memcpy(mRestbuf, spuBufPiece + rdOffset + ret, mRestLen);
 
                     int syncWord = subPeekAsInt32(mRestbuf);
                     if ((AML_PARSER_SYNC_WORD == syncWord) && ((mRestbuf[4] == 0xaa) || (mRestbuf[4] == 0x77))) {
-                        ALOGI("## sub header found ! mRestbuf=%p, %x, ---\n", mRestbuf, mRestbuf[0]);
+                        SUBTITLE_LOGI("## sub header found ! mRestbuf=%p, %x, ---\n", mRestbuf, mRestbuf[0]);
                         sizeflag = mRestLen;
                     } else {
-                        ALOGI("## no header found, free mRestbuf! ---\n");
+                        SUBTITLE_LOGI("## no header found, free mRestbuf! ---\n");
                         free(mRestbuf);
                         mRestbuf = NULL;
                         mRestLen = sizeflag = 0;
@@ -839,7 +839,7 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
                 ret = -1;
                 break;
         }
-        ALOGI("get_spu ret: %d\n", ret);
+        SUBTITLE_LOGI("get_spu ret: %d\n", ret);
 
         if (ret < 0) break;
 
@@ -862,7 +862,7 @@ int DvdParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
             }
             addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
         } else {
-            ALOGE("decoded invalid subtitle!");
+            SUBTITLE_LOGE("decoded invalid subtitle!");
         }
     }
 
