@@ -92,9 +92,16 @@ struct JniContext {
     jint callJava_subtitleTextOrImage(int parserType) {
         bool needDetach = false;
         JNIEnv *env = getJniEnv(&needDetach);
-        jint uiType = env->CallIntMethod(mSubtitleManagerObject, mSubtitleTextOrImage, parserType);
-        if (needDetach) DetachJniEnv();
-        return uiType;
+        if (mSubtitleManagerObject != nullptr && env!= nullptr) {
+            jint uiType = env->CallIntMethod(mSubtitleManagerObject, mSubtitleTextOrImage, parserType);
+            if (needDetach) DetachJniEnv();
+            return uiType;
+        } else {
+            // Handle the case where mSubtitleManagerObject is null
+            ALOGE("mSubtitleManagerObject is Null or env is Null");
+            if (needDetach) DetachJniEnv();
+            return -1;/* some default value or error code */;
+        }
     }
     void callJava_showTextData(const char *data, int type, int cmd, int objectSegmentId) {
         bool needDetach = false;
@@ -119,19 +126,23 @@ struct JniContext {
             ALOGE("invalid parameter width=%d height=%d size=%d", width, height, size);
             return;
         }
-        ALOGD("callJava_showBitmapData width=%d height=%d size=%d", width, height, size);
+        ALOGI("callJava_showBitmapData width=%d height=%d size=%d", width, height, size);
         JNIEnv *env = getJniEnv(&needDetach);
-        int *jintData = (int *)malloc(width*height * sizeof(int));
-        for (int i=0; i<width*height; i++) {
-            jintData[i] = static_cast<int>(data[i]);;
-        }
-        jintArray array = env->NewIntArray(width*height);
-        env->SetIntArrayRegion(array, 0, width*height, (jint *)jintData);
-        env->CallVoidMethod(mSubtitleManagerObject, mNotifySubtitleEvent, array, nullptr,
-                uiType, x, y, width, height, videoWidth, videoHeight, !(cmd==0), objectSegmentId);
+        if (width * height * 4 == size) {
+            int *jintData = (int *)malloc(width*height * sizeof(int));
+            for (int i=0; i<width*height; i++) {
+                jintData[i] = ((data[4*i + 3] << 24) | (data[4*i] << 16) | (data[4*i + 1] << 8) | data[4*i + 2]);
+            }
+            jintArray array = env->NewIntArray(width*height);
+            env->SetIntArrayRegion(array, 0, width*height, (jint *)jintData);
+            env->CallVoidMethod(mSubtitleManagerObject, mNotifySubtitleEvent, array, nullptr,
+                    uiType, x, y, width, height, videoWidth, videoHeight, !(cmd==0), objectSegmentId);
 
-        env->DeleteLocalRef(array);
-        free(jintData);
+            env->DeleteLocalRef(array);
+            free(jintData);
+        } else {
+            ALOGE("invalid RGBA bitmap, width=%d height=%d size=%d", width, height, size);
+        }
         if (needDetach) DetachJniEnv();
     }
 
