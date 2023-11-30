@@ -360,19 +360,26 @@ void Subtitle::run() {
         mPendingAction = -1;
 
         // wait100ms, still no parser, then start default CC
-        if (mParser == nullptr) {
-            SUBTITLE_LOGI("No parser found, create default!");
-            // start default parser, normally, this is CC
-            mParser = ParserFactory::create(mSubPrams, mDataSource);
-            if (mParser == nullptr) {
-                SUBTITLE_LOGE("Parser creat failed, break!");
-                break;
-            } else {
-                mParser->startParser(mParserNotifier, mPresentation.get());
-            }
+        if (mSubPrams->playerId <= 0) {
+            SUBTITLE_LOGI("%s, playerid is an invalid value, playerid = %d",__func__, mSubPrams->playerId);
+        }
 
-            if (mPresentation != nullptr) {
-                ret = mPresentation->startPresent(mParser);
+        if (mParser == nullptr) {
+            int value = (mSubPrams->closedCaptionParam.ChannelID >> 8) == 1? 1:(mSubPrams->playerId > 0 ? 1:0);
+            if (value) {
+                SUBTITLE_LOGI("No parser found, create default!");
+                // start default parser, normally, this is CC
+                mParser = ParserFactory::create(mSubPrams, mDataSource);
+                if (mParser == nullptr) {
+                    SUBTITLE_LOGE("Parser creat failed, break!");
+                    break;
+                } else {
+                    mParser->startParser(mParserNotifier, mPresentation.get());
+                }
+
+                if (mPresentation != nullptr) {
+                    ret = mPresentation->startPresent(mParser);
+                }
             }
         }
 

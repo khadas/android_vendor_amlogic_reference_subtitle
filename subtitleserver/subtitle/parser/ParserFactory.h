@@ -250,7 +250,7 @@ struct SubtitleParamType {
     int mediaId;
     int idxSubTrackId; // only for idxsub
 
-    SubtitleParamType() : playerId(0), mediaId(-1), idxSubTrackId(0) {
+    SubtitleParamType() : playerId(-1), mediaId(-1), idxSubTrackId(0) {
         subType = TYPE_SUBTITLE_INVALID;
         memset(&closedCaptionParam, 0, sizeof(closedCaptionParam));
     }
