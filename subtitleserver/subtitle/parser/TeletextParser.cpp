@@ -1062,8 +1062,9 @@ static void handler(vbi_event *ev, void *userData) {
         }
     } else {
         //TODO: If multiple packets contain more than one page, pages may got queued up, and this may happen...
-        SUBTITLE_LOGI("Buffered too many pages, dropping page %s.\n", pgNoStr);
+        SUBTITLE_LOGI("%s buffered too many pages, dropping page %s,  need to reinitialize.\n", __FUNCTION__, pgNoStr);
         ctx->handlerRet = -1;//AVERROR(ENOSYS);
+        ctx->totalPages = 0;
     }
 
 #ifdef NEED_TELETEXT_CACHE_ZVBI_STATUS
@@ -1485,7 +1486,9 @@ int TeletextParser::fetchVbiPageLocked(int pageNum, int subPageNum) {
             mContext->handlerRet = -1;//AVERROR(ENOMEM);
         }
     } else {
+        SUBTITLE_LOGI("%s buffered too many pages, need to reinitialize.\n", __FUNCTION__);
         mContext->handlerRet = -1;//AVERROR(ENOSYS);
+        mContext->totalPages = 0;
     }
 
     if (!mContext->lockSubpg) {
