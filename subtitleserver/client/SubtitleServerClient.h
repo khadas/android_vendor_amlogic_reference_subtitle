@@ -43,7 +43,8 @@ typedef enum {
     DTV_SUB_DVB             = 4,
     DTV_SUB_DVB_TELETEXT    = 5,
     DTV_SUB_DVB_TTML        = 6,
-    DTV_SUB_ARIB24          = 8,
+    DTV_SUB_ARIB24          = 7,
+    DTV_SUB_SMPTE_TTML      = 8,
 } DtvSubtitleType;
 
 typedef struct {

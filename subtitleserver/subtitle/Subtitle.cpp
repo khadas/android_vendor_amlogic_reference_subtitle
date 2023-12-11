@@ -78,6 +78,8 @@ Subtitle::Subtitle(bool isExtSub, int trackId, ParserEventNotifier *notifier) :
     mSubPrams->arib24Param.languageCodeId = -1;
     mSubPrams->ttmlParam.demuxId = -1;
     mSubPrams->ttmlParam.pid= -1;
+    mSubPrams->smpteTtmlParam.demuxId = 0;
+    mSubPrams->smpteTtmlParam.pid= 0;
     mPresentation = std::shared_ptr<Presentation>(new Presentation(nullptr));
 }
 
@@ -196,7 +198,8 @@ bool Subtitle::setParameter(void *params) {
 
     //process ttx skip page func.
     if ((mSubPrams->subType == TYPE_SUBTITLE_DVB) || (mSubPrams->subType == TYPE_SUBTITLE_DVB_TELETEXT) || (mSubPrams->subType == TYPE_SUBTITLE_DVB_TTML)
-        || (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CAPTION) || (mSubPrams->subType == TYPE_SUBTITLE_SCTE27) || (mSubPrams->subType == TYPE_SUBTITLE_ARIB_B24)) {
+        || (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CAPTION) || (mSubPrams->subType == TYPE_SUBTITLE_SCTE27) || (mSubPrams->subType == TYPE_SUBTITLE_ARIB_B24)
+        || (mSubPrams->subType == TYPE_SUBTITLE_SMPTE_TTML)) {
         mPendingAction = ACTION_SUBTITLE_SET_PARAM;
         mCv.notify_all();
         return true;
@@ -289,6 +292,8 @@ void Subtitle::run() {
                         mParser->updateParameter(TYPE_SUBTITLE_SCTE27, &mSubPrams->scte27Param);
                     } else if (mSubPrams->subType == TYPE_SUBTITLE_CLOSED_CAPTION) {
                         mParser->updateParameter(TYPE_SUBTITLE_CLOSED_CAPTION, &mSubPrams->closedCaptionParam);
+                    } else if (mSubPrams->subType == TYPE_SUBTITLE_SMPTE_TTML) {
+                        mParser->updateParameter(TYPE_SUBTITLE_SMPTE_TTML, &mSubPrams->smpteTtmlParam);
                     }
 
                     if (createAndStart) {
@@ -330,6 +335,8 @@ void Subtitle::run() {
                         mParser->updateParameter(TYPE_SUBTITLE_SCTE27, &mSubPrams->scte27Param);
                     } else if (mSubPrams->subType == TYPE_SUBTITLE_ARIB_B24) {
                         mParser->updateParameter(TYPE_SUBTITLE_ARIB_B24, &mSubPrams->arib24Param);
+                    } else if (mSubPrams->subType == TYPE_SUBTITLE_SMPTE_TTML) {
+                        mParser->updateParameter(TYPE_SUBTITLE_SMPTE_TTML, &mSubPrams->smpteTtmlParam);
                     }
                 }
             }

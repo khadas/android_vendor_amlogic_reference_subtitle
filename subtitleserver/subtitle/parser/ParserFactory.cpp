@@ -36,6 +36,7 @@
 #include "ClosedCaptionParser.h"
 #include "Scte27Parser.h"
 #include "ExtParser.h"
+#include "SmpteTtmlParser.h"
 
 std::shared_ptr<Parser> ParserFactory::create(
             std::shared_ptr<SubtitleParamType> subParam,
@@ -82,6 +83,9 @@ std::shared_ptr<Parser> ParserFactory::create(
         case TYPE_SUBTITLE_ARIB_B24:
             return std::shared_ptr<Parser>(new AribB24Parser(source));
 
+        case TYPE_SUBTITLE_SMPTE_TTML:
+            return std::shared_ptr<Parser>(new SmpteTtmlParser(source));
+
         case TYPE_SUBTITLE_CLOSED_CAPTION: {
             std::shared_ptr<Parser> p = std::shared_ptr<Parser>(new ClosedCaptionParser(source));
             if (p != nullptr) {
@@ -113,6 +117,7 @@ DisplayType ParserFactory::getDisplayType(int type)
         case TYPE_SUBTITLE_DVB:
         case TYPE_SUBTITLE_DVB_TELETEXT:
         case TYPE_SUBTITLE_SCTE27:
+        case TYPE_SUBTITLE_SMPTE_TTML:
         case TYPE_SUBTITLE_IDX_SUB:
           return SUBTITLE_IMAGE_DISPLAY;
         case TYPE_SUBTITLE_MKV_STR:
