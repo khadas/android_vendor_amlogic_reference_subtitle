@@ -512,7 +512,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                 pts = convertDvbTime2Ns(spu->pts);
                 ptsDiff = (pts>timestamp) ? (pts-timestamp) : (timestamp-pts);
 
-                // The subtitle pts ahead more than 100S of video...maybe ahead more 20s
+                // The subtitle pts ahead more than 100S of video...maybe ahead more 200s
                 if ((ptsDiff >= 200*1000*1000*1000LL) && !(spu->isExtSub)) {
                     SUBTITLE_LOGI("Got  SPU: spu is ptsDiff >= 200s pts:%lld spu->pts:%lld",pts, spu->pts);
                     // we cannot check it's valid or not, so delay 1s(common case) and show
@@ -669,7 +669,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
             if (mPresent->mEmittedFaddingSpu.size() > 0) {
                 spu = mPresent->mEmittedFaddingSpu.front();
 
-                if (spu != nullptr) {
+                if (spu != nullptr && !spu->isKeepShowing) {
                     uint64_t delayed = convertDvbTime2Ns(spu->m_delay);
                     uint64_t timestamp = mPresent->mStartTimeModifier + mPresent->mCurrentPresentRelativeTime;
                     uint64_t ahead_delay_tor = ((spu->isExtSub)?5:100)*1000*1000*1000LL;
