@@ -430,6 +430,7 @@ void Scte27Parser::decodeBitmap(std::shared_ptr<AML_SPUVAR> spu, uint8_t* buffer
     spu->spu_data = (unsigned char *)malloc(bitmap_width*bitmap_height*4);
     if (!spu->spu_data) {
         SUBTITLE_LOGE("%s malloc SCTE27_SUB_SIZE failed!\n",__FUNCTION__);
+        free (bmp);
         free (bitmap);
         free (simple_bitmap);
         return;
@@ -452,9 +453,9 @@ void Scte27Parser::decodeBitmap(std::shared_ptr<AML_SPUVAR> spu, uint8_t* buffer
         simple_bitmap->bitmap_length);
     if (!spu->spu_data) {
         SUBTITLE_LOGE("%s malloc SCTE27_SUB_SIZE failed!\n",__FUNCTION__);
+        free (bmp);
         free (bitmap);
         free (simple_bitmap);
-        free (bmp);
         return;
     }
 }
@@ -557,6 +558,12 @@ int Scte27Parser::decodeMessageBodySubtitle(std::shared_ptr<AML_SPUVAR> spu, cha
     }
     //memset(spu->spu_data, 0, width*height*4);
     //memcpy(spu->spu_data,ctx->buffer, width*height*4);
+    //ANSI_SCTE_27_2011.pdf5.9 Display Modes
+    if (immediate) {
+        spu->isImmediatePresent = true;
+    } else {
+        spu->isImmediatePresent = false;
+    }
     spu->spu_width = width;
     spu->spu_height = height;
     spu->spu_origin_display_w = width;
@@ -651,9 +658,6 @@ int Scte27Parser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *psrc, co
             spu->spu_origin_display_w = VideoInfo::Instance()->getVideoWidth();
             spu->spu_origin_display_h = VideoInfo::Instance()->getVideoHeight();
         }
-        //ttx,need immediatePresent show
-        spu->isImmediatePresent = true;
-        spu->isKeepShowing = true;
         addDecodedItem(std::shared_ptr<AML_SPUVAR>(spu));
     } else {
         if (mDumpSub) SUBTITLE_LOGI("[%s::%d]dump-pts-hwdmx!error this pts(%lld) frame was abandon\n", __FUNCTION__,__LINE__, spu->pts);
