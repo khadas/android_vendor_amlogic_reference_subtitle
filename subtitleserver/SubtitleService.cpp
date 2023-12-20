@@ -401,7 +401,7 @@ bool SubtitleService::ttControl(int cmd, int magazine, int pageNo, int regionId,
         case TT_EVENT_GO_TO_PAGE:
         case TT_EVENT_GO_TO_SUBTITLE:
             mSubParam.teletextParam.magazine = magazine;
-            mSubParam.teletextParam.subPageNo = pageNo;
+            mSubParam.teletextParam.pageNo = pageNo;
             mSubParam.teletextParam.regionId = regionId;
             break;
         case TT_EVENT_SET_REGION_ID:

@@ -214,7 +214,8 @@ typedef enum{
    TT_EVENT_TIMER,
    TT_EVENT_GO_TO_PAGE,
    TT_EVENT_GO_TO_SUBTITLE,
-   TT_EVENT_SET_REGION_ID
+   TT_EVENT_SET_REGION_ID,
+   TT_EVENT_SUBPAGE_MODE
 } TeletextEvent;
 
 typedef struct {
