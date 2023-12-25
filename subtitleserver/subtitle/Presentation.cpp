@@ -678,7 +678,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                     uint64_t ahead_delay_tor = ((spu->isExtSub)?5:100)*1000*1000*1000LL;
                     if ((delayed <= timestamp) && (delayed*5 > timestamp)) {
                         mPresent->mEmittedFaddingSpu.pop_front();
-                        SUBTITLE_LOGI("1 fade SPU: TimeStamp:%lld startAtPts=%lld ItemPts=%lld(%lld) duration:%lld(%lld) data:%p(%p)，isKeepShowing:%d, isImmediatePresent:%d, isTtxSubtitle:%d",
+                        SUBTITLE_LOGI("1 fade SPU: TimeStamp:%lld startAtPts=%lld ItemPts=%lld(%lld) duration:%lld(%lld) data:%p(%p), isKeepShowing:%d, isImmediatePresent:%d, isTtxSubtitle:%d",
                                 ns2ms(mPresent->mCurrentPresentRelativeTime),
                                 ns2ms(mPresent->mStartTimeModifier),
                                 spu->pts, spu->pts/DVB_TIME_MULTI,

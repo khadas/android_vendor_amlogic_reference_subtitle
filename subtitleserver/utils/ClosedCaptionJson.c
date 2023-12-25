@@ -289,7 +289,7 @@ static char* edge_to_str (enum edge e) {
             break;
         default:
             str = "none";
-            // ALOGE("edge style error: %s", e);
+            // SUBTITLE_LOGE("edge style error: %s", e);
             break;
     }
     return str;
@@ -363,7 +363,7 @@ static int vbi_page_row_to_json (struct vbi_page *pg, Output *out, int row, vbi_
         vbi_char *pc = &pg->text[row * pg->columns + col];
         int uc = pc->unicode;
         int r;
-        //ALOGE("unicode %x op %d start %d", uc, pc->opacity,start);
+        //SUBTITLE_LOGE("unicode %x op %d start %d", uc, pc->opacity,start);
         if (vbi_style_cmp(st, pc)) {
             if (vbi_text_to_json(pg, buf, len, st, out) < 0) return -1;
             pb  = buf;
@@ -555,7 +555,7 @@ static int row_to_json (struct tvcc_decoder *td, struct dtvcc_window *win, Outpu
         lang_korea_unicode = td->dtvcc.decoder_param & (0x1<<13);
         if (lang_korea && (lang_korea_unicode == 0)) {
             errno = 0;
-            //ALOGI("cc_json convert json in kor lang: %s", getenv("ICU_DATA"));
+            //SUBTITLE_LOGI("cc_json convert json in kor lang: %s", getenv("ICU_DATA"));
             if (c) {
                 char tobuffer[16] = {0};
                 size_t outLen = 16;
@@ -595,7 +595,7 @@ static int row_to_json (struct tvcc_decoder *td, struct dtvcc_window *win, Outpu
         }
     }
 
-    ALOGI("debug-cc row buffer=%s", buf);
+    SUBTITLE_LOGI("debug-cc row buffer=%s", buf);
 
     if (len) {
         if (text_to_json(buf, len, pt, out) < 0) return -1;

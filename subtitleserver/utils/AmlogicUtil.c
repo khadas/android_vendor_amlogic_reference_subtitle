@@ -49,7 +49,7 @@ static pthread_once_t once = PTHREAD_ONCE_INIT;
 static void sig_handler(int signo)
 {
     pthread_t tid =pthread_self();
-    ALOGD("signal handler, tid %ld, signo %d", tid, signo);
+    SUBTITLE_LOGI("signal handler, tid %ld, signo %d", tid, signo);
 }
 
 static void register_sig_handler()
@@ -83,13 +83,13 @@ int AmlogicFileRead(const char *name, char *buf, int len)
     if (fd >= 0) {
         c = read(fd, buf, len);
         if (c > 0) {
-            //ALOGI("read success val:%s", buf);
+            //SUBTITLE_LOGI("read success val:%s", buf);
         } else {
-            ALOGI("read failed!file %s,err: %s", name, strerror(errno));
+            SUBTITLE_LOGI("read failed!file %s,err: %s", name, strerror(errno));
         }
         close(fd);
     } else {
-        ALOGI("unable to open file %s,err: %s", name, strerror(errno));
+        SUBTITLE_LOGI("unable to open file %s,err: %s", name, strerror(errno));
     }
     return c > 0 ? AM_SUCCESS : AM_FAILURE;
 }

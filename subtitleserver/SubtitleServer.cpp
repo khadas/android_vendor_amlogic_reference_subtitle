@@ -490,9 +490,7 @@ Return<void> SubtitleServer::prepareWritingQueue(int32_t sId, int32_t size, prep
     } else {
         std::unique_ptr<DataMQ> tempDataMQ(new DataMQ(size, true /* EventFlag */));
         if (!tempDataMQ->isValid()) {
-            if (!tempDataMQ->isValid()) {
-                SUBTITLE_LOGE("data MQ is invalid");
-            }
+            SUBTITLE_LOGE("data MQ is invalid");
             sendError(Result::FAIL);
             return Void();
         }
@@ -540,7 +538,7 @@ Return<void> SubtitleServer::setCallback(const sp<ISubtitleCallback>& callback, 
         Return<bool> linkResult = callback->linkToDeath(mDeathRecipient, cookie);
         bool linkSuccess = linkResult.isOk() ? static_cast<bool>(linkResult) : false;
         if (!linkSuccess) {
-            SUBTITLE_LOGI("Couldn't link death recipient for cookie: %d", cookie);
+            SUBTITLE_LOGE("Couldn't link death recipient for cookie: %d", cookie);
         }
 
         SUBTITLE_LOGI("%s cookie:%d, client size:%d", __FUNCTION__, cookie, (int)mCallbackClients.size());

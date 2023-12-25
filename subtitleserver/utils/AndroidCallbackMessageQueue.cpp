@@ -77,7 +77,7 @@ void AndroidCallbackMessageQueue::looperLoop() {
         mLooper->pollAll(-1);
         //If mLooper is set to nullptr at some point within the loop, ensure proper handling and exit the loop
         if (mLooper == nullptr) {
-            ALOGE("looperLoop mLooper is Null.");
+            SUBTITLE_LOGE("looperLoop mLooper is Null.");
             break;
         }
     }

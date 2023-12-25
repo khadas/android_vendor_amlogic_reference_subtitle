@@ -870,10 +870,12 @@ static void* aml_userdata_thread (void *arg) {
         } else {
             read_vdec_id = ffs(vdec_ids) - 1;
         }
+
         // if (read_vdec_id != ud->playerId) {
         //     SUBTITLE_LOGI("the player is not consistent with the video read_vdec_id=%d,ud->playerId=%d",read_vdec_id,ud->playerId);
         //     continue;
         // }
+
         if (flush) {
             ioctl(fd, AMSTREAM_IOC_UD_FLUSH_USERDATA, &read_vdec_id);
             flush = 0;

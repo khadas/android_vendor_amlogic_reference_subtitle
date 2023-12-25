@@ -206,7 +206,7 @@ static int dvb_enable_filter(DemuxDeviceType *dev, DemuxFilterType *filter, bool
         ret = ioctl(fd, DMX_STOP, 0);
     }
     if (ret == -1) {
-        ALOGE("start filter failed (%s)", strerror(errno));
+        SUBTITLE_LOGE("start filter failed (%s)", strerror(errno));
         return DEMUX_ERROR_SYS;
     }
     return AM_SUCCESS;

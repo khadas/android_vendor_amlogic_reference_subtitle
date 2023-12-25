@@ -2078,7 +2078,7 @@ bool TeletextParser::updateParameter(int type, void *data) {
     #ifdef NEED_TELETEXT_CACHE_ZVBI_STATUS
     // teletext not started. this is the first time we check. when not started, vbi is null.
     if (teletextParam->event != TT_EVENT_SET_REGION_ID && (teletextParam->event != TT_EVENT_GO_TO_SUBTITLE || (teletextParam->event == TT_EVENT_GO_TO_SUBTITLE && mContext->subtitleMode == TT2_GRAPHICS_MODE))) {
-        ALOGD("This is the first? pid:%d onid:%d tsid:%d  %d", teletextParam->pid, teletextParam->onid, teletextParam->tsid, teletextParam->event);
+        SUBTITLE_LOGI("This is the first? pid:%d onid:%d tsid:%d  %d", teletextParam->pid, teletextParam->onid, teletextParam->tsid, teletextParam->event);
         // tricky for check need keep using vbi or not
         gVBIStatus.updateProgramInfo(teletextParam->pid, teletextParam->onid, teletextParam->tsid);
 

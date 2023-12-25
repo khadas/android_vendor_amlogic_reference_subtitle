@@ -29,7 +29,7 @@ class DeathNotifier: public IBinder::DeathRecipient
         }
 
         void binderDied(const wp<IBinder>& who) {
-            SUBTITLE_LOGI("subtitleservice died!");
+            SUBTITLE_LOGE("subtitleservice died!");
         }
 };
 
@@ -108,7 +108,7 @@ const sp<ISubTitleService>& getSubtitleService()
             binder = sm->getService(String16("subtitle_service"));
             if (binder != 0)
                 break;
-            SUBTITLE_LOGI("subtitle_service not published, waiting...");
+            SUBTITLE_LOGE("subtitle_service not published, waiting...");
             usleep(500000); // 0.5 s
         } while(true);
         if (amDeathNotifier == NULL) {
