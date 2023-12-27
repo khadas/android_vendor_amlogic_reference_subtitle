@@ -546,7 +546,10 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                 }*/
                 if ((spu->buffer_size + totalQueuedMemSize(mPresent->mEmittedShowingSpu)) >= MAX_ALLOWED_QUEUED_MEM) {
                     SUBTITLE_LOGI("Warning! The memory size occupied by the total queue has exceeded the maximum value.");
-                    mPresent->mEmittedShowingSpu.pop_front();
+                    size_t halfQueueSize = mPresent->mEmittedShowingSpu.size() / 2;
+                    for (size_t i = 0; i < halfQueueSize; ++i) {
+                        mPresent->mEmittedShowingSpu.pop_front();
+                    }
                 }
             }
 
