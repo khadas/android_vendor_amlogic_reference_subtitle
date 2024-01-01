@@ -227,7 +227,7 @@ typedef struct {
    int pageDir    =  0; // +1:next page, -1: last page
    int subPageDir =  0; // +1:next sub page, -1: last sub page
    int regionId   = -1; // Country subset specification, range (0~87), default G0 and G2
-   TeletextEvent event;
+   TeletextEvent event = TT_EVENT_INVALID;
    // when play the same program, vbi is cached, must support quick reference page
    int onid       = -1; // origin network id for check need close vbi or not
    int tsid       = -1; // tsid. for check need close vbi or not

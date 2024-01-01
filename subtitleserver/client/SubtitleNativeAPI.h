@@ -182,7 +182,7 @@ typedef struct {
    int subPageDir =  0; // +1:next sub page, -1: last sub page
    int regionid   = -1; // Country subset specification, range (0~87), default G0 and G2
    int flag       = -1; // Flag of whether to encrypt or not, 0 means unencrypted, 1 means encrypted
-   AmlTeletextEvent event;
+   AmlTeletextEvent event = TT_EVENT_INVALID;
 } AmlTeletextCtrlParam;
 
 
