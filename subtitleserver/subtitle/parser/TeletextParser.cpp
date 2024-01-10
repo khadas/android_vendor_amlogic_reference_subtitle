@@ -1138,12 +1138,12 @@ TeletextParser::~TeletextParser() {
             }
         }
        free(mContext->pages);
-       vbi_set_subtitle_mix_video_flag(mContext->vbi, TT2_MIX_BLACK);
+       if (NULL != mContext->vbi) vbi_set_subtitle_mix_video_flag(mContext->vbi, TT2_MIX_BLACK);
        mContext->mixVideoState = TT2_MIX_BLACK;
        mContext->transparentBackground = 0;
        mContext->gotoSubPageModeFlag = false;
        mContext->gotoSubPageDigitFlag = 0;
-       vbi_set_subtitle_subpage_mode(mContext->vbi, mContext->gotoSubPageModeFlag, mContext->gotoSubPageDigitFlag);
+       if (NULL != mContext->vbi) vbi_set_subtitle_subpage_mode(mContext->vbi, mContext->gotoSubPageModeFlag, mContext->gotoSubPageDigitFlag);
 #ifdef NEED_TELETEXT_CACHE_ZVBI_STATUS
 //        vbi_event_handler_remove(mContext->vbi, tt2TimeUpdate);
 //        vbi_event_handler_remove(mContext->vbi, handler);
