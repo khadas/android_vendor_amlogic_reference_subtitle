@@ -51,7 +51,7 @@
 static void save2BitmapFile(const char *filename, uint32_t *bitmap, int w, int h) {
     SUBTITLE_LOGI("save2BitmapFile:%s\n",filename);
     FILE *f;
-    char fname[40];
+    char fname[50];
     snprintf(fname, sizeof(fname), "%s.ppm", filename);
     f = fopen(fname, "w");
     if (!f) {
@@ -117,6 +117,8 @@ void Scte27Parser::notifyCallerAvail(int avil) {
 
 int Scte27Parser::initContext() {
     mContext = new Scte27SubContext();
+    mContext->segment_container  = (char *)malloc(DATA_SIZE);
+    memset(mContext->segment_container, 0, DATA_SIZE);
     return 0;
 }
 
@@ -149,6 +151,15 @@ void Scte27Parser::notifySubtitleErrorInfo(int error) {
     }
 }
 
+void Scte27Parser::cleanSegment() {
+    memset(mContext->segment_container, 0, DATA_SIZE);
+    mContext->table_ext = 0;
+    mContext->curr_no = 0;
+    mContext->last_no = 0;
+    mContext->seg_size = 0;
+    mContext->has_segment = 0;
+}
+
 Scte27Parser::Scte27Parser(std::shared_ptr<DataSource> source) {
     mContext = nullptr;
     mDataSource = source;
@@ -162,6 +173,7 @@ Scte27Parser::~Scte27Parser() {
     SUBTITLE_LOGI("%s", __func__);
     mState = SUB_STOP;
     if (mContext != NULL) {
+        free(mContext->segment_container);
         delete mContext;
         mContext = nullptr;
     }
@@ -274,6 +286,7 @@ void Scte27Parser::decodeBitmap(std::shared_ptr<AML_SPUVAR> spu, uint8_t* buffer
     bitmap_v = simple_bitmap->bottom_v - simple_bitmap->top_v;
     bitmap_size = bitmap_h * bitmap_v;
     simple_bitmap->bitmap_length = (buffer[0] << 8) | buffer[1];
+    SUBTITLE_LOGI("size %d bmp_size %d", bitmap_size, simple_bitmap->bitmap_length);
 
     bitmap = (uint8_t*)malloc(bitmap_size);
     if (!bitmap) {
@@ -401,13 +414,10 @@ void Scte27Parser::decodeBitmap(std::shared_ptr<AML_SPUVAR> spu, uint8_t* buffer
     bmp = (uint8_t *) malloc(bitmap_width*bitmap_height*4);
     target_bmp_start = bmp + simple_bitmap->top_v * pitch + simple_bitmap->top_h * 4;
 
-    for (i=0; i<bitmap_v; i++)
-    {
+    for (i=0; i<bitmap_v; i++) {
         cursor = target_bmp_start + i * pitch;
-        for (j=0; j<bitmap_h; j++)
-        {
-            switch (bitmap[i*bitmap_h + j])
-            {
+        for (j=0; j<bitmap_h; j++) {
+            switch (bitmap[i*bitmap_h + j]) {
                 case PIXEL_BG: //Bg
                     if (simple_bitmap->is_framed)
                         set_rgba(cursor + j * 4, simple_bitmap->frame_bg_style.frame_color_rgba);
@@ -506,10 +516,9 @@ int Scte27Parser::decodeMessageBodySubtitle(std::shared_ptr<AML_SPUVAR> spu, cha
     reveal_pts = (reveal_pts < 0) ? -reveal_pts : reveal_pts;
     int display_duration    = ((buf[8] & 0x07) << 8) | buf[9];
 
-    SUBTITLE_LOGI("%s pre_clear_display %d immediate %d display_standard:%d subtitle_type:%d vlc_subtitle_type:%d block_length:%d reveal_pts :%lld display_duration:%d", __FUNCTION__, pre_clear_display, immediate, display_standard, subtitle_type, vlc_subtitle_type, block_length, reveal_pts, display_duration);
+    SUBTITLE_LOGI("%s pre_clear_display %d immediate %d display_standard:%d subtitle_type:%d vlc_subtitle_type:%d block_length:%d reveal_pts :%lld display_duration:%d size:%d", __FUNCTION__, pre_clear_display, immediate, display_standard, subtitle_type, vlc_subtitle_type, block_length, reveal_pts, display_duration, size);
 
-    if (block_length < 12 || block_length > size)
-    {
+    if (block_length < 12 || block_length > size) {
         SUBTITLE_LOGE("%s sub_node->block_len invalid blen %x size %x", __FUNCTION__, block_length, size);
         return -1;
     }
@@ -614,7 +623,8 @@ int Scte27Parser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *psrc, co
         }
 
         if (curr_no == 0) {
-            SUBTITLE_LOGI("scte overlay");
+            SUBTITLE_LOGI("%s scte overlay", __FUNCTION__);
+            cleanSegment();
             mContext->seg_size = 0;
             mContext->table_ext = table_ext;
             mContext->last_no = last_no;
@@ -623,26 +633,39 @@ int Scte27Parser::decodeSubtitle(std::shared_ptr<AML_SPUVAR> spu, char *psrc, co
 
         if (table_ext != mContext->table_ext && mContext->has_segment) {
             SUBTITLE_LOGE("%s segment ext does not match", __FUNCTION__);
+            cleanSegment();
             return -1;
         }
 
         if ((curr_no != (mContext->curr_no + 1)) && mContext->has_segment) {
             SUBTITLE_LOGE("%s segment curr_no does not match", __FUNCTION__);
+            cleanSegment();
             return -1;
         }
 
         mContext->curr_no = curr_no;
         mContext->has_segment = 1;
+        segment_size = section_length - 1 - 5 - 4;
+        memcpy(&mContext->segment_container[mContext->seg_size],&psrc[9],segment_size);
+        mContext->seg_size += segment_size;
+        if (mDumpSub) SUBTITLE_LOGI("%s segment_size:%d seg_size:%d curr_no:%d last_no:%d", __FUNCTION__, segment_size, mContext->seg_size, curr_no, last_no);
+
         if (curr_no == last_no) {
             if (mContext->seg_size < 12) {
                 SUBTITLE_LOGE("%s scte_segment.seg_size:%d < 12 fail.", __FUNCTION__, section_length - 1 - 5 - 4);
                 return -1;
             }
-            ret = decodeMessageBodySubtitle(spu, &psrc[9], section_length - 1 - 5 - 4);
+            if (mDumpSub) {
+                for (size_t i = 0; i < mContext->seg_size; ++i) {
+                    SUBTITLE_LOGI("segmentation_overlay_included:%02X", (unsigned char)mContext->segment_container[i]);
+                }
+            }
+            ret = decodeMessageBodySubtitle(spu, mContext->segment_container, mContext->seg_size);
+            cleanSegment();
         }
     } else { // decode scte27 message body
-        if ((section_length - 1 - 4) < 12)
-        {
+        if (mContext->has_segment) cleanSegment();
+        if ((section_length - 1 - 4) < 12) {
             SUBTITLE_LOGE("(section_length - 1 - 4):%d < 12 fail.", section_length - 1- 4);
             return -1;
         }
@@ -730,71 +753,26 @@ int Scte27Parser::softDemuxParse(std::shared_ptr<AML_SPUVAR> spu, char *psrc, co
 }
 
 int Scte27Parser::getScte27Spu() {
-    char tmpbuf[8];
-    char *originBuffer = NULL, *transportBuffer = NULL; // Pointer to dynamically allocated buffer
-    int bufferSize = 10*1024; // Set the initial buffer size as needed
-    int bufIndex = 0;
-    int64_t table_id = 0; //0xc6
-    int64_t CRC_32 = 0; //0xFFFFFFFF
-    bool packetSource = false;
-    originBuffer = new char[bufferSize];
-    transportBuffer = new char[bufferSize];
+    char *originBuffer = NULL; // Pointer to dynamically allocated buffer
+    originBuffer = new char[DATA_SIZE];
 
     if (mDumpSub) SUBTITLE_LOGI("enter get_scte27_spu\n");
     int ret = -1;
 
-    while (mDataSource->read(tmpbuf, 1) == 1) {
-        if (mState == SUB_STOP) {
-            if (originBuffer != NULL) {
-                delete[] originBuffer;
-            }
-            if (transportBuffer != NULL) {
-                delete[] transportBuffer;
-            }
-            return 0;
+    int size = mDataSource->read(originBuffer, 0xffff);
+    if (mState == SUB_STOP) {
+        if (originBuffer != NULL) {
+            delete[] originBuffer;
         }
-
-        table_id = tmpbuf[0];
-        CRC_32 = ((CRC_32<<8) & 0x000000ffffffff00) | tmpbuf[0];
-
-
-        if (table_id  == 0xc6 && !packetSource) {
-            packetSource = true;
-            bufIndex = 0;
-            CRC_32 = 0;
-        }
-
-        if (packetSource) {
-            originBuffer[bufIndex++] = tmpbuf[0];
-            //SUBTITLE_LOGI("%s bufIndex:%d tmpbuf:0x%x\n", __FUNCTION__, bufIndex,tmpbuf[0]);
-        }
-
-        if ((CRC_32 & 0xffffffff) == 0xFFFFFFFF && packetSource) {
-            //If 0xFFFFFFFF(CRC_32), stop saving data to the buffer
-            //The data stored in dataBuffer can be used here
-            //Reset the data buffer and data size and prepare to receive the next data segment
-            memset(transportBuffer, 0x0, bufferSize);
-            memcpy(transportBuffer, originBuffer, bufIndex - 4);
-            if (mDumpSub) {
-                for (int i =0;i< bufIndex - 4;i++) {
-                    SUBTITLE_LOGI("%s transportBuffer[%d]:0x%x\n", __FUNCTION__, i,transportBuffer[i]);
-                }
-            }
-            std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
-            spu->sync_bytes = AML_PARSER_SYNC_WORD;
-            ret = hwDemuxParse(spu, transportBuffer ,bufIndex - 4);
-            packetSource = false;
-            bufIndex = 0;
-            CRC_32 = 0;
-        }
+        return 0;
     }
+    if (size <= 0) return -1;
+    std::shared_ptr<AML_SPUVAR> spu(new AML_SPUVAR());
+    spu->sync_bytes = AML_PARSER_SYNC_WORD;
+    ret = hwDemuxParse(spu, originBuffer, DATA_SIZE);
 
     if (originBuffer != NULL) {
         delete[] originBuffer;
-    }
-
-    if (transportBuffer != NULL) {
-        delete[] transportBuffer;
     }
     return ret;
 }
