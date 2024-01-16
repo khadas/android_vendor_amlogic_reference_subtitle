@@ -2391,9 +2391,9 @@ bool TeletextParser::handleControl() {
 }
 
 int TeletextParser::convertPageDecimal2Hex(int magazine, int pageNo) {
-    SUBTITLE_LOGI("%s, magazine:%d, pageNo:%d\n", __FUNCTION__, magazine, pageNo);
+    SUBTITLE_LOGI("%s, magazine:0x%x, pageNo:0x%x\n", __FUNCTION__, magazine, pageNo);
     int pageNum;
-    if (magazine < TELETEXT_MIN_MAGAZINE_NUMBER ||  magazine > TELETEXT_MAX_MAGAZINE_NUMBER || pageNo < TELETEXT_MIN_PAGENO_NUMBER || pageNo > TELETEXT_MAX_PAGENO_NUMBER ) {
+    if (magazine < TELETEXT_MIN_MAGAZINE_NUMBER ||  magazine > TELETEXT_MAX_MAGAZINE_NUMBER || vbi_bcd2dec(pageNo) < TELETEXT_MIN_PAGENO_NUMBER || vbi_bcd2dec(pageNo) > TELETEXT_MAX_PAGENO_NUMBER ) {
         SUBTITLE_LOGE("%s, Page number parameter input error, corrected to default pageNo 100\n", __FUNCTION__);
         pageNum = 100;
     } else if (magazine == TELETEXT_MIN_MAGAZINE_NUMBER) {
