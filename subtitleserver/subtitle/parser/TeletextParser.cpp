@@ -108,9 +108,8 @@
 #define BITMAP_CHAR_WIDTH  (12 * MULTIPLE)
 #define BITMAP_CHAR_HEIGHT (10 * MULTIPLE)
 
-#define TELETEXT_LIVETV_DEFAULT_SUBPAGE   0
-#define TELETEXT_INVALID_SUBPAGE_NUMBER_1 -1
-#define TELETEXT_INVALID_SUBPAGE_NUMBER_2 0xffffffff
+#define TELETEXT_LIVETV_DEFAULT_SUBPAGE 0
+#define TELETEXT_INVALID_SUBPAGE_NUMBER -1
 
 #define DOUBLE_HEIGHT_SCROLL_FACTOR 2
 #define DOUBLE_HEIGHT_SCROLL_SECTION 6
@@ -736,8 +735,7 @@ static inline void setNavigatorPageNumber(vbi_page *page, int currentPage)
      for (int i = 0; i < NAVIGATOR_COLORBAR_LINK_SIZE; i++) {
          NavigatorPageT navigatorPage;
          navigatorPage.pageNo = page->nav_link[i].pgno;
-         if (page->nav_link[i].subno == TELETEXT_INVALID_SUBPAGE_NUMBER_1 ||
-            page->nav_link[i].subno == TELETEXT_INVALID_SUBPAGE_NUMBER_2) {
+         if (page->nav_link[i].subno == TELETEXT_INVALID_SUBPAGE_NUMBER) {
                 navigatorPage.subPageNo= 0;
          } else {
                 navigatorPage.subPageNo= page->nav_link[i].subno;
@@ -2180,7 +2178,7 @@ bool TeletextParser::updateParameter(int type, void *data) {
             vbi_decoder_delete(gVBIStatus.getVbiInstance());
             gVBIStatus.registerVbiInstance(nullptr);
             SUBTITLE_LOGI(" %s, re-register VBI mContext->vbi:%p magazine:%d pageNo:0x%x subPageNo:0x%x after\n", __FUNCTION__,mContext->vbi, teletextParam->magazine, teletextParam->pageNo, teletextParam->subPageNo);
-            if ((teletextParam->event == TT_EVENT_GO_TO_PAGE && teletextParam->magazine >= TELETEXT_MIN_MAGAZINE_NUMBER && teletextParam->magazine <= TELETEXT_MAX_MAGAZINE_NUMBER&& teletextParam->subPageNo >= TELETEXT_MIN_SUBPAGE_NUMBER && teletextParam->subPageNo <= TELETEXT_MAX_SUBPAGE_NUMBER)
+            if ((teletextParam->event == TT_EVENT_GO_TO_PAGE && teletextParam->magazine >= TELETEXT_MIN_MAGAZINE_NUMBER && teletextParam->magazine <= TELETEXT_MAX_MAGAZINE_NUMBER && ((teletextParam->subPageNo >= TELETEXT_MIN_SUBPAGE_NUMBER && teletextParam->subPageNo <= TELETEXT_MAX_SUBPAGE_NUMBER) || teletextParam->subPageNo == TELETEXT_INVALID_SUBPAGE_NUMBER))
                 || (teletextParam->event == TT_EVENT_INDEXPAGE)) {
                 gVBIStatus.lastMagazine = teletextParam->magazine;
                 gVBIStatus.lastPageNo    = teletextParam->pageNo;
