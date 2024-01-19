@@ -1026,8 +1026,14 @@ static void handler(vbi_event *ev, void *userData) {
     SUBTITLE_LOGI("%d x %d page chop:%d\n", page->columns, page->rows, chopTop);
     vbi_teletext_set_current_page(ctx->vbi,ev->ev.ttx_page.pgno, ev->ev.ttx_page.subno);
 
-    if (ctx->lockSubpg == 0 || ctx->currentPage == nullptr) {
-        ctx->currentPage = page;
+    if ((ctx->lockSubpg == 0 || ctx->currentPage == nullptr) && page) {
+        ctx->currentPage = (vbi_page *)malloc(sizeof(vbi_page));
+        if (!ctx->currentPage) {
+            SUBTITLE_LOGE("malloc  ctx->currentPage failed!\n");
+            return;
+        }
+        memset(ctx->currentPage, 0, sizeof(vbi_page));
+        memcpy(ctx->currentPage, page, sizeof(vbi_page));
     }
     if (ctx->totalPages < MAX_BUFFERED_PAGES) {
 
@@ -1150,6 +1156,7 @@ TeletextParser::~TeletextParser() {
         vbi_decoder_delete(mContext->vbi);
 #endif
         mContext->vbi = nullptr;
+        mContext->currentPage = nullptr;
         mContext->pts = AV_NOPTS_VALUE;
         mContext->dispUpdate = 0;
         mContext->regionId = -1;
@@ -1462,8 +1469,14 @@ int TeletextParser::fetchVbiPageLocked(int pageNum, int subPageNum) {
     vbi_teletext_set_current_page(mContext->vbi, vbi_dec2bcd(mContext->gotoPage), vbi_dec2bcd(mContext->subPageNum));
     setNavigatorPageNumber(page,mContext->gotoPage);
     vbi_set_subtitle_flag(mContext->vbi, mContext->isSubtitle, mContext->subtitleMode, TELETEXT_USE_SUBTITLESERVER);
-    if (mContext->lockSubpg == 0 ||  mContext->currentPage == nullptr) {
-        mContext->currentPage = page;
+    if ((mContext->lockSubpg == 0 ||  mContext->currentPage == nullptr) && page) {
+        mContext->currentPage = (vbi_page *)malloc(sizeof(vbi_page));
+        if (!mContext->currentPage) {
+            SUBTITLE_LOGE("malloc mContext->currentPage failed!\n");
+            return -1;
+        }
+        memset(mContext->currentPage, 0, sizeof(vbi_page));
+        memcpy(mContext->currentPage, page, sizeof(vbi_page));
     }
     if (mContext->totalPages < MAX_BUFFERED_PAGES) {
         SUBTITLE_LOGI("%s, totalPages:%d\n",__FUNCTION__, mContext->totalPages);
@@ -2424,6 +2437,7 @@ int TeletextParser::initContext() {
     }
     mContext->formatId = 0;
     mContext->vbi = NULL;
+    mContext->currentPage = NULL;
     mContext->pts = AV_NOPTS_VALUE;
     mContext->subDuration = 30000;
     mContext->opacity = -1;
