@@ -210,7 +210,7 @@ cc_binary {
 */
 
   static_libs: [
-    "libzvbi_static",
+    "libzvbi_subtitle_static",
     "libaribcaption_static",
   ],
 
