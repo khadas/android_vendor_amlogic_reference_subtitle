@@ -57,6 +57,8 @@ SubSourceStatus SubSource_ReportLanguageString(SubSourceHandle handle, const cha
 
 SubSourceStatus SubSource_SendData(SubSourceHandle handle, const char *data, int size);
 
+SubSourceStatus SubSource_GetVersion(SubSourceHandle handle, int *version);
+
 
 #ifdef __cplusplus
 }
