@@ -469,6 +469,8 @@ int PgsParser::parserOnePgs(std::shared_ptr<AML_SPUVAR> spu) {
     spu->pts = mPgsEpgs->showdata.pts;
     spu->buffer_size = spu->spu_width * spu->spu_height * 4;
     spu->objectSegmentId = mPgsEpgs->showdata.objectSegmentId;
+    if (spu->spu_start_x == 0) spu->spu_start_x = (spu->spu_origin_display_w - spu->spu_width) / 2; // SWPL-157056 When the offset of x is 0, place subtitles in the center.
+    if (spu->spu_start_y == 0) spu->spu_start_y = (spu->spu_origin_display_h - spu->spu_height); // SWPL-157056 When the y offset is 0, place subtitles tightly against the bottom.
     if (spu->buffer_size > 0 && spu->spu_data != NULL) {
         if (mDumpSub) {
             snprintf(filename, sizeof(filename), "./data/subtitleDump/pgs(%lld)", spu->pts);
