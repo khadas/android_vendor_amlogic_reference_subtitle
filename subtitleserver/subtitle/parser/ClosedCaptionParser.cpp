@@ -331,10 +331,6 @@ int ClosedCaptionParser::startAmlCC() {
     int source = mChannelId>>8;
     int channel = mChannelId&0xff;
     if (source != CLOSED_CAPTION_INPUT_VBI) {
-        if (mPlayerId <= 0) {
-            SUBTITLE_LOGI("%s, playerid is an invalid value, return",__func__);
-            return 0;
-        }
         mVfmt = VideoInfo::Instance()->getVideoFormat();
     }
 
