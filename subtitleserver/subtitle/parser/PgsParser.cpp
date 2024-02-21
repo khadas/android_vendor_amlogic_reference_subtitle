@@ -237,9 +237,14 @@ static inline void readColorTable(unsigned char *buf, int size, PgsInfo *pgsInfo
         unsigned char y = buf[pos + 1];
         unsigned char u = buf[pos + 2];
         unsigned char v = buf[pos + 3];
-        unsigned char r = y + (v - 128) + ((v - 128) * 103 >> 8);
-        unsigned char g = y - ((u - 128) * 88 >> 8) - ((v - 128) * 183 >> 8);
-        unsigned char b = y + (u - 128) + ((u - 128) * 198 >> 8);
+        // Calculate RGB components
+        int r = (int)y + ((int)v - 128) + (((int)v - 128) * 103 >> 8);
+        int g = (int)y - (((int)u - 128) * 88 >> 8) - (((int)v - 128) * 183 >> 8);
+        int b = (int)y + ((int)u - 128) + (((int)u - 128) * 198 >> 8);
+        // Ensure color components are within [0, 255]
+        r = (r < 0) ? 0 : ((r > 255) ? 255 : r);
+        g = (g < 0) ? 0 : ((g > 255) ? 255 : g);
+        b = (b < 0) ? 0 : ((b > 255) ? 255 : b);
         /*
         R = Y + 1.140V
         G = Y - 0.395U - 0.581V
@@ -430,7 +435,7 @@ PgsParser::~PgsParser() {
 
 int PgsParser::parserOnePgs(std::shared_ptr<AML_SPUVAR> spu) {
     int bufferSize = 0;
-    char filename[32];
+    char filename[64];
 
     bufferSize = (mPgsEpgs->showdata.imageWidth *
                    mPgsEpgs->showdata.imageHeight * 4);
@@ -501,7 +506,7 @@ int PgsParser::decode(std::shared_ptr<AML_SPUVAR> spu, unsigned char *buf) {
     int size;
     int startTime, endTime;
     unsigned char type;
-    char filename[32];
+    char filename[64];
     PgsInfo *pgsInfo = mPgsEpgs->pgsInfo;
     type = readTimeHeader(&curBuf, &size, &startTime, &endTime);
     switch (type) {
