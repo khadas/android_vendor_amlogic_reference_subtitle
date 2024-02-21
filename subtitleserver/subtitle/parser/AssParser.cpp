@@ -337,6 +337,16 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
                     ret = __getAssSpu(spu->spu_data, spu->buffer_size, spu);
                     SUBTITLE_LOGI("CODEC_ID_SSA  size is:%u ,data is:%s, currentLen=%d\n",
                              spu->buffer_size, spu->spu_data, currentLen);
+                } else if (currentType == AV_CODEC_ID_SUBRIP) {
+                    if (currentLen >= 7) {
+                        //Check if the beginning is "<i>" and the end is marked in italics "</i>"
+                        if (memcmp(spu->spu_data, "<i>", 3) == 0 && memcmp(spu->spu_data + currentLen - 4, "</i>", 4) == 0) {
+                            memmove(spu->spu_data, spu->spu_data + 3, currentLen - 7); //Remove the starting "<i>"
+                            spu->spu_data[currentLen - 7] = '\0'; //Remove "</i>" from the tail
+                        }
+                    }
+                    SUBTITLE_LOGI("CODEC_ID_SUBRIP  size is:%u ,data is:%s, currentLen=%d\n", spu->buffer_size, spu->spu_data, currentLen);
+                    ret = 0;
                 } else {
                     ret = 0;
                 }
