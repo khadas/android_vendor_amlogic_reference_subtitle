@@ -2082,7 +2082,11 @@ int TeletextParser::gotoPageLocked(int pageNum, int subPageNum)
     }
 
     mContext->pageNum = pageNum;
-    mContext->subPageNum = subPageNum;
+    if (mContext->subtitleMode == TT2_GRAPHICS_MODE ) {
+        mContext->subPageNum = subPageNum;
+    } else if (mContext->subtitleMode == TT2_SUBTITLE_MODE) {
+        mContext->subPageNum = AM_TT2_ANY_SUBNO;
+    }
     mContext->acceptSubPage = subPageNum;
     mContext->gotoPage = pageNum;
     SUBTITLE_LOGI("[%s,%d] pgno: %d, mContext->subtitleMode:%d\n",__FUNCTION__, __LINE__, mContext->pageNum, mContext->subtitleMode);
