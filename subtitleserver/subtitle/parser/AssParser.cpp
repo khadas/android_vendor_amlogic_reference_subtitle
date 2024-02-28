@@ -337,16 +337,26 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
                     ret = __getAssSpu(spu->spu_data, spu->buffer_size, spu);
                     SUBTITLE_LOGI("CODEC_ID_SSA  size is:%u ,data is:%s, currentLen=%d\n",
                              spu->buffer_size, spu->spu_data, currentLen);
+                #ifdef NEED_ASS_REMOVE_STYLE
                 } else if (currentType == AV_CODEC_ID_SUBRIP) {
-                    if (currentLen >= 7) {
-                        //Check if the beginning is "<i>" and the end is marked in italics "</i>"
-                        if (memcmp(spu->spu_data, "<i>", 3) == 0 && memcmp(spu->spu_data + currentLen - 4, "</i>", 4) == 0) {
-                            memmove(spu->spu_data, spu->spu_data + 3, currentLen - 7); //Remove the starting "<i>"
-                            spu->spu_data[currentLen - 7] = '\0'; //Remove "</i>" from the tail
+                    for (size_t i = 0; i < currentLen - 2; ++i) {
+                        if (spu->spu_data[i] == 0x3C && spu->spu_data[i + 1] == 0x69 && spu->spu_data[i + 2] == 0x3E) {
+                            spu->spu_data[i] = 0x20;
+                            spu->spu_data[i + 1] = 0x20;
+                            spu->spu_data[i + 2] = 0x20;
                         }
                     }
-                    SUBTITLE_LOGI("CODEC_ID_SUBRIP  size is:%u ,data is:%s, currentLen=%d\n", spu->buffer_size, spu->spu_data, currentLen);
+
+                    for (size_t i = 0; i < currentLen - 3; ++i) {
+                        if (spu->spu_data[i] == 0x3C && spu->spu_data[i + 1] == 0x2F && spu->spu_data[i + 2] == 0x69 && spu->spu_data[i + 3] == 0x3E) {
+                            spu->spu_data[i] = 0x20;
+                            spu->spu_data[i + 1] = 0x20;
+                            spu->spu_data[i + 2] = 0x20;
+                            spu->spu_data[i + 3] = 0x20;
+                        }
+                    }
                     ret = 0;
+                #endif
                 } else {
                     ret = 0;
                 }
