@@ -394,7 +394,7 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
 
     #else
     if (mHorizontalAlign) {
-        /* default using left justfication */
+        /* default using left justification */
         if (row.mPriorStrPositionForDraw == -1) {
             row.mPriorStrPositionForDraw = win.mWindowStartX + mStrStartX;
         }
@@ -434,7 +434,7 @@ bool RowString::draw(SkCanvas &canvas, Window &win, Rows &row) {
             mStrRight = mStrLeft + mStringLengthOnPaint;
             row.mPriorStrPositionForDraw = mStrRight;
         } else {
-            /* default using left justfication */
+            /* default using left justification */
             if (row.mPriorStrPositionForDraw == -1) {
                 row.mPriorStrPositionForDraw = win.mWindowStartX + mStrStartX;
             }
