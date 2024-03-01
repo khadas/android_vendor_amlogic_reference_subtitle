@@ -176,12 +176,18 @@ SubtitleServerClient::SubtitleServerClient(bool isFallback, sp<SubtitleListener>
 
 void SubtitleServerClient::initRemoteLocked() {
     mRemote = ISubtitleServer::tryGetService();
-    while (mRemote == nullptr) {
+    hasInit = true;
+    int retryCount = 3;
+    while (mRemote == nullptr && retryCount > 0) {
         mLock.unlock();
         usleep(200*1000);//sleep 200ms
         mLock.lock();
         mRemote = ISubtitleServer::tryGetService();
+        retryCount--;
         SUBTITLE_LOGE("tryGet ISubtitleServer daemon Service ISubtitleServer::descriptor");
+    }
+    if (mRemote == nullptr) {
+        return;
     }
 
     mCallback = new SubtitleCallback(mListener);
@@ -257,8 +263,11 @@ bool SubtitleServerClient::open(int fd, int fdData, int trackId, int ioType) {
 
     Mutex::Autolock _l(mLock);
     SUBTITLE_LOGI("open session:0x%x  ioType=%d", mSessionId, ioType);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
 
     native_handle_t* nativeHandle = nullptr;
@@ -288,7 +297,7 @@ bool SubtitleServerClient::open(int fd, int fdData, int trackId, int ioType) {
 bool SubtitleServerClient::open(int fd, int ioType) {
     Mutex::Autolock _l(mLock);
     SUBTITLE_LOGI("open session:0x%x ioType:%d", mSessionId, ioType);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
     }
 
@@ -336,8 +345,11 @@ bool SubtitleServerClient::close() {
         return false;
     }
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->close(mSessionId);
     checkRemoteResultLocked(r);
@@ -346,8 +358,11 @@ bool SubtitleServerClient::close() {
 
 bool SubtitleServerClient::updateVideoPos(int pos) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->updateVideoPos(mSessionId, pos);
     checkRemoteResultLocked(r);
@@ -357,10 +372,12 @@ bool SubtitleServerClient::updateVideoPos(int pos) {
 
 int SubtitleServerClient::totalTracks() {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
     }
-
+    if (mRemote == nullptr) {
+        return false;
+    }
     int track = -1;
     auto r = mRemote->getTotalTracks(mSessionId, [&] (const Result &ret, const int& v) {
             if (ret == Result::OK) {
@@ -374,10 +391,13 @@ int SubtitleServerClient::totalTracks() {
 
 std::string SubtitleServerClient::getSubLanguage(int idx) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
     }
     std::string subLanguage;
+    if (mRemote == nullptr) {
+        return subLanguage;
+    }
     auto r = mRemote->getLanguage(mSessionId, [&] (const Result &ret, const std::string& language) {
             if (ret == Result::OK) {
                 subLanguage = language;
@@ -390,8 +410,11 @@ std::string SubtitleServerClient::getSubLanguage(int idx) {
 
 bool SubtitleServerClient::setSubLanguage(std::string lang) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
 
     auto r = mRemote->setLanguage(mSessionId, lang);
@@ -401,8 +424,11 @@ bool SubtitleServerClient::setSubLanguage(std::string lang) {
 
 int SubtitleServerClient::getSubType() {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     int subType = -1;
     auto r = mRemote->getType(mSessionId, [&] (const Result &ret, const int& v) {
@@ -417,8 +443,11 @@ int SubtitleServerClient::getSubType() {
 
 bool SubtitleServerClient::resetForSeek() {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
 
     auto r = mRemote->resetForSeek(mSessionId);
@@ -428,8 +457,11 @@ bool SubtitleServerClient::resetForSeek() {
 
 bool SubtitleServerClient::setSubType(int type) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
 
     auto r = mRemote->setSubType(mSessionId, type);
@@ -441,10 +473,12 @@ bool SubtitleServerClient::setSubType(int type) {
 //             2 for the media id setting.
 bool SubtitleServerClient::setPipId(int mode, int id) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
     }
-
+    if (mRemote == nullptr) {
+        return false;
+    }
     auto r = mRemote->setPipId(mSessionId, mode, id);
     checkRemoteResultLocked(r);
     return r.isOk();
@@ -457,8 +491,11 @@ bool SubtitleServerClient::setSubPid(int pid) {
 
 bool SubtitleServerClient::setSubPid(int pid, int onid, int tsid) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
 
     auto r = mRemote->setSubPid(mSessionId, pid, onid, tsid);
@@ -468,8 +505,11 @@ bool SubtitleServerClient::setSubPid(int pid, int onid, int tsid) {
 
 bool SubtitleServerClient::setSecureLevel(int flag) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     SUBTITLE_LOGI("select session:0x%x flag:%d", mSessionId, flag);
     auto r = mRemote->setSecureLevel(mSessionId, flag);
@@ -480,8 +520,11 @@ bool SubtitleServerClient::setSecureLevel(int flag) {
 bool SubtitleServerClient::setClosedCaptionLang(const char *lang) {
     SUBTITLE_LOGI("select session:0x%x lang:%d", mSessionId, lang);
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     std::string clang;
     clang = lang;
@@ -493,8 +536,11 @@ bool SubtitleServerClient::setClosedCaptionLang(const char *lang) {
 bool SubtitleServerClient::selectCcChannel(int ch, const char *lang) {
     Mutex::Autolock _l(mLock);
     SUBTITLE_LOGI("select session:0x%x  channel:%d lang:%d", mSessionId, ch, lang);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     std::string clang;
     if (lang != nullptr) {
@@ -525,11 +571,13 @@ bool SubtitleServerClient::selectCcChannel(int ch) {
 
 bool SubtitleServerClient::setClosedCaptionId(int id) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
     }
 
-
+    if (mRemote == nullptr) {
+        return false;
+    }
     auto r = mRemote->setChannelId(mSessionId, id);
     checkRemoteResultLocked(r);
     return r.isOk();
@@ -537,10 +585,12 @@ bool SubtitleServerClient::setClosedCaptionId(int id) {
 
 bool SubtitleServerClient::setClosedCaptionVfmt(int fmt) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
     }
-
+    if (mRemote == nullptr) {
+        return false;
+    }
     auto r = mRemote->setClosedCaptionVfmt(mSessionId, fmt);
     checkRemoteResultLocked(r);
     return r.isOk();
@@ -548,10 +598,12 @@ bool SubtitleServerClient::setClosedCaptionVfmt(int fmt) {
 
 bool SubtitleServerClient::setCompositionPageId(int pageId) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
     }
-
+    if (mRemote == nullptr) {
+        return false;
+    }
     auto r = mRemote->setPageId(mSessionId, pageId);
     checkRemoteResultLocked(r);
     return r.isOk();
@@ -559,10 +611,12 @@ bool SubtitleServerClient::setCompositionPageId(int pageId) {
 
 bool SubtitleServerClient::setAncillaryPageId(int ancPageId){
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
     }
-
+    if (mRemote == nullptr) {
+        return false;
+    }
     auto r = mRemote->setAncPageId(mSessionId, ancPageId);
     checkRemoteResultLocked(r);
     return r.isOk();
@@ -570,10 +624,12 @@ bool SubtitleServerClient::setAncillaryPageId(int ancPageId){
 
 bool SubtitleServerClient::ttControl(int cmd, int magazine, int pageNo, int regionId, int param) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
     }
-
+    if (mRemote == nullptr) {
+        return false;
+    }
     auto r = mRemote->ttControl(mSessionId, cmd, magazine, pageNo, regionId, param);
     checkRemoteResultLocked(r);
     return r.isOk();
@@ -583,8 +639,11 @@ bool SubtitleServerClient::ttControl(int cmd, int magazine, int pageNo, int regi
 
 bool SubtitleServerClient::userDataOpen() {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->userDataOpen(mSessionId);
     checkRemoteResultLocked(r);
@@ -597,8 +656,11 @@ bool SubtitleServerClient::userDataClose() {
         return false;
     }
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->userDataClose(mSessionId);
     checkRemoteResultLocked(r);
@@ -612,8 +674,11 @@ bool SubtitleServerClient::userDataClose() {
 // that cannot Android (Java) UI hierarchy.
 bool SubtitleServerClient::uiShow() {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->show(mSessionId);
     checkRemoteResultLocked(r);
@@ -623,8 +688,11 @@ bool SubtitleServerClient::uiShow() {
 
 bool SubtitleServerClient::uiHide() {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->hide(mSessionId);
     checkRemoteResultLocked(r);
@@ -634,8 +702,11 @@ bool SubtitleServerClient::uiHide() {
 
 bool SubtitleServerClient::uiSetTextColor(int color) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->setTextColor(mSessionId, color);
     checkRemoteResultLocked(r);
@@ -644,8 +715,11 @@ bool SubtitleServerClient::uiSetTextColor(int color) {
 
 bool SubtitleServerClient::uiSetTextSize(int size) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->setTextSize(mSessionId, size);
     checkRemoteResultLocked(r);
@@ -654,8 +728,11 @@ bool SubtitleServerClient::uiSetTextSize(int size) {
 
 bool SubtitleServerClient::uiSetGravity(int gravity) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->setGravity(mSessionId, gravity);
     checkRemoteResultLocked(r);
@@ -664,8 +741,11 @@ bool SubtitleServerClient::uiSetGravity(int gravity) {
 
 bool SubtitleServerClient::uiSetTextStyle(int style) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->setTextStyle(mSessionId, style);
     checkRemoteResultLocked(r);
@@ -674,8 +754,11 @@ bool SubtitleServerClient::uiSetTextStyle(int style) {
 
 bool SubtitleServerClient::uiSetYOffset(int yOffset) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->setPosHeight(mSessionId, yOffset);
     checkRemoteResultLocked(r);
@@ -684,8 +767,11 @@ bool SubtitleServerClient::uiSetYOffset(int yOffset) {
 
 bool SubtitleServerClient::uiSetImageRatio(float ratioW, float ratioH, int32_t maxW, int32_t maxH) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->setImgRatio(mSessionId, ratioW, ratioH, maxW, maxH);
     checkRemoteResultLocked(r);
@@ -694,8 +780,11 @@ bool SubtitleServerClient::uiSetImageRatio(float ratioW, float ratioH, int32_t m
 
 bool SubtitleServerClient::uiGetSubDimension(int *pWidth, int *pHeight) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->getSubDimension(mSessionId, [&] (const Result &ret, const int& width, const int&height) {
             if (ret == Result::OK) {
@@ -710,8 +799,11 @@ bool SubtitleServerClient::uiGetSubDimension(int *pWidth, int *pHeight) {
 
 bool SubtitleServerClient::uiSetSurfaceViewRect(int x, int y, int width, int height) {
     Mutex::Autolock _l(mLock);
-    if (mRemote == nullptr) {
+    if (mRemote == nullptr && !hasInit) {
         initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
     }
     auto r = mRemote->setSurfaceViewRect(mSessionId, x, y, width, height);
     checkRemoteResultLocked(r);

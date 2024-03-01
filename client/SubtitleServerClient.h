@@ -202,6 +202,7 @@ private:
 
     // As hidl. check if from middleware or APP.
     OpenType mOpenType;
+    bool hasInit;
     bool hasDied;
     AmlSubtitleParam2 subtitleParamHistory;
 };
