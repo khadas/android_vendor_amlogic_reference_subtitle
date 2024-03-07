@@ -2880,6 +2880,13 @@ vbi_format_vt_page(vbi_decoder *vbi,
 		int esc;
 		vbi_bool hold, mosaic;
 		vbi_bool double_height, wide_char;
+
+		#ifdef NEED_TELETEXT_REMOVE_SUBTITLE_LEFT_RIGHT_BACKGROUND
+		vbi_bool subtitle_left_mode, subtitle_right_mode;
+		vbi_bool subtitle_left_space, subtitle_right_space;
+		int subtitle_left_space_column, subtitle_right_space_column;
+		#endif
+
 		vbi_char ac, *acp = &pg->text[row * EXT_COLUMNS];
 
 		held_mosaic_unicode = 0xEE20; /* G1 block mosaic, blank, contiguous */
@@ -2897,6 +2904,15 @@ vbi_format_vt_page(vbi_decoder *vbi,
 		esc		= 0;
 		hold		= FALSE;
 		mosaic		= FALSE;
+
+		#ifdef NEED_TELETEXT_REMOVE_SUBTITLE_LEFT_RIGHT_BACKGROUND
+		subtitle_left_mode          = FALSE;
+		subtitle_right_mode         = FALSE;
+		subtitle_left_space         = FALSE;
+		subtitle_right_space        = FALSE;
+		subtitle_left_space_column  = -1;
+		subtitle_right_space_column = -1;
+		#endif
 
 		double_height	= FALSE;
 		wide_char	= FALSE;
@@ -3013,17 +3029,27 @@ vbi_format_vt_page(vbi_decoder *vbi,
 			case 0x0A:		/* end box */
 				if (column < (COLUMNS - 1)
 				    && vbi_unpar8 (vtp->data.lop.raw[0][i]) == 0x0a
-				    && pg->page_opacity[row > 0] != VBI_SEMI_TRANSPARENT)
-					if (vtp->flags & (C5_NEWSFLASH | C6_SUBTITLE)) ac.opacity = pg->page_opacity[row > 0]; // SWPL-120022 SWPL-96972 SWPL-100989
+				    && pg->page_opacity[row > 0] != VBI_SEMI_TRANSPARENT) {
+					if (vtp->flags & (C5_NEWSFLASH | C6_SUBTITLE)) {
+						#ifdef NEED_TELETEXT_REMOVE_SUBTITLE_LEFT_RIGHT_BACKGROUND
+						subtitle_right_mode = TRUE;
+						#endif
+						ac.opacity = pg->page_opacity[row > 0]; // SWPL-120022 SWPL-96972 SWPL-100989
+					}
+				}
 				inside_box = 0;
 				break;
 
 			case 0x0B:		/* start box */
 				if (column < (COLUMNS - 1)
 					&& vbi_unpar8 (vtp->data.lop.raw[0][i]) == 0x0b
-					&& pg->page_opacity[row > 0] != VBI_SEMI_TRANSPARENT)
-				{
-					if (vtp->flags & (C5_NEWSFLASH | C6_SUBTITLE)) ac.opacity = pg->boxed_opacity[row > 0]; // SWPL-120022 SWPL-96972 SWPL-100989
+					&& pg->page_opacity[row > 0] != VBI_SEMI_TRANSPARENT){
+					if (vtp->flags & (C5_NEWSFLASH | C6_SUBTITLE)) {
+						#ifdef NEED_TELETEXT_REMOVE_SUBTITLE_LEFT_RIGHT_BACKGROUND
+						subtitle_left_mode = TRUE;
+						#endif
+						ac.opacity = pg->boxed_opacity[row > 0]; // SWPL-120022 SWPL-96972 SWPL-100989
+					}
 					ac.unicode = 0x20;
 				}
 				inside_box = 1;
@@ -3083,6 +3109,37 @@ vbi_format_vt_page(vbi_decoder *vbi,
 			#endif
 		}
 
+		#ifdef NEED_TELETEXT_REMOVE_SUBTITLE_LEFT_RIGHT_BACKGROUND
+		if (subtitle_left_mode || subtitle_right_mode) {
+			for (column = 0; column < EXT_COLUMNS; column++) {
+				ac = acp[column];
+				//ALOGI("row:%d column:%d ac.unicode:0x%02x ac.opacity:0x%02x", row, column, ac.unicode, ac.opacity);
+				if (ac.unicode != 0x20 && !subtitle_left_space) {
+					subtitle_left_space = TRUE;
+					subtitle_left_space_column = column;
+				}
+				if (ac.unicode == 0x20 && subtitle_left_space && !subtitle_right_space) {
+					subtitle_right_space = TRUE;
+					subtitle_right_space_column = column;
+				} else if (subtitle_right_space && ac.unicode != 0x20) {
+					subtitle_right_space = FALSE;
+					subtitle_right_space_column = -1;
+				}
+			}
+
+			if (subtitle_left_space) {
+				for (column = 0; column < EXT_COLUMNS; column++) {
+					if (column <= subtitle_left_space_column) acp[column].opacity = 0;
+				}
+			}
+			if (subtitle_right_space) {
+				for (column = 0; column < EXT_COLUMNS; column++) {
+					if (column >= subtitle_right_space_column) acp[column].opacity = 0;
+				}
+			}
+			//ALOGI("subtitle_left_space_column:%d subtitle_right_space_column:%d", subtitle_left_space_column, subtitle_right_space_column);
+		}
+		#endif
 
 		if (double_height) {
 			for (column = 0; column < EXT_COLUMNS; column++) {
