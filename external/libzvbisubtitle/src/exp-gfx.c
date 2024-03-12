@@ -54,19 +54,22 @@
 
 #ifdef NEED_TELETEXT_USES_VECTOR_FONTS
 #define MULTIPLE 5
-#else
-#define MULTIPLE 1
-#endif
-
-/* Teletext character cell dimensions - hardcoded (DRCS) */
-#define TCW (12 * MULTIPLE)
-#define TCH (10 * MULTIPLE)
-
+#define TCW 40
+#define TCH 50
 #define TCPL (wstfont2_width / TCW * wstfont2_height / TCH)
 #define BTCPL (bwstfont2_width / TCW * bwstfont2_height / TCH)
 #define PSCPL (psymbol_width / TCW * psymbol_height / TCH)
 #define RVCPL (reveal_width / TCW * reveal_height / TCH)
-
+#else
+/* Teletext character cell dimensions - hardcoded (DRCS) */
+#define MULTIPLE 1
+#define TCW 12
+#define TCH 10
+#define TCPL (wstfont2_width / TCW * wstfont2_height / TCH)
+#define BTCPL (bwstfont2_width / TCW * bwstfont2_height / TCH)
+#define PSCPL (psymbol_width / TCW * psymbol_height / TCH)
+#define RVCPL (reveal_width / TCW * reveal_height / TCH)
+#endif
 
 /* Closed Caption character cell dimensions */
 
