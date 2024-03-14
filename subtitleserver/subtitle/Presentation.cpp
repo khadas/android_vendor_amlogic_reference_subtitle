@@ -50,6 +50,7 @@
 #define HIGH_32_BIT_PTS 0xFFFFFFFF
 
 #define DEFAULT_DELAY_TIME 2 //second
+#define DEFAULT_SHOW_DIFF_MAX_TIME 2 //second
 
 static const int DVB_TIME_MULTI = 90;
 
@@ -616,11 +617,13 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                         pts = convertDvbTime2Ns(spu->pts);
                     }*/
 
+                    uint64_t ptsShowDiff = (pts>(timestamp+tolerance)) ? (pts-(timestamp+tolerance)) : ((timestamp+tolerance)-pts);
+
                     if (spu->m_delay <= 0) {
                         spu->m_delay = spu->pts + (ADDJUST_NO_PTS_MS * DVB_TIME_MULTI);
                     }
 
-                    if (spu->isImmediatePresent || (pts <= (timestamp+tolerance))) {
+                    if (spu->isImmediatePresent || ((pts <= (timestamp+tolerance)) || (ptsShowDiff <= DEFAULT_SHOW_DIFF_MAX_TIME*1000*1000*1000LL))) {
                         mPresent->mEmittedShowingSpu.pop_front();
                         if (mPresent->mEmittedShowingSpu.size() > 0) {
                             std::shared_ptr<AML_SPUVAR> secondSpu = mPresent->mEmittedShowingSpu.front();
@@ -659,6 +662,14 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                             mPresent->mRender->removeSubtitleItem(cachedSpu);
                         }
                         mPresent->mEmittedFaddingSpu.push_back(spu);
+                    } else if (pts <= (timestamp+tolerance) || ptsShowDiff > DEFAULT_SHOW_DIFF_MAX_TIME*1000*1000*1000LL) {
+                        SUBTITLE_LOGE("Error, the difference in PTS is too large, discard this subtitle frame. TimeStamp:%lld startAtPts=%lld ItemPts=%lld(%lld) duration:%lld(%lld)",
+                                ns2ms(mPresent->mCurrentPresentRelativeTime),
+                                ns2ms(mPresent->mStartTimeModifier),
+                                spu->pts, spu->pts/DVB_TIME_MULTI,
+                                spu->m_delay, spu->m_delay/DVB_TIME_MULTI);
+                        mPresent->mEmittedFaddingSpu.clear();
+                        mPresent->mRender->resetSubtitleItem();
                     } else {
                         uint64_t delayTime = spu->isExtSub ? ms2ns(100):pts-timestamp;
                         mLooper->sendMessageDelayed(delayTime, this, Message(MSG_PTS_TIME_CHECK_SPU));
