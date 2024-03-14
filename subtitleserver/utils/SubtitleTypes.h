@@ -154,6 +154,7 @@ typedef struct alm_spuvar
 
 #define CC_JSON_BUFFER_SIZE 8192
 
+#define PIP_INVALID_ID -1
 #define PIP_PLAYER_ID 1
 #define PIP_MEDIASYNC_ID 2
 

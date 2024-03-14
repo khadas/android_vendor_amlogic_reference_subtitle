@@ -375,7 +375,7 @@ void SubtitleService::setPipId(int mode, int id) {
             mUserDataAfd->setPipId(mode, id);
         }
     } else if (PIP_MEDIASYNC_ID == mode) {
-        if (mSubParam.mediaId == id) {
+        if (mSubParam.mediaId == id && id != PIP_INVALID_ID) {
             same = true;
         } else {
             same = false;
