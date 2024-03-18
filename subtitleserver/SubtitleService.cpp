@@ -536,6 +536,13 @@ void SubtitleService::setLanguage(std::string lang) {
     }
 }
 
+void SubtitleService::setStartTimeStamp(int startTime) {
+       if (mSubtiles != nullptr) {
+        startTime = startTime * 90;
+        mSubtiles->onRenderStartTimestamp(startTime);
+    }
+}
+
 void SubtitleService::dump(int fd) {
     dprintf(fd, "\n\n SubtitleService:\n");
     dprintf(fd, "--------------------------------------------------------------------------------------\n");

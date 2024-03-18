@@ -55,7 +55,7 @@ public:
     int subtitleType();
     std::string currentLanguage();
     void setLanguage(std::string lang);
-
+    void setStartTimeStamp(int startTime);
 
     int updateVideoPosAt(int timeAt);
     void setSubType(int type);

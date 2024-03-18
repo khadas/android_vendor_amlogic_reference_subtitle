@@ -85,6 +85,7 @@ public:
     Return<void> getType(int32_t sId, getType_cb _hidl_cb) override;
     Return<void> getLanguage(int32_t sId, getLanguage_cb _hidl_cb) override;
     Return<Result> setLanguage(int32_t sId, const hidl_string& lang) override;
+    Return<Result> setStartTimeStamp(int32_t sId, int32_t startTime) override;
 
     Return<Result> setSubType(int32_t sId, int32_t type) override;
     Return<Result> setSubPid(int32_t sId, int32_t pid, int onid, int tsid) override;

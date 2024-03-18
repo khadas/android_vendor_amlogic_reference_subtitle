@@ -52,6 +52,8 @@ interface ISubtitleServer {
   getType(int32_t sId) generates (Result result, int32_t val);
   getLanguage(int32_t sId) generates (Result result, string language);
   setLanguage(int32_t sId, string lang) generates (Result result);
+  setStartTimeStamp(int32_t sId, int32_t startTime) generates (Result result);
+
 
   /************** DTV subtitle related *********/
 

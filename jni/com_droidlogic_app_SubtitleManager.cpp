@@ -425,6 +425,14 @@ static void nativeSetSubLanguage(JNIEnv* env, jclass clazz, jstring jlang) {
     }
 }
 
+static void nativeSetStartTimeStamp(JNIEnv* env, jclass clazz, jint startTime) {
+    if (getJniContext()->mSubContext != nullptr) {
+        getJniContext()->mSubContext->setStartTimeStamp(startTime);
+    } else {
+        ALOGE("Subtitle Connection not established");
+    }
+}
+
 static void nativeSetSctePid(JNIEnv* env, jclass clazz, jint pid) {
     if (getJniContext()->mSubContext != nullptr) {
         getJniContext()->mSubContext->setSubPid(pid);
@@ -603,6 +611,7 @@ static JNINativeMethod SubtitleManager_Methods[] = {
     {"nativeSetSubType", "(I)V", (void *)nativeSetSubType},
     {"nativeGetSubLanguage", "(I)Ljava/lang/String;", (void *)nativeGetSubLanguage},
     {"nativeSetSubLanguage", "(Ljava/lang/String;)V", (void *)nativeSetSubLanguage},
+    {"nativeSetStartTimeStamp", "(I)V", (void *)nativeSetStartTimeStamp},
     {"nativeSetPlayerType", "(I)V", (void *)nativeSetPlayerType},
     {"nativeSetSctePid", "(I)V", (void *)nativeSetSctePid},
     {"nativeSetSubPid", "(III)V", (void *)nativeSetSubPid},
