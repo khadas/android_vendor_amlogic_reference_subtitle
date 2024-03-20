@@ -3129,7 +3129,7 @@ vbi_format_vt_page(vbi_decoder *vbi,
 
 			if (subtitle_left_space) {
 				for (column = 0; column < EXT_COLUMNS; column++) {
-					if (column <= subtitle_left_space_column) acp[column].opacity = 0;
+					if (column < subtitle_left_space_column) acp[column].opacity = 0;
 				}
 			}
 			if (subtitle_right_space) {
