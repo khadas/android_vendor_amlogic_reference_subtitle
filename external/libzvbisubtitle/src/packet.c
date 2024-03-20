@@ -1854,8 +1854,10 @@ parse_28_29(vbi_decoder *vbi, uint8_t *p,
 
 			ext->charset_code[0] = bits(7);
 			ext->charset_code[1] = bits(7);
-			if (vbi->vt.region != ext->charset_code[0])
-			    vbi_teletext_set_default_region(vbi, ext->charset_code[0] );
+			if (vbi->vt.region != ext->charset_code[0] && cvtp->pgno == vbi->vt.current_pgno) {
+				vbi_teletext_set_default_region(vbi, ext->charset_code[0] );
+				ALOGI("parse_28_29 vbi->vt.region:%d ext->charset_code[0]:%d cvtp->pgno:0x%03x vbi->vt.current_pgno:0x%03x", vbi->vt.region, ext->charset_code[0], cvtp->pgno,vbi->vt.current_pgno);
+			}
 
 			left_panel = bits (1);
 			right_panel = bits (1);
