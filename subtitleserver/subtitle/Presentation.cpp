@@ -662,7 +662,7 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                             mPresent->mRender->removeSubtitleItem(cachedSpu);
                         }
                         mPresent->mEmittedFaddingSpu.push_back(spu);
-                    } else if (pts <= (timestamp+tolerance) || ptsShowDiff > DEFAULT_SHOW_DIFF_MAX_TIME*1000*1000*1000LL) {
+                    } else if (pts <= (timestamp+tolerance) && ptsShowDiff > DEFAULT_SHOW_DIFF_MAX_TIME*1000*1000*1000LL) {
                         SUBTITLE_LOGE("Error, the difference in PTS is too large, discard this subtitle frame. TimeStamp:%lld startAtPts=%lld ItemPts=%lld(%lld) duration:%lld(%lld)",
                                 ns2ms(mPresent->mCurrentPresentRelativeTime),
                                 ns2ms(mPresent->mStartTimeModifier),
