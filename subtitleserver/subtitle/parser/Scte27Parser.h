@@ -212,7 +212,7 @@ struct Scte27SubContext {
     int                 last_no;
     int                 seg_size;
     int                 has_segment;
-    uint8_t*            segment_container;
+    char                *segment_container;
     int                 scte27_subtitle_type;
     uint8_t             display_std;
     uint8_t             pre_clear;
@@ -252,6 +252,7 @@ private:
 
     void notifySubtitleDimension(int width, int height);
     void notifySubtitleErrorInfo(int error);
+    void cleanSegment();
 
     void checkDebug();
     int initContext();

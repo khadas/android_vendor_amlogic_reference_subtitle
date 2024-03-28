@@ -337,6 +337,26 @@ int AssParser::getSpu(std::shared_ptr<AML_SPUVAR> spu) {
                     ret = __getAssSpu(spu->spu_data, spu->buffer_size, spu);
                     SUBTITLE_LOGI("CODEC_ID_SSA  size is:%u ,data is:%s, currentLen=%d\n",
                              spu->buffer_size, spu->spu_data, currentLen);
+                #ifdef NEED_ASS_REMOVE_STYLE
+                } else if (currentType == AV_CODEC_ID_SUBRIP) {
+                    for (size_t i = 0; i < currentLen - 2; ++i) {
+                        if (spu->spu_data[i] == 0x3C && spu->spu_data[i + 1] == 0x69 && spu->spu_data[i + 2] == 0x3E) {
+                            spu->spu_data[i] = 0x20;
+                            spu->spu_data[i + 1] = 0x20;
+                            spu->spu_data[i + 2] = 0x20;
+                        }
+                    }
+
+                    for (size_t i = 0; i < currentLen - 3; ++i) {
+                        if (spu->spu_data[i] == 0x3C && spu->spu_data[i + 1] == 0x2F && spu->spu_data[i + 2] == 0x69 && spu->spu_data[i + 3] == 0x3E) {
+                            spu->spu_data[i] = 0x20;
+                            spu->spu_data[i + 1] = 0x20;
+                            spu->spu_data[i + 2] = 0x20;
+                            spu->spu_data[i + 3] = 0x20;
+                        }
+                    }
+                    ret = 0;
+                #endif
                 } else {
                     ret = 0;
                 }

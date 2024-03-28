@@ -348,10 +348,12 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data) {
             SUBTITLE_LOGI("cc auto detect play pgno:%d", pgno);
         }
 
+        pthread_mutex_lock(&cc->lock);
         if (cc->vbi_pgno == ev->ev.caption.pgno && cc->flash_stat == FLASH_NONE) {
             json_buffer = (char*)malloc(JSON_STRING_LENGTH);
             if (!json_buffer) {
                 SUBTITLE_LOGI("json buffer malloc failed");
+                pthread_mutex_unlock(&cc->lock);
                 return;
             }
             /* Convert to json attributes */
@@ -365,6 +367,7 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data) {
             if (ret == -1) {
                 SUBTITLE_LOGI("tvcc_to_json failed");
                 if (json_buffer) free(json_buffer);
+                pthread_mutex_unlock(&cc->lock);
                 return;
             }
             //SUBTITLE_LOGE("---------json: %s %d", json_buffer, count);
@@ -389,6 +392,8 @@ static void am_cc_vbi_event_handler(vbi_event *ev, void *user_data) {
             cc->need_clear = 0;
             cc->timeout = CC_CLEAR_TIME;
         }
+        pthread_mutex_unlock(&cc->lock);
+        pthread_cond_signal(&cc->cond);
     } else if ((ev->type == VBI_EVENT_ASPECT) || (ev->type == VBI_EVENT_PROG_INFO)) {
         cc->curr_data_mask |= 1 << CLOSED_CAPTION_XDS;
         if (cc->cpara.pinfo_cb) cc->cpara.pinfo_cb(cc, ev->ev.prog_info);
@@ -797,6 +802,7 @@ static void *am_cc_render_thread(void *arg) {
     /* Get fps of video */
     int fps;
     AmlogicGetClock(&last);
+    pthread_mutex_lock(&cc->lock);
     timeout = 10;
     void* media_sync = NULL;
     if (cc->media_sync_id >= 0) {
@@ -829,10 +835,11 @@ static void *am_cc_render_thread(void *arg) {
         }
 
         AmlogicGetTimeSpecTimeout(timeout, &ts);
-        if (!cc->running) {
-            SUBTITLE_LOGE("cc->running:%d",cc->running);
+        if (cc->running)
+            pthread_cond_timedwait(&cc->cond, &cc->lock, &ts);
+        else
             break;
-        }
+
         vpts = am_cc_get_video_pts(media_sync);
         cc->video_pts = vpts;
         // Judge if video pts gap is in valid range
@@ -863,6 +870,7 @@ static void *am_cc_render_thread(void *arg) {
     if (media_sync != NULL) {
         MediaSync_destroy(media_sync);
     }
+    pthread_mutex_unlock(&cc->lock);
     //close(fd);
     SUBTITLE_LOGE("CC rendering thread exit now");
     return NULL;
@@ -899,6 +907,8 @@ int ClosedCaptionCreate(ClosedCaptionCreatePara_t *para, ClosedCaptionHandleType
         return CLOSED_CAPTION_ERROR_LIBZVBI;
     }
     vbi_event_handler_register(cc->decoder.vbi, VBI_EVENT_CAPTION|VBI_EVENT_ASPECT |VBI_EVENT_PROG_INFO|VBI_EVENT_NETWORK |VBI_EVENT_RATING, am_cc_vbi_event_handler, cc);
+    pthread_mutex_init(&cc->lock, NULL);
+    pthread_cond_init(&cc->cond, NULL);
     cc->cpara = *para;
     *handle = cc;
     AM_SigHandlerInit();
@@ -913,6 +923,8 @@ int ClosedCaptionDestroy(ClosedCaptionHandleType handle) {
     if (cc == NULL) return CLOSED_CAPTION_ERROR_INVALID_PARAM;
     ClosedCaptionStop(handle);
     tvcc_destroy(&cc->decoder);
+    pthread_mutex_destroy(&cc->lock);
+    pthread_cond_destroy(&cc->cond);
     if (cc->json_chain_head) free(cc->json_chain_head);
     free(cc);
     SUBTITLE_LOGI("am_cc_destroy ok");
@@ -925,6 +937,7 @@ int ClosedCaptionStart(ClosedCaptionHandleType handle, ClosedCaptionStartPara_t 
     ClosedCaptionDecoder_t *cc = (ClosedCaptionDecoder_t*)handle;
     int rc, ret = AM_SUCCESS;
     if (cc == NULL || para == NULL) return CLOSED_CAPTION_ERROR_INVALID_PARAM;
+    pthread_mutex_lock(&cc->lock);
     if (cc->running) {
         ret = CLOSED_CAPTION_ERROR_BUSY;
         goto start_done;
@@ -974,6 +987,7 @@ int ClosedCaptionStart(ClosedCaptionHandleType handle, ClosedCaptionStartPara_t 
     }
 
 start_done:
+    pthread_mutex_unlock(&cc->lock);
     return ret;
 }
 
@@ -984,10 +998,13 @@ int ClosedCaptionStop(ClosedCaptionHandleType handle) {
     int ret = AM_SUCCESS;
     bool join = 0;
     if (cc == NULL) return CLOSED_CAPTION_ERROR_INVALID_PARAM;
+    pthread_mutex_lock(&cc->lock);
     if (cc->running) {
         cc->running = 0;
         join = true;
     }
+    pthread_mutex_unlock(&cc->lock);
+    pthread_cond_broadcast(&cc->cond);
     pthread_kill(cc->data_thread, SIGALRM);
     if (join) {
         pthread_join(cc->data_thread, NULL);

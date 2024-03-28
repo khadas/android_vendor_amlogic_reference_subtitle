@@ -164,9 +164,12 @@ static int open_dvb_dmx(TVSubtitleData *data, int dmx_id, int pid, int flag) {
         } else if (TYPE_SUBTITLE_SCTE27 == DemuxSource::getCurrentInstance()->mSubType) {
             //the scte27 data is section
             SUBTITLE_LOGE("[open_dmx] scte27 demux");
-            pesp.pes_type = DMX_PES_SUBTITLE;
-            pesp.input = DMX_IN_FRONTEND;
-            ret = DemuxSetPesFilter(dmx_id, data->filter_handle, &pesp);
+            memset(&param, 0, sizeof(param));
+            param.pid = pid;
+            param.filter.filter[0] = SCTE27_TID;
+            param.filter.mask[0] = 0xff;
+            param.flags = DMX_CHECK_CRC;
+            ret = DemuxSetSecFilter(dmx_id, data->filter_handle, &param);
             if (ret != AM_SUCCESS)
                 goto error;
             SUBTITLE_LOGE("[open_dmx]DemuxSetPesFilter");
