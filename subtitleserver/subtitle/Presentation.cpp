@@ -617,13 +617,13 @@ void Presentation::MessageProcess::handleStreamSub(const Message& message) {
                         pts = convertDvbTime2Ns(spu->pts);
                     }*/
 
-                    uint64_t ptsShowDiff = (pts>(timestamp+tolerance)) ? (pts-(timestamp+tolerance)) : ((timestamp+tolerance)-pts);
+                    uint64_t ptsShowDiff = (timestamp+tolerance) - pts;
 
                     if (spu->m_delay <= 0) {
                         spu->m_delay = spu->pts + (ADDJUST_NO_PTS_MS * DVB_TIME_MULTI);
                     }
 
-                    if (spu->isImmediatePresent || ((pts <= (timestamp+tolerance)) || (ptsShowDiff <= DEFAULT_SHOW_DIFF_MAX_TIME*1000*1000*1000LL))) {
+                    if (spu->isImmediatePresent || ((pts <= (timestamp+tolerance)) || ((ptsShowDiff <= DEFAULT_SHOW_DIFF_MAX_TIME*1000*1000*1000LL)) && ptsShowDiff >= 0)) {
                         mPresent->mEmittedShowingSpu.pop_front();
                         if (mPresent->mEmittedShowingSpu.size() > 0) {
                             std::shared_ptr<AML_SPUVAR> secondSpu = mPresent->mEmittedShowingSpu.front();
