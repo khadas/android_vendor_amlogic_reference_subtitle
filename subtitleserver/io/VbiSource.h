@@ -58,6 +58,7 @@ public:
     }
     virtual void updateParameter(int type, void *data) ;
     virtual size_t lseek(int offSet, int whence) {return 0;}
+    bool mDumpSub;
 
 private:
     void loopRenderTime();
@@ -65,6 +66,7 @@ private:
     size_t readDriverData(void *buffer, size_t size);
 
     bool notifyInfoChange();
+    void checkDebug();
     int mRdFd;
     std::shared_ptr<std::thread> mRenderTimeThread;
 

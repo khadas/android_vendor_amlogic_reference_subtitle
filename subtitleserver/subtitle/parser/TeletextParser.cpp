@@ -418,7 +418,7 @@ static void save2BitmapFile(const char *filename, uint32_t *bitmap, int w, int h
 {
     SUBTITLE_LOGI("png_save2:%s\n",filename);
     FILE *f;
-    char fname[40];
+    char fname[50];
 
     snprintf(fname, sizeof(fname), "%s.bmp", filename);
     f = fopen(fname, "w");
@@ -1292,7 +1292,7 @@ static inline int generateInputDisplay(AVSubtitleRect *subRect, unsigned char *d
 
 
 int TeletextParser::saveTeletextGraphicsRect2Spu(std::shared_ptr<AML_SPUVAR> spu, AVSubtitleRect *subRect) {
-    SUBTITLE_LOGI("save_display_set\n");
+    SUBTITLE_LOGI("%s save_display_set\n",__FUNCTION__);
     int resx = subRect->w;
     int resy = subRect->h;
     int error =  DATA_VALID_AND_BLANK;
@@ -1333,19 +1333,19 @@ int TeletextParser::saveTeletextGraphicsRect2Spu(std::shared_ptr<AML_SPUVAR> spu
             break;
    }
    if (mDumpSub) {
-        char filename[32];
-        snprintf(filename, sizeof(filename), "./data/subtitleDump/tt(%d)", mIndex);
+        char filename[50];
+        snprintf(filename, sizeof(filename), "./data/subtitleDump/tt(%lld)", spu->pts);
         save2BitmapFile(filename, (uint32_t *)spu->spu_data, resx, resy);
     }
     free(pbuf);
     return error;
 }
 int TeletextParser::saveDisplayRect2Spu(std::shared_ptr<AML_SPUVAR> spu, AVSubtitleRect *subRect) {
-    SUBTITLE_LOGI("save_display_set\n");
+    SUBTITLE_LOGI("%s save_display_set\n",__FUNCTION__);
     int resx = subRect->w;
     int resy = subRect->h;
     int error =  DATA_VALID_AND_BLANK;
-    char filename[32];
+    char filename[50];
 
     uint32_t *pbuf;
 

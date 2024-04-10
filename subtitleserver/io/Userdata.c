@@ -55,6 +55,7 @@
 #define USERDATA_POLL_TIMEOUT 100
 #define MAX_CC_NUM          64
 #define MAX_CC_DATA_LEN  (1024*5 + 4)
+#define MAX_DUMP_DATA_LENGTH 3000
 
 #define IS_H264(p)  ((p[0] == 0xb5 && p[3] == 0x47 && p[4] == 0x41 && p[5] == 0x39 && p[6] == 0x34))
 #define IS_H265(p)  ((p[0] == 0xb5 && p[3] == 0x47 && p[4] == 0x41 && p[5] == 0x39 && p[6] == 0x34))
@@ -232,6 +233,18 @@ const UserdataDriverType aml_ud_drv = {
 .get_mode = aml_get_mode,
 .set_param = aml_set_param,
 };
+
+bool mDumpSub = false;
+void checkDebug() {
+    #ifdef NEED_DUMP_ANDROID
+    char value[PROPERTY_VALUE_MAX] = {0};
+    memset(value, 0, PROPERTY_VALUE_MAX);
+    property_get("vendor.subtitle.dump", value, "false");
+    if (!strcmp(value, "true")) {
+        mDumpSub = true;
+    }
+    #endif
+}
 
 int64_t am_get_video_pts(void* media_sync) {
     #define VIDEO_PTS_PATH "/sys/class/tsync/pts_video"
@@ -480,13 +493,14 @@ static void aml_add_cc_data(UserdataDeviceType *dev, int poc, int type, uint8_t 
 
 static void aml_mpeg_userdata_package(UserdataDeviceType *dev, int poc, int type, uint8_t *p, int len, int64_t pts, int pts_valid, int64_t duration) {
     AM_UDDrvData *ud = dev->drv_data;
-#if 0
-    int i;
-    char display_buffer[10240];
-    for (i=0;i<len; i++)
-        sprintf(&display_buffer[i*3], " %02x", p[i]);
-    SUBTITLE_LOGI("mpeg_process len:%d data:%s", len, display_buffer);
-#endif
+
+    if (mDumpSub) {
+        char display_buffer[MAX_DUMP_DATA_LENGTH*4];
+        for (int i=0;i<len && i< MAX_DUMP_DATA_LENGTH; i++) {
+            sprintf(&display_buffer[i*3], " %02x", p[i]);
+        }
+        SUBTITLE_LOGI("mpeg_process len:%d data:%s", len, display_buffer);
+    }
 
     if (len < 5) return;
     if (p[4] != 3) return;
@@ -511,7 +525,7 @@ static void aml_mpeg_userdata_package(UserdataDeviceType *dev, int poc, int type
 }
 
 static int aml_process_scte_userdata(UserdataDeviceType *dev, uint8_t *data, int len, struct userdata_meta_info_t* meta_info) {
-    int cc_count = 0, cnt, i;
+    int cc_count = 0, cnt;
     int field_num;
     uint8_t* cc_section;
     uint8_t cc_data[64] = {0};
@@ -528,11 +542,6 @@ static int aml_process_scte_userdata(UserdataDeviceType *dev, uint8_t *data, int
     int64_t pts;
     int top_bit_value, top_bit_valid;
     AM_UDDrvData *ud = dev->drv_data;
-
-#if 0
-    char display_buffer[10240];
-#endif
-
     flags = meta_info->flags;
     pts = 0;//meta_info->vpts;
 
@@ -544,11 +553,13 @@ static int aml_process_scte_userdata(UserdataDeviceType *dev, uint8_t *data, int
     ref = (v >> 16) & 0x3ff;
     ptype = (v >> 26) & 7;
 
-#if 0
-    for (i=0; i<len; i++)
-        sprintf(display_buffer+3*i, " %02x", data[i]);
-    SUBTITLE_LOGI("scte buffer type %d ref %d top_bit %d %s", ptype, ref, top_bit_value, display_buffer);
-#endif
+    char display_buffer[MAX_DUMP_DATA_LENGTH*4];
+    if (mDumpSub) {
+        for (int i=0; i<len && i< MAX_DUMP_DATA_LENGTH; i++) {
+            sprintf(&display_buffer[i*3], " %02x", p[i]);
+        }
+        SUBTITLE_LOGI("aml_process_scte_userdata buffer type %d ref %d top_bit %d %s", ptype, ref, top_bit_value, display_buffer);
+    }
 
     if (ptype == I_TYPE)  aml_flush_cc_data(dev);
 
@@ -592,7 +603,7 @@ static int aml_process_scte_userdata(UserdataDeviceType *dev, uint8_t *data, int
 
     GET(cnt, 5);
     array_position = 7;
-    for (i = 0; i < cnt; i ++) {
+    for (int i = 0; i < cnt; i ++) {
         GET(prio, 2);
         GET(field, 2);
         GET(line, 5);
@@ -629,11 +640,13 @@ static int aml_process_scte_userdata(UserdataDeviceType *dev, uint8_t *data, int
     cc_data[5] = 0x40 |cc_count;
     size = 7 + cc_count*3;
 
-#if 0
-    for (i=0; i<size; i++)
-            sprintf(display_buffer+3*i, " %02x", cc_data[i]);
-        //SUBTITLE_LOGI("scte_write_buffer len: %d data: %s", size, display_buffer);
-#endif
+    if (mDumpSub) {
+        for (int i=0; i<size && i<MAX_DUMP_DATA_LENGTH; i++) {
+                sprintf(display_buffer+3*i, " %02x", cc_data[i]);
+        }
+        SUBTITLE_LOGI("scte_write_buffer size: %d data: %s", size, display_buffer);
+    }
+
     if (cc_count > 0)
         aml_add_cc_data(dev, ref, ptype, cc_data, size, pts, meta_info->vpts_valid,
             meta_info->duration);
@@ -811,13 +824,10 @@ static void* aml_userdata_thread (void *arg) {
     UserdataDeviceType *dev = (UserdataDeviceType*)arg;
     AM_UDDrvData *ud = (AM_UDDrvData*)dev->drv_data;
     int fd = ud->fd;
-    int r, ret, i;
+    int r, ret;
     struct pollfd pfd;
     uint8_t data[MAX_CC_DATA_LEN];
     uint8_t *pd = data;
-#if 0
-    char display_buffer[10*1024];
-#endif
     int left = 0;
     int flush = 1;
     int vdec_ids;
@@ -907,12 +917,15 @@ static void* aml_userdata_thread (void *arg) {
             }else {
                 usleep(20*1000);
             }
-#if 0
-            static char display_buffer[10*1024];
-            for (i=0; i<left; i++)
-                sprintf(&display_buffer[i*3], " %02x", data[i]);
-            SUBTITLE_LOGI("fmt %d ud_aml_buffer: %s", ud->vfmt, display_buffer);
-#endif
+
+            if (mDumpSub) {
+                char display_buffer[MAX_DUMP_DATA_LENGTH*4];
+                for (int i=0; i<left && i< MAX_DUMP_DATA_LENGTH; i++) {
+                    sprintf(&display_buffer[i*3], " %02x", data[i]);
+                }
+                SUBTITLE_LOGI("fmt %d left:%d ud_aml_buffer: %s", ud->vfmt, left, display_buffer);
+            }
+
             ud->format = INVALID_TYPE;
             while (ud->format == INVALID_TYPE || IS_AFD_TYPE(ud->format)) {
                 if (left < 8) break;

@@ -49,6 +49,7 @@ static const std::string VBI_DEV_FILE = "/dev/vbi";
 static const std::string SYSFS_VIDEO_PTS = "/sys/class/tsync/pts_video";
 
 #define DTV_SUB_DVB_TELETEXT 8
+#define MAX_DUMP_DATA_LENGTH 3000
 
 static inline bool pollFd(int fd, int timeout) {
     struct pollfd pollFd[1];
@@ -81,6 +82,8 @@ VbiSource::VbiSource() {
     int type = VBI_TYPE_TT_625B;
     mExitRequested = false;
     mNeedDumpSource = false;
+    mDumpSub = false;
+    checkDebug();
     mDumpFd = -1;
     mRdFd = ::open(VBI_DEV_FILE.c_str(), O_RDONLY);
     if (mRdFd == -1) {
@@ -115,6 +118,17 @@ VbiSource::~VbiSource() {
 
 size_t VbiSource::totalSize() {
     return 0;
+}
+
+void VbiSource::checkDebug() {
+    #ifdef NEED_DUMP_ANDROID
+    char value[PROPERTY_VALUE_MAX] = {0};
+    memset(value, 0, PROPERTY_VALUE_MAX);
+    property_get("vendor.subtitle.dump", value, "false");
+    if (!strcmp(value, "true")) {
+        mDumpSub = true;
+    }
+    #endif
 }
 
 void VbiSource::updateParameter(int type, void *data) {
@@ -200,12 +214,13 @@ void VbiSource::loopDriverData() {
                 memcpy(rdBuffer + ATV_TELETEXT_SUB_HEADER_LEN, (char *)pd->b, 42);
                 std::shared_ptr<char> spBuf = std::shared_ptr<char>(rdBuffer, [](char *buf) { delete [] buf; });
                 mSegment->push(spBuf, size);
-#if 0
-                static char slice_buffer[10*1024];
-                for (int i=0; i < strlen((char*)pd->b); i++)
-                    sprintf(&slice_buffer[i*3], " %02x", slice_buffer[i]);
-                SUBTITLE_LOGI("line data: %s", slice_buffer);
-#endif
+                if (mDumpSub) {
+                    static char slice_buffer[MAX_DUMP_DATA_LENGTH * 4];
+                    for (int i=0; i < strlen((char*)pd->b) && i< MAX_DUMP_DATA_LENGTH; i++) {
+                        sprintf(&slice_buffer[i*3], " %02x", slice_buffer[i]);
+                    }
+                    SUBTITLE_LOGI("line data: %s", slice_buffer);
+                }
             }
         }
     }
