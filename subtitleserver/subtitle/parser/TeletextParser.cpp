@@ -100,13 +100,22 @@
 #define MAX_BUFFERED_PAGES 25
 
 #ifdef NEED_TELETEXT_USES_VECTOR_FONTS
-#define MULTIPLE 5
+#define BITMAP_CHAR_WIDTH  40
+#define BITMAP_CHAR_HEIGHT 50
+#define TELETEXT_HEAD_HEIGHT 50
+#define TELETEXT_TEXT_HEIGHT 1150
+#define TELETEXT_BAR_HEIGHT 100
+#define TELETEXT_GRAPHIC_WIDTH 1640
 #else
-#define MULTIPLE 1
+#define BITMAP_CHAR_WIDTH  12
+#define BITMAP_CHAR_HEIGHT 10
+#define TELETEXT_HEAD_HEIGHT 10
+#define TELETEXT_TEXT_HEIGHT 230
+#define TELETEXT_BAR_HEIGHT 20
+#define TELETEXT_GRAPHIC_WIDTH 492
 #endif
 
-#define BITMAP_CHAR_WIDTH  (12 * MULTIPLE)
-#define BITMAP_CHAR_HEIGHT (10 * MULTIPLE)
+
 
 #define TELETEXT_LIVETV_DEFAULT_SUBPAGE 0
 #define TELETEXT_INVALID_SUBPAGE_NUMBER -1
@@ -114,11 +123,6 @@
 #define DOUBLE_HEIGHT_SCROLL_FACTOR 2
 #define DOUBLE_HEIGHT_SCROLL_SECTION 6
 #define DOUBLE_HEIGHT_SCROLL_SECTION_PLUS DOUBLE_HEIGHT_SCROLL_SECTION+1  //+1 for sub page row
-
-#define TELETEXT_HEAD_HEIGHT (10 * MULTIPLE)
-#define TELETEXT_TEXT_HEIGHT (230 * MULTIPLE)
-#define TELETEXT_BAR_HEIGHT (20 * MULTIPLE)
-#define TELETEXT_GRAPHIC_WIDTH (492 * MULTIPLE)
 
 #define DOUBLE_BITMAP_CHAR_HEIGHT BITMAP_CHAR_HEIGHT/2
 
@@ -414,7 +418,7 @@ static void save2BitmapFile(const char *filename, uint32_t *bitmap, int w, int h
 {
     SUBTITLE_LOGI("png_save2:%s\n",filename);
     FILE *f;
-    char fname[40];
+    char fname[50];
 
     snprintf(fname, sizeof(fname), "%s.bmp", filename);
     f = fopen(fname, "w");
@@ -1288,7 +1292,7 @@ static inline int generateInputDisplay(AVSubtitleRect *subRect, unsigned char *d
 
 
 int TeletextParser::saveTeletextGraphicsRect2Spu(std::shared_ptr<AML_SPUVAR> spu, AVSubtitleRect *subRect) {
-    SUBTITLE_LOGI("save_display_set\n");
+    SUBTITLE_LOGI("%s save_display_set\n",__FUNCTION__);
     int resx = subRect->w;
     int resy = subRect->h;
     int error =  DATA_VALID_AND_BLANK;
@@ -1329,19 +1333,19 @@ int TeletextParser::saveTeletextGraphicsRect2Spu(std::shared_ptr<AML_SPUVAR> spu
             break;
    }
    if (mDumpSub) {
-        char filename[32];
-        snprintf(filename, sizeof(filename), "./data/subtitleDump/tt(%d)", mIndex);
+        char filename[50];
+        snprintf(filename, sizeof(filename), "./data/subtitleDump/tt(%lld)", spu->pts);
         save2BitmapFile(filename, (uint32_t *)spu->spu_data, resx, resy);
     }
     free(pbuf);
     return error;
 }
 int TeletextParser::saveDisplayRect2Spu(std::shared_ptr<AML_SPUVAR> spu, AVSubtitleRect *subRect) {
-    SUBTITLE_LOGI("save_display_set\n");
+    SUBTITLE_LOGI("%s save_display_set\n",__FUNCTION__);
     int resx = subRect->w;
     int resy = subRect->h;
     int error =  DATA_VALID_AND_BLANK;
-    char filename[32];
+    char filename[50];
 
     uint32_t *pbuf;
 

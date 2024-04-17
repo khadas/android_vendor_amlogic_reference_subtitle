@@ -119,6 +119,7 @@ public:
     int getSubType();
     std::string getSubLanguage(int idx);
     bool setSubLanguage(std::string lang);
+    bool setStartTimeStamp(int startTime);
     bool resetForSeek();
 
     bool setPipId(int mode, int id);

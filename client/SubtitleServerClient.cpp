@@ -422,6 +422,20 @@ bool SubtitleServerClient::setSubLanguage(std::string lang) {
     return r.isOk();
 }
 
+bool SubtitleServerClient::setStartTimeStamp(int startTime) {
+    Mutex::Autolock _l(mLock);
+    if (mRemote == nullptr && !hasInit) {
+        initRemoteLocked();
+    }
+    if (mRemote == nullptr) {
+        return false;
+    }
+    SUBTITLE_LOGI("select session:0x%x startTime:%lld ms", mSessionId, startTime);
+    auto r = mRemote->setStartTimeStamp(mSessionId, startTime);
+    checkRemoteResultLocked(r);
+    return r.isOk();
+}
+
 int SubtitleServerClient::getSubType() {
     Mutex::Autolock _l(mLock);
     if (mRemote == nullptr && !hasInit) {
