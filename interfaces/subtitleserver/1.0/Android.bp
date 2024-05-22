@@ -12,6 +12,7 @@ package {
 hidl_interface {
     name: "vendor.amlogic.hardware.subtitleserver@1.0",
     root: "vendor.amlogic.hardware",
+    compile_multilib: "both",
 
     system_ext_specific: true,
     srcs: [

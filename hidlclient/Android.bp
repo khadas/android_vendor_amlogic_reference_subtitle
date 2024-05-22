@@ -37,6 +37,7 @@ cc_library_shared {
     name: "libsubtitlebinder",
     vendor_available:true,
     system_ext_specific: true,
+    compile_multilib: "both",
 
     srcs: ["SubtitleServerHidlClient.cpp"],
 

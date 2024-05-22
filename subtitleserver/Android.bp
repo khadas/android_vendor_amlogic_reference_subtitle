@@ -46,7 +46,6 @@ cc_binary {
   defaults: [
     "hidl_defaults",
   ],
-  compile_multilib: "32",
 
   arch: {
       x86: {
@@ -171,7 +170,7 @@ cc_binary {
     "-Wno-error=implicit-function-declaration",
     "-Wno-unused-variable",
     "-Wno-unused-parameter",
-    "-DNEED_MALLOC_LEAK",
+    //"-DNEED_MALLOC_LEAK",
     "-DNEED_DUMP_ANDROID",
     "-DNEED_DECODE_TIMEOUT_ANDROID",
     "-DNEED_ARIB24_LIBARIBCAPTION",

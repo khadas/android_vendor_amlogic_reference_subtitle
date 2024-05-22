@@ -43,6 +43,7 @@ package {
 
 cc_library_shared {
     name: "libsubtitlemanager_jni",
+    compile_multilib: "both",
     vendor_available: true,
     system_ext_specific: true,
     srcs: [
@@ -86,6 +87,7 @@ cc_library_shared {
 
 cc_prebuilt_library_shared {
     name: "libvendorfont",
+    compile_multilib: "both",
     vendor_available: true,
     check_elf_files: false,
     system_ext_specific: true,

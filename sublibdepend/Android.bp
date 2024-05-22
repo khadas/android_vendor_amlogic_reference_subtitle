@@ -33,6 +33,7 @@ package {
 
 cc_library_shared {
     name: "libsubtitle_depend",
+    compile_multilib: "both",
     srcs: ["subtitle_depend.cpp"],
     vendor: true,
 

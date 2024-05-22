@@ -36,6 +36,7 @@ package {
 
 cc_library_static {
     name: "libsubtitleclient_static",
+    compile_multilib: "both",
     vendor_available: true,
     system_ext_specific: true,
 
@@ -62,6 +63,7 @@ cc_library_static {
 
 cc_library_shared {
     name: "libSubtitleClient",
+    compile_multilib: "both",
     vendor_available: true,
     system_ext_specific: true,
     static_libs: ["libsubtitleclient_static"],

@@ -70,6 +70,7 @@ license {
 cc_library_static {
     vendor_available: true,
     name: "libaribcaption_static",
+    compile_multilib: "both",
 
     srcs: [
         "src/base/aligned_alloc.cpp",
